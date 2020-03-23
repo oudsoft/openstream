@@ -6,15 +6,16 @@ const express = require('express');
 const app = express();
 
 const serverPort = 443;
-/*
+
 const privateKey = fs.readFileSync(__dirname + '/ssl-cert/server.pem', 'utf8');
 const certificate = fs.readFileSync(__dirname + '/ssl-cert/server.crt', 'utf8');
 const credentials = { key: privateKey, cert: certificate};
-*/
 
+/*
 const privateKey = fs.readFileSync(__dirname + '/ssl-cert/key6.pem', 'utf8');
 const certificate = fs.readFileSync(__dirname + '/ssl-cert/server6.crt', 'utf8');
-const credentials = { key: privateKey, cert: certificate /*, passphrase: '' */};
+const credentials = { key: privateKey, cert: certificate /*, passphrase: '' */ /*};
+*/
 
 const corsMiddleware = function(req, res, next) {
 	res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
@@ -63,9 +64,9 @@ RootNames.forEach((item)=>{
 });
 
 /*************************************/
-//app.use('/blog', blog);
-//app.use('/win', win);
-//app.use('/mrqr', mrqr);
+app.use('/blog', blog);
+app.use('/win', win);
+app.use('/mrqr', mrqr);
 app.use('/manual', manual);
 /*************************************/
 
