@@ -1,0 +1,84 @@
+<!-- testchatbox3.html -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="../shortcut icon" type="image/x-icon"/>
+                    
+		<title>Open Stream - Sender-2</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link href="../css/index.css" rel="stylesheet"/>
+		<script src="../js/utility.js"></script>
+		<link type="text/css" href="../css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<script type="text/javascript" src="../lib/jquery.ui.chatbox.js"></script>
+		<script type="text/javascript" src="../lib/simpleUpload.min.js"></script>
+	</head>
+	<body>
+		<div style="padding: 10px; text-align: center;">
+			<input type="button" id="showchatboxcmd" name="showchatboxbttn" value="ติดต่อเจ้าหน้าที่" />
+		</div>
+		<div id="chat_div"></div>
+	</body>
+</html>
+
+<script type="text/javascript">
+	//const hostname = window.location.hostname;
+	const hostname = '58.137.157.66';
+	const rootname = window.location.pathname.split('/')[1];
+
+	let ws = null;
+
+	let roomname = 'Admin';
+
+	const RoomName = 'Sanook_1';
+	const RootName = rootname;
+
+	let box = null;
+
+	doConnect();
+
+	function doConnect() {
+		ws = new WebSocket('wss://' + hostname + '/' + rootname + '/' + roomname + '/' + RoomName + '?type=vchat&screenno=00');
+		ws.onopen = function () {
+			console.log('Websocket is connected to the signaling server');
+		}
+		ws.onmessage = function (msg) {
+			if (msg.data !== 'Hello world') {
+				var data = JSON.parse(msg.data);
+				console.log(data);
+				if (data.message) {
+					box.chatbox("option", "boxManager").addMsg(data.sender, data.message.msg, data.message.msgtype);
+				}
+			}
+		}
+	}
+
+	$(document).ready(function() {
+		$("#showchatboxcmd").click(function(event, ui) {
+			if(box) {
+				box.chatbox("option", "boxManager").toggleBox();
+				let offset = box.chatbox("option", "offset");
+				console.log(offset);
+				let user = box.chatbox("option", "user");
+				console.log(user);
+			} else {
+				box = $("#chat_div").chatbox({id: RoomName, 
+					rootName: RootName,
+					roomName: RoomName,
+					user: {name : RoomName},
+					title : "ติดต่อเจ้าหน้าที่",
+					messageSent : function(id, user, msg, type) {
+						$("#chat_div").chatbox("option", "boxManager").addMsg(id, msg, type);
+						let sendto = 'Admin';	
+						let msgSend = {type: 'message', rootname: RootName, roomName: roomname, sender: RoomName, recver: roomname, message: {msgtype: type, msg}};
+						ws.send(JSON.stringify(msgSend));  
+
+					}
+				});
+			}
+		});
+	});
+</script>

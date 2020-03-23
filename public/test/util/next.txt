@@ -1,0 +1,74 @@
+สรุปขั้นตอนการ Config Coturn (STUN/TURN) Server
+==================================================
+
+1. ติดตั้งและ Config ตามนี้ 
+	https://meetrix.io/blog/webrtc/coturn/installation.html
+2. แก้ไข ufw
+	https://linuxize.com/post/how-to-setup-a-firewall-with-ufw-on-ubuntu-18-04/
+	โดยต้องเปิด port ตามที่ Coturn ต้องการ
+	$ sudo ufw app info 'Coturn'
+	แล้วทุก port ทั้ง tcp และ udc
+3. start coturn
+	$ sudo turnserver -o -v
+4. ทดสอบ stun
+	$ stunclient --protocol udp --verbosity 4 58.137.157.66
+
+-----------------------------------------------------------------------------------------------------------
+การประยุกต์ใช้งาน openstream
+==================================================
+ร้านอาหารกลางวัน จุดจอดพักรถ คุณสาหร่าย
+ร้านอาหารกลางคืน โรงเบียร์ฯ
+รถทัวร์ที่มีจอบนรถ
+รถเมล์ ขสมก.
+งานอีเวนต์
+งานแต่งงาน(แบบเลี้ยงโต๊ะจีน)
+ร้านกาแฟ อะเมซอล สามารถใช้วิธีเสียงตามสายแบบในโลตัสได้ โดยแยกภาพแยกเสียง
+
+คิดว่ายังมีอะไรอีกเยอะให้ค้นหามาผนวกอีกเยอะ คิดดีๆ คิดสิ คิดสิ คิด คิด
+-----------------------------------------------------------------------------------------------------------
+สิ่งที่ต้องแก้ไขและปรับปรุงใน Openstream WebApp
+==================================================
+1. ทดสอบระบบ
+	7.1 หาวิธีเทสระบบข้ามเครือข่ายให้แน่ใจก่อนปล่อย <เทสครั้งที่ 1 ใช้ vpn ของ ราชมงคลอิสาน เป็น client ผลทดสอบ ผ่าน (2020-0116)>
+	7.2 ทดสอบเปิดห้อง 2, 3 ใช้งานพร้อมๆ กัน
+
+2. ทำ Video Chat มาใช้เล่นๆ เพื่อทดสอบการทำงานข้ามเครือข่าย และการใช้งานหลายห้องพร้อมๆ กัน
+	ใช้โครงของ Client.html
+		<Roomname>/<master>/00
+		<Roomname>/<client>/<d/m>/<00 ... 04>
+		<Roomname>/<vchat>/<r/e>/<00 ... 04>/<00 ... 04>
+
+3. Design Production version
+	3.1 Add Login of control.html
+		- Add Special Chat <ช่องทางแจ้งชำระเงิน>
+	3.2 Add Agency <openstream/panstream/auystream/ponstream/...>
+	3.3 Add Database
+		dbname openstremdb
+		user <userid/username/password/type/createat/updateat>
+		agency <userid/agencyname/promptpayNo/promptpayName/status<enable/disable>/createat/updateat>
+		packagesale<id/name/size/uprice/>
+		paymentlog<agencyid/packagesaleid/roomname/openat/amount/>
+	3.4 Design Process
+		- Master ตั้งชื่อห้อง on satus=pending
+		- ออก QR ชำระเงิน
+		- ชำระเงิน
+		- แจ้งชำระเงิน ใช้ สลิป ชื่อห้อง
+		- ตรวจสอบการชำระเงิน
+		- ตรวจสอบชื่อห้อง
+			- ผ่าน ปลดล็อค pendding -> active เข้าห้องได้
+			- ไม่ผ่าน ให้ตั้งชื่อห้องใหม่
+				- แจ้งชื่อใหม่ 
+				- ตรวจสอบชื่อห้องใหม่
+				- วน จนกว่าจะผ่าน
+				- ถ้าไม่ผ่าน คืนเงิน
+	3.5 ปรับปรุงระบบ Chat
+		- user แก้ไข profile ได้
+		- บันทึกข้อความ chat ลงใน localStoreage
+	3.5 สามารถจอง/ซื้อห้องได้ล่วงหน้า
+		- ระบุวันเวลาเริ่มเข้าใช้งาน
+		- สามารถเลื่อนได้ ก่อนถึงเวลาเปิดห้อง 1 นาที
+	3.6 ปรับระบบเดืม(ฟรี) ให้สามารถปิดห้องได้เองด้วย node-cron
+-----------------------------------------------------------------------------------------------------------------------------------
+Capture Screen Plugin
+
+https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk

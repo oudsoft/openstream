@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+</head>
+
+<body>
+	<br>
+	<video controls="true" autoplay="true" muted="muted"></video>
+	<button onclick="doShowme()">play show me please</button>
+	<button onclick="appendYoutube()">Test Youtube</button>
+  <script>
+
+/*
+https://TUmzyLS6wAQ-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url=https%3A%2F%2Fwww.youtube.com%2Fget_video_info%3Fvideo_id%3DTUmzyLS6wAQ
+
+
+*/
+
+	function doLoadSimpleStream(){
+		return new Promise(function(resolve, reject) {
+			var url = "/openstream/simplevideo";
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+    const mediaSource = new MediaSource();
+
+    const video = document.querySelector("video");
+
+	let thetime = null;
+
+	function doShowme() {
+		media.play();
+	}
+
+	/*
+	doLoadSimpleStream().then((data) => {
+		//console.log(data);
+		let srcPath = "data:video/mp4;"+data;
+		video.src = srcPath;
+		//video.srcObject = srcPath;
+	});
+	*/
+
+	video.oncanplay = function() {
+		video.play();
+	}
+
+	var media = document.createElement("video");
+	var stream = null;
+
+	//media.src = "https://nickdesaulniers.github.io/netfix/demo/frag_bunny.mp4";
+	media.src = "/openstream/simplevideo";
+	//media.src = "/openstream/video/adult/ala011SRS_217033001_sd.mp4";
+	//media.src = "/openstream/video/adult/jessica-weding.mp4";
+	//media.src = "/openstream/video/adult/jessica-dogman.mp4";
+	//media.src = "/openstream/video/AdVideo.mp4";
+	media.oncanplay = function() {
+		stream = media.captureStream();
+		//onMediaSuccess(stream);
+		video.srcObject = stream
+	}
+
+	media.onended = function () {
+		console.log('thetime', thetime);
+		console.log('stream', stream);
+		/*
+		console.log('AdXStream', AdXStream);
+		*/
+		thetime = window.setTimeout(() => {
+			doShowme();
+			window.clearTimeout(thetime);
+		}, 60000);
+		
+	}
+
+	function onMediaSuccess(stream) {
+		if (video.srcObject === null) {
+			video.srcObject = stream
+		}
+	}
+
+
+	function appendYoutube() {
+		var videoElement = document.createElement('video');
+		var url = 'https://www.youtube.com/watch?v=TUmzyLS6wAQ';
+		videoElement.pause();
+		videoElement.src = url;
+		videoElement.currentTime = 0;
+		videoElement.play();
+		document.body.appendChild(videoElement);
+	}
+
+  </script>
+
+
+</body>
+
+</html>

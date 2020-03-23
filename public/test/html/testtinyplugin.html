@@ -1,0 +1,46 @@
+<!-- testtinyplugin.html -->
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>		
+		<title>Tiny Toggle</title>
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link href="../plugin/tinytoggle/css/tinytoggle.min.css" rel="stylesheet">
+		<script src="../plugin/tinytoggle/js/jquery.tinytoggle.min.js" type="text/javascript"></script>
+
+	</head>
+	<body>
+		<div>
+			<!-- Create checkbox input and add "tiny-toggle" class -->  
+			<input type="checkbox" id="my-checkbox" name="my_option" class="tiny-toggle" data-tt-type="power" data-tt-size="monster" data-tt-palette="red">
+
+		</div>
+	</body>
+</html>
+
+<script type="text/javascript">
+	//http://tinytoggle.simonerighi.net/
+	// Customize default options
+	//$.fn.TinyToggle.defaults.type = "square";
+	$.fn.TinyToggle.defaults.palette = "green";
+	// Define your custom size and use it
+	//$.fn.TinyToggle.sizes["mysize"] = "36px";
+	//$.fn.TinyToggle.defaults.size = "mysize";
+
+	// Initialize plug-in    
+	$("#my-checkbox").tinyToggle({
+		//type:    "power",
+		palette: "green", 
+		//size:    "monster", // you can also specify defined custom sizes Ex. "mysize"
+		onReady: function(obj) { /* do something... */ console.log(obj); obj.attr("palette", "green"); obj.attr("size", "large")},
+		onClick: function(obj) { /* do something */ console.log(obj); /*$(this).tinyToggle({size: 'monster', type: 'power', palette: "red"})*/  obj.attr("palette", "green")},
+		onChange: function() { /* do something... */ },
+		onCheck: function() { /* do something... */ },
+		onUncheck: function() { /* do something... */ },
+		onDisabled: function(obj) { /* do something... */ obj.attr("palette", "green")},
+		onEnabled: function() { /* do something... */ }
+	});    
+</script>

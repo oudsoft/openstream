@@ -1,0 +1,248 @@
+<!-- fullscreen.html -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+		<title>Open Stream</title>
+		<!-- <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>-->
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script src='../lib/socket.io.js'></script>
+		<script src="../js/client.js"></script>
+		<script src="../js/utility.js"></script>
+		<!--
+		<link rel="stylesheet" href="css/client.css" />
+		-->
+		<style>
+			#Main {
+				border: 3px solid blue;
+				position: relative;
+				/* height: 300px; */
+			}
+			#Connection-Control {
+				margin-top: 10px;
+				padding: 5px;
+			}
+			#RoomName{
+				text-align: center;
+				display: block;
+				padding: 2px;
+				height: 100px;
+				background-color: gray;
+				border-color: blue;
+				box-shadow: 3px 3px 5px 6px #ccc;
+				/* font-size: 24px;	*/
+			}
+			#ClientScreen {
+				border: 1px solid red;
+				/* position: absolute; */
+				margin-right: 10px;
+				left: 5px;
+				top: 5px;
+				/* bottom: 5px; */
+				/* right: 30%; */
+				width: 65%;
+				min-height: 100%;
+				display: inline-block;
+				float: left;
+			}
+			video {
+				/*
+				width: 100%;
+				border-radius: 5px;
+				border: 1px solid black;
+				*/
+			}
+			#Client-Area {
+				position: relative;
+				border: 2px solid green;
+				width: 98%;
+			}
+			#remoteScreenVideo { 
+				border: 3px solid gray;
+				padding: 5px;
+				z-index: 0;
+			}
+			.remoteScreenNormal {
+				width: 97%; 
+				height: 100%;
+			}
+			.remoteScreenFull {
+				max-width: 98%;
+				min-height: 112%;
+			}
+			#remoteMediaVideo { 
+				background-color: rgba(0,0,0,0.5);
+				border: 3px solid yellow;
+				z-index: 2;
+				width: 300px; 
+				height: 200px;
+			}
+			.remoteMediaNormal{
+				position: absolute; 
+				bottom: 4px; 
+				right: 4px; 
+			}
+			.remoteMediaFull {
+				position: absolute; 
+				bottom: 4px; 
+				right: 4px; 
+			}
+			.error-box {
+				position: relative;
+				color: red;
+			}
+			.stats-box {
+				position: relative;
+				color: blue;
+			}
+
+			/* Chat Area*/
+			#ChatScreen {
+				width: 30%;
+				/* position: absolute; */
+				/* float: left; */
+				display: inline-block;
+			}
+			#MessageScreen {
+				position: relative;
+				border: 3px solid green;
+				width: 100%;
+				height: 420px;
+				margin-top: 4px;
+				background-color: rgba(0,0,0,0.5);
+				overflow: auto;
+				color: white;
+			}
+			#ScreenProfile {
+				width: 100%; 
+				height: 60px;
+				display: block;
+				border: 1px solid red;
+			}
+
+		</style>
+	</head>
+	<body>
+		<div id="RoomName"></div>				
+		<h1>Client Screen</h1>
+		<div id="Main">
+			<!--
+			<div id="ControlRefresh">
+				<div id="RefreshWarnning"></div>
+				<div id="RefreshBttnBox">
+					<div class="RefreshBttnDiv"><a class="RefreshLink" href="#" onclick="(function(){alert('Test Refresh');})()">Refresh</a></div>
+				</div>
+			</div>
+			-->
+			<div id="Connection-Control">
+				<button id="btn-connect-server" onclick="(function(){alert('Test Start Connect');})()">Start Connect</button>
+				<button id="btn-start-screen-call" onclick="(function(){alert('Test Call Stream');})()">Call Stream</button>
+				<button id="btn-start-media-call" onclick="(function(){alert('Test Call Media');})()">Call Media</button>
+				<button id="btn-stop-screen-call" onclick="(function(){alert('Test Stop Connect');})()">Stop Connect</button>
+				<button id="btn-request-fullscreen" onclick="doRequestFullScreen()">Full Screen</button>
+			</div>
+			<div>&nbsp;</div>
+			<div class="inline">
+				<div id="ClientScreen">
+					<div id="Client-Area">
+						<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+						<video id="remoteMediaVideo" class="remoteMediaNormal" autoplay playsinline></video>
+					</div>
+				</div>
+				<div id="ChatScreen">
+					<div id="ScreenProfile"></div>
+					<div id="MessageScreen">
+					</div>
+					<div>&nbsp;</div>
+					<div id="ChatInput">
+						<p style="font-weight: bold;">โปรดใช้คำสุภาพในข้อความที่ต้องการส่ง</p>
+						<input type="text" id="usermessage" size="30" placeholder="พิมพ์ข้อความ"/>
+						<input type="button" id="sendcommand" value=" ส่ง "/>
+						<p id="ErrorInputMessage" style="color: red;"></p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="error-box"></div>
+		<div class="stats-box"></div>
+	</body>
+</html>
+
+<script type="text/javascript">
+	function requestFullScreen(element) {
+		return new Promise(function(resolve, reject) {
+			// Supports most browsers and their versions.
+			var requestMethod = element.requestFullScreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullScreen;
+			if (requestMethod) { // Native full screen.
+				requestMethod.call(element);
+				var width = window.innerWidth;
+				var height = window.innerHeight;
+				resolve({width: width, height: height});
+			} else if (typeof window.ActiveXObject !== "undefined") { // Older IE.
+				var wscript = new ActiveXObject("WScript.Shell");
+				if (wscript !== null) {
+					wscript.SendKeys("{F11}");
+				}
+				resolve(null);
+			}
+		});
+	}
+
+	function doRequestFullScreen() {
+		//<div id="ClientScreen">
+		//<div id="Client-Area">			
+		var frameVideo = document.querySelector('#Client-Area');
+		//var frameVideo = document.querySelector('#ClientScreen');
+		requestFullScreen(frameVideo).then((wh) => {
+			console.log(wh.width, wh.height);
+			//$('#Client-Area').css('width', wh.width);
+			//$('#Client-Area').css('height', wh.height);
+			//console.log($('#Client-Area').css('width'), $('#Client-Area').css('height'));
+			//console.log($('#ClientScreen').css('width'), $('#ClientScreen').css('height'));
+			//$('#remoteScreenVideo').css('width', wh.width);
+			//$('#remoteScreenVideo').css('height', wh.height);
+			/*
+			$('#remoteScreenVideo').css('width', wh.width+'px');
+			$('#remoteScreenVideo').css('height', wh.height+'px');
+			$('#remoteScreenVideo').css('max-width', '98%');
+			$('#remoteScreenVideo').css('min-height', '112%');
+			*/
+			console.log($('#remoteScreenVideo').css('bottom'), $('#remoteScreenVideo').css('right'));
+			console.log($('#remoteMediaVideo').css('bottom'), $('#remoteMediaVideo').css('right'));
+			var  rmmvH = $('#remoteScreenVideo').css('height')
+			//$('#remoteMediaVideo').css('right', wh.width+'px');
+		});
+	}
+
+	if (document.addEventListener)	{
+		document.addEventListener('fullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('mozfullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('MSFullscreenChange', exitFullScreenHandler, false);
+		document.addEventListener('webkitfullscreenchange', exitFullScreenHandler, false);
+	}
+
+	var toggleFullScreen = false;
+
+	function exitFullScreenHandler(){
+		if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement !== null)	{
+			// Run code on exit
+			console.log('Full Screen Mode Trigger');
+			toggleFullScreen = !toggleFullScreen;
+			console.log(toggleFullScreen);
+			if (toggleFullScreen){
+				$('#remoteScreenVideo').removeClass('remoteScreenNormal');
+				$('#remoteScreenVideo').addClass('remoteScreenFull');
+				$('#remoteMediaVideo').removeClass('remoteMediaNormal');
+				$('#remoteMediaVideo').addClass('remoteMediaFull');
+			} else {
+				$('#remoteScreenVideo').removeClass('remoteScreenFull');
+				$('#remoteScreenVideo').addClass('remoteScreenNormal');
+				$('#remoteMediaVideo').removeClass('remoteMediaFull');
+				$('#remoteMediaVideo').addClass('remoteMediaNormal');
+			}
+		}
+	}
+</script>

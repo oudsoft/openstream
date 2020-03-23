@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset = "utf-8" /> 
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<title>Open Stream System</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link type="text/css" href="css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<script type="text/javascript" src="lib/jquery.ui.chatbox.js"></script>
+		<script type="text/javascript" src="lib/chatboxManager.js"></script>
+		<script type="text/javascript" src="lib/simpleUpload.min.js"></script> 
+		<script src="js/Lexxus-jq-timeTo-7c3b4ea/jquery.time-to.min.js"></script>
+		<link href="js/Lexxus-jq-timeTo-7c3b4ea/timeTo.css" type="text/css" rel="stylesheet"/>
+		<script src="lib/notify.min.js"></script>
+		<script src="js/utility.js"></script>
+		<script src="js/master.js"></script>
+		<link rel="stylesheet" href="css/master.css" />
+        <script data-main="js/mod/loadhelper.js" src="lib/require.js"></script>
+	</head>
+	<body>
+		<div id="RoomHeaderDiv">
+			<div id="RoomName"></div>
+			<div id="ClockCountDown"></div>
+		</div>	
+		<div id="MasterScreenLabel">
+			<div id="MasterScreenId">
+				<h1>Master Screen</h1>
+			</div>
+			<div id="ScreenProfile"></div>
+		</div>
+		<div id="SystemMessageBox"></div>
+		<div id="Main">
+			<div id="VideoBox">
+				<div id="localScreen">
+					<div class="NumberStep">
+						<div class="CicleStepMark">1</div><div class="StepName"><h2>Local Screen</h2></div>
+						<div class="StreamSource">
+							<div>
+								<button id="CallOpenLocalFileBar" onclick="doToggleLocalFileBar()">Local Video File</button>
+								<button id="CallOpenYoutubeBar" onclick="doToggleYoutubeBar()">Youtube</button>
+								<button id="btn-get-Stream" onclick="doToggleControlScreenBar()">Get Screen ...</button>
+							</div>
+						</div>
+					</div>
+					<div id="ControlLocalDiv">
+						<div id="YoutubeShareDiv">
+							<label>Youtube URL</label>
+							<input id="YouTubeUrl" type="text" size="20" placeholder="https://www.youtube.com/watch?v=J_tWIeJmKxo"/>
+							<button id="SendYoutubeURL" onclick="doBroadcastYoutube()">OK</button>
+						</div>
+						<div id="LocalFileShareDiv">
+							<label>เปิดไฟล์วิดีโอ</label>
+							<div id="video-file-message"></div>
+							<input id="LocalFile" type="file" accept="video/*" />
+						</div>
+						<div id="control-local-screen"></div>
+						<video id="localVideo" controls autoplay playsinline></video> <!--  muted="false" volume="0" -->
+					</div>
+					<!--				
+					<button id="btn-start-share" onclick="doStartShareScreen()">Start Share Screen</button>
+					<button id="btn-stop-share" onclick="doStopShareScreen()">Stop Share Screen</button>
+					-->
+				</div>
+				<div id="localMediaScreen">
+					<div class="NumberStep">
+						<div class="CicleStepMark">2</div><div class="StepName"><h2>Local Media (Camera and Microphone)</h2></div>
+						<div class="StreamSource"><div><button id="btn-start-getLocalMedia" onclick="doGetLocalMedia()">Get Media</button></div></div>
+					</div>
+					<div id="MediaTrackDiv">
+						<video id="localMediaVideo" autoplay playsinline></video>
+					</div>
+					<div id="ControlMediaTrack">
+						<div class="switch" id="Webcam-On-Cmd"><img src="imgs/logo/webcam-on.png"  height="50px" width="auto"/></div>
+						<div class="switch" id="Webcam-Off-Cmd"><img src="imgs/logo/webcam-off.png"  height="50px" width="auto"/></div>
+						<div class="switch" id="Mic-On-Cmd"><img src="imgs/logo/mic-on.png"  height="50px" width="auto"/></div>
+						<div class="switch" id="Mic-Off-Cmd"><img src="imgs/logo/mic-off.png"  height="50px" width="auto"/></div>
+					</div>
+				</div>
+				<div id="mixedScreen">
+					<div class="NumberStep">
+						<div class="CicleStepMark">3</div><div class="StepName"><h2>Mixed Stream</h2></div>
+						<div class="StreamSource">
+							<div>
+								<button id="btn-full-view" onclick="doFullView()">Full View</button>
+								<button id="btn-mix-stream" onclick="doMixStream()">Mix Them</button>
+								<button id="btn-disconnect-server" onclick="doStopShareScreen()">Stop</button>
+								<button id="btn-connect-server" onclick="doStartShareScreen()">Share</button>
+							</div>
+						</div>
+					</div>
+					<div id="FrameMixedVideo">
+						<video id="mixedVideo" autoplay playsinline></video>
+					</div>
+					<div id="ControlRemoteJoinTrack">
+						<div class="switch" id="CloseRemoteJoinCmd"><img src="imgs/logo/join.png"  height="50px" width="auto"/></div>
+					</div>
+				</div>
+			</div>
+			<div id="ChatScreen">
+				<div id="MessageScreen"></div>
+				<div>&nbsp;</div>
+				<div id="ChatInput">
+					<p style="font-weight: bold;">โปรดใช้คำสุภาพในข้อความที่ต้องการส่ง</p>
+					<input type="text" id="usermessage" size="20" placeholder="พิมพ์ข้อความ"/>
+					<input type="button" id="sendcommand" value=" ส่ง "/>
+					<input type="button" id="sendImgcommand" value=" ส่งรูป "/>
+					<input type="file" id="ImgUpload" name="imagemsg" style="display: none;" onChange="doSendImage()"/>
+					<p id="ErrorInputMessage" style="color: red;"></p>
+				</div>
+			</div>
+		</div>
+		<div class="error-box"></div>
+		<div class="stats-box"></div>
+		<div id="AdXCanvasDiv"></div>
+		<div id="WaitingLayout" class="loading"></div>
+	</body>
+</html>
+
+<div id="ShareBox">
+	<div id="ShareButtonCmd" style="text-align: center;"></div>
+</div>
+<div id="ClientProfilePopup">
+	<div id="AvatarImgDiv"></div>
+	<div id="DisplayName"></div>
+	<div id="VideoChatCmdDiv" class="FullWidthCenter"><button id="OpenVideoCallCmd">Video Call</button></div>
+	<div id="TextChatCmdDiv"  class="FullWidthCenter"><button id="OpenTextChatCmd">ส่งข้อความ</button></div>
+	<div id="CloseCmdDiv"  class="FullWidthCenter"><button id="ClosePopupCmd" onclick="doCloseClientProfilePopup()">ปิด</button></div>
+</div>
+
+<div id="VideoCallInteruptPopup" style="text-align: center;">
+	<div id="AcceptCmdDiv" style="padding: 5px;"><button id="AcceptCmd">รับสาย</button></div>
+	<div id="NotAcceptCmdDiv" style="padding: 5px;"><button id="NotAcceptCmd"  onclick="doNotAcceptInterupt()">ไม่รับสาย</button></div>
+</div>
+
+<div id="VchatPopup">
+	<div id="VchatContent"></div>
+</div>
+
+<script>
+	/*User Register Before go in room section */
+	function doRequestCheckRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/checkroom/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestCheckScreen(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/checkscreen/" + params.roomname + '/' + params.screenno;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestAddUser(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/addnewuser/" + params.roomname + "/" + params.screenno;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestClientEntryQRCode(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/qrservice/newentryqrcode";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestStampEntyTime(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/stampstarttime/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetRequestRemoveScreen(roomname, screenno) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/removescreen/" + roomname + "/" + screenno;
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function getQueryRequest(){
+		let url = window.location.href;
+		let queryparams = url.split('?')[1];
+		let params = queryparams.split('&');
+		let pair = null;
+		let data = [];
+		params.forEach(function(d) {
+		    pair = d.split('=');
+		    let param = {key: pair[0], value: pair[1]};
+		    data.push(param);
+		});
+
+		return data;
+	}
+	
+	function doUserRegister(){
+		let querys = getQueryRequest();
+		let roomnames = querys.filter((item)=>{
+			if (item.key === 'roomname') return item;
+		});
+		let screennos = querys.filter((item)=>{
+			if (item.key === 'screenno') return item;
+		});
+		let registerUser = function(type) {
+			roomname = roomnames[0].value;
+			screenno = screennos[0].value;
+			roomtype = type;
+			$('#Main').show();
+			$('#RoomName').html('<h1>' + roomname + ' Room</h1>');
+			/* init top position of MessageScreen */
+			var $el = $('#ScreenProfile'); 
+			var bottom = $el.position().top + $el.outerHeight(true);
+			$('#MessageScreen').css('top', bottom +'px')
+			$('#MessageScreen').load('content/masterguide.html');
+			doInitSystem();
+			//doConnectChatWebScket(roomname, roomname + '-' + screenno);
+		}
+
+		//console.log(JSON.stringify(roomnames) + ':' + JSON.stringify(screennos));
+		let params = {roomname: roomnames[0].value};
+		doRequestCheckRoom(params).then((statusR) => {
+			//console.log('statusR', JSON.stringify(statusR));
+			/*
+				statusR.status.code === 200 >> ยังไม่มีห้องชื่อนี้
+				statusR.status.code === 201 >> มีห้องชื่อนี้แล้ว
+			*/
+			if (statusR.status.code === 201) {
+				if (statusR.status.roomstatus === 'Active') {
+					params = {roomname: roomnames[0].value, screenno: screennos[0].value, clientId: clientId};
+					doRequestCheckScreen(params).then((statusS) => {
+						//console.log('statusS', JSON.stringify(statusS));
+						//console.log(statusS.status.code);
+						if (statusS.status.code === 200) {
+							doRequestAddUser(params).then((statusU) => {
+								//console.log('statusU', JSON.stringify(statusU));
+								if (statusU.status.code === 200) { 
+									registerUser(statusR.status.roomtype);
+								} else {
+						    		$('#SystemMessageBox').html('ไม่สามารถลงทะเบียนเข้าใช้งานได้โปรดติดต่อ ...');
+									$('#SystemMessageBox').addClass('error');
+									$('#SystemMessageBox').addClass('blink');
+									$('#SystemMessageBox').show("slide", { direction: "left" }, 1200);
+							    	setTimeout(()=>{
+										$('#SystemMessageBox').hide("slide", { direction: "right" }, 1200);
+							    	}, 5000);
+								}
+							});
+						} else if (statusS.status.code === 201) {
+							registerUser(statusR.status.roomtype);
+					    } else if (statusS.status.code === 203) {
+							$('#SystemMessageBox').html('หน้าจอที่คุณต้องการเข้าใช้งานมีผู้อื่นเข้าใช้แล้ว\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา');
+							$('#SystemMessageBox').addClass('error');
+							$('#SystemMessageBox').addClass('blink');
+							$('#SystemMessageBox').show("slide", { direction: "left" }, 1200);
+							setTimeout(()=>{
+								$('#SystemMessageBox').hide("slide", { direction: "right" }, 1200);
+							}, 5000);
+					    }
+			    	});
+				} else if (statusR.status.roomstatus === 'Pending') {
+			    		$('#SystemMessageBox').html('ห้อง <b>' + roomnames[0].value + ' </b> อยู่ระหว่างรอชำระค่าบริการ');
+						$('#SystemMessageBox').addClass('error');
+						$('#SystemMessageBox').addClass('blink');
+						$('#SystemMessageBox').show("slide", { direction: "left" }, 1200);
+			    		setTimeout(()=>{
+							$('#SystemMessageBox').hide("slide", { direction: "right" }, 1200);
+			    		}, 5000);
+				}
+			} else {
+				$('#SystemMessageBox').html('ห้องที่คุณต้องการเข้าใช้งานยังไม่ได้สร้างขึ้นมา\nโปรดสร้างห้องที่ต้องการก่อน');
+				$('#SystemMessageBox').addClass('error');
+				$('#SystemMessageBox').show();
+				const hostname = window.location.hostname;
+				setTimeout(()=>{
+					window.location = 'https://' + hostname + '/' + rootname;
+				}, 5000);
+			}
+		});
+	}
+
+	function doGetWsState() {
+		if (ws) {
+			return ws.readyState;
+		} else {
+			return -1;
+		}
+	}
+
+	function doCallCloseMedia() {
+		if (localStream)	{
+			localStream.getTracks().forEach((track)=>{
+				track.stop();
+			});
+			localVideo.srcObject = null;
+			//localViedo.srcObject = null;
+		    console.log('Local Streaming Stop!!');
+		}
+		if (localMediaStream)	{
+			localMediaVideo.pause();
+			localMediaStream.getTracks().forEach((track)=>{
+				track.stop();
+			});
+			localMediaVideo.srcObject = null;
+			//localMediaViedo.srcObject = null;
+		    console.log('Local Media Streaming Stop!!');
+		}
+		if (mixedStream) {
+			mixedStream.getTracks().forEach((track)=>{
+				track.stop();
+			});
+			mixedVideo.srcObject = null;
+			//mixedVideo.srcObject = null;
+		    console.log('Mixed Streaming Stop!!');
+		}
+
+		$('#btn-start-getLocalMedia').prop( "disabled", false );
+		//$('#btn-start-shareLocalMedia').prop( "disabled", true );
+		$('#btn-mix-stream').prop( "disabled", false );
+		$('#btn-full-view').prop( "disabled", true );
+		$('#mixedScreen').hide();
+
+		$('#btn-connect-server').normally();
+		$('#btn-connect-server').prop( "disabled", true );
+		$('#btn-disconnect-server').normally();
+		$('#btn-disconnect-server').prop( "disabled", true );
+
+		doDisconnect();
+		$('#ClockCountDown').hide();
+	}
+
+	/* Control Master Screen System Section */
+	var displayMediaStreamConstraints;
+
+	var localVideo = document.querySelector('#localVideo');
+
+	var localMediaVideo = document.querySelector('#localMediaVideo');
+
+	var mixedVideo = document.querySelector('#mixedVideo');
+
+	var localStream;
+
+	var localMediaStream;
+
+	var mixedStream;
+	var joinStream;
+
+	var inputNode;
+
+	var errorBox = $('.error-box');
+	var statsBox = $('.stats-box');
+
+	var msgScreen = document.querySelector('#MessageScreen');
+
+	var screenProfile = document.querySelector('#ScreenProfile');
+
+	var clientId;
+	var clientNo;
+
+	const saleTimeDayUnit = 24 * 60 * 60 * 1000;
+	var delayTime = 15000000;
+
+	document.onkeydown = function (e) {
+		e = e || window.event;
+		if ((e.keyCode == '48') || (e.keyCode == '96')){
+			//number 0
+			$('.error-box').toggle();
+			$('.stats-box').toggle();
+			$('#AdXCanvasDiv').toggle();
+			$('#AdDemo').toggle();
+			//$('#ClientProfilePopup').dialog('open');
+		/*
+		} else if ((e.keyCode == '84')){
+			delayTime = Number(prompt('Please type your new delay time', delayTime));
+		
+		} else if ((e.keyCode == '40')){
+
+
+		*/
+		}
+
+	};
+
+	$(document).ready(function() {
+		$('#Main').hide();
+		doUserRegister();
+		doManageClientProfileClickEvent();
+		$('#ShareBox, #ClientProfilePopup, #VideoCallInteruptPopup, #VchatPopup').dialog({ 
+			modal: true, autoOpen: false, width: 350, resizable: false, title: 'แชร์'
+		});
+		document.addEventListener("ClientLogoClick", function(e) {
+			console.log(e.detail);
+			doOpenClientProfilePopup(roomname, screenno, e.detail.fromId, e.detail.clientId);
+		});
+		$("#Mic-On-Cmd, #Mic-Off-Cmd").on("click", function() {
+			doToggleMicrophoneLocalMedia();
+			$("#Mic-On-Cmd").toggle();
+			$("#Mic-Off-Cmd").toggle();
+		});	
+		$("#Webcam-On-Cmd, #Webcam-Off-Cmd").on("click", function() {
+			doToggleMediaStream();
+			$("#Webcam-On-Cmd").toggle();
+			$("#Webcam-Off-Cmd").toggle();
+		});
+		$("#CloseRemoteJoinCmd").on("click", function() {
+			let event = new CustomEvent("RemoveJoinStreamCmd", { "detail": {joinStream: joinStream}});
+			document.dispatchEvent(event);
+			$("#CloseRemoteJoinCmd").toggle();
+		});
+	});
+
+	function doInitSystem(){
+		$('#control-local-screen').load('content/controllocal.html', function() {
+			/*
+			var textarea = $('#capabilities');
+			var settings  = $('#settings');
+			var aspectRatio  = $('#aspectRatio');
+			var frameRate  = $('#frameRate');
+			var resolutions  = $('#resolutions');
+			var cursor = $('#cursor');
+			var displaySurface = $('#displaySurface');
+			var logicalSurface = $('#logicalSurface');
+			*/
+			$('#resolutions option[value=720p]').attr('selected','selected');
+
+			if(!navigator.getDisplayMedia && !navigator.mediaDevices.getDisplayMedia) {
+				var error = 'Your browser does NOT supports getDisplayMedia API.';
+				$('h1').html(error);
+				$('h1').css('color', 'red');
+
+				$('video').css({display: 'none'});
+				$('#btn-test-getDisplayMedia').css({display: 'none'});
+				throw new Error(error);
+			}
+		});
+
+		$('#sendcommand').on('click', function(event) {
+				event.preventDefault();
+				doSendMessage();
+		});
+
+		$('#sendImgcommand').on('click', function() {
+			$('#ImgUpload').click();
+		});
+
+		$('#usermessage').on("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				doSendMessage();
+			}
+		});
+
+		$('#btn-get-Stream').prop( "disabled", false );
+		//$('#btn-start-share').prop( "disabled", true );
+		//$('#btn-stop-share').prop( "disabled", true );
+
+		$('#btn-start-getLocalMedia').prop( "disabled", false );
+		//$('#btn-start-shareLocalMedia').prop( "disabled", true );
+		//$('#btn-stop-shareLocalMedia').prop( "disabled", true );
+
+		$('#usermessage').prop( "disabled", true );
+		$('#sendcommand').prop( "disabled", true );
+
+		//$('#btn-connect-server').text("Share");
+		//$('#btn-connect-server').attr( "onclick", "doConnect()" );
+		//$('#btn-connect-server').prop( "disabled", true );
+		//$('#btn-connect-server').greenify();
+
+		$('#sendImgcommand').prop( "disabled", true );
+
+		$('#btn-full-view').prop( "disabled", true );
+		//$('#btn-disconnect-server').prop( "disabled", true );
+
+		//$('#ScreenProfile').empty();
+		let initparams = {rootname: rootname, roomname: roomname};
+		initScreenProfileMaster(initparams);
+	}
+
+	function doReadyGetStream(){
+		doReadyShareAll();
+		doRequestStampEntyTime({roomname: roomname}).then((data) => {
+			$('#usermessage').prop( "disabled", false );
+			$('#sendcommand').prop( "disabled", false );
+			$('#sendImgcommand').prop( "disabled", false );
+			$('#MessageScreen').empty();
+			//console.log(data);
+			if ((data.status.code === 201) || (data.status.code === 202)) {
+				let startAt = new Date(data.starttime);
+				startAt = startAt.getTime();
+				let endAt = startAt + saleTimeDayUnit;
+				let currentTime = new Date();
+				currentTime = currentTime.getTime();
+				delayTime = endAt - currentTime;
+				//console.log(startAt, endAt, currentTime, delayTime);
+				//NaN NaN 1581908663636 NaN
+				if (delayTime > saleTimeDayUnit) console.log({error: 'Delay Time Error ' + delayTime + ' : ' + saleTimeDayUnit});
+				doShowClockCountdown(delayTime / 1000);
+			}
+		});
+	}
+
+	function doMixStream() {
+		let event = new CustomEvent("MergeStreamCmd", { "detail": {localStream: localVideo.srcObject, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
+		document.dispatchEvent(event);
+	}
+	function doReMixStream() {
+		let event = new CustomEvent("ReMergeStreamCmd", { "detail": {localStream: /*localVideo.srcObject*/ localStream, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
+		document.dispatchEvent(event);
+	}
+
+
+	function doToggleMediaStream() {
+		const eventName = 'ResetLayerStreamCmd';
+		let event, isMuted, streamIndex;
+		if ($('#Mic-On-Cmd').css('display') === 'block'){
+			isMuted = false;
+		} else {
+			isMuted = true;
+		}
+		if ($('#Webcam-On-Cmd').css('display') === 'block'){
+			streamIndex = [1, 0];
+		} else {
+			streamIndex = [0, 1];
+		}
+		//doToggleWebcamLocalMedia()
+		event = new CustomEvent(eventName, { "detail": {localStream: /*localVideo.srcObject*/ localStream, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: isMuted, streamIndex: streamIndex}});
+		document.dispatchEvent(event);
+	}
+
+	function doReadyShareAll() {
+		//console.log(mixedStream);
+		if (mixedVideo.srcObject){
+			//console.log('<<')
+			$('#btn-mix-stream').prop( "disabled", true );
+			$('#btn-full-view').prop( "disabled", false );
+
+			$('#btn-connect-server').prop( "disabled", false );
+			$('#btn-connect-server').greenify();
+			$('#btn-disconnect-server').prop( "disabled", true );
+			$('#btn-disconnect-server').normally();
+		} else {
+			//console.log('>>')
+			$('#btn-mix-stream').prop( "disabled", false );
+			$('#btn-full-view').prop("disabled", true );
+
+			$('#btn-connect-server').prop( "disabled", true );
+			$('#btn-connect-server').normally();
+			$('#btn-disconnect-server').prop( "disabled", true );
+			$('#btn-disconnect-server').normally();
+		}
+	}	
+
+	function doReadyShareStream(){
+		//console.log(localVideo.srcObject, localMediaVideo.srcObject);
+		if ((localVideo.srcObject) && (localMediaVideo.srcObject)) {
+			$('#mixedScreen').show();
+			doReadyShareAll();
+			//$('#btn-get-Stream').prop( "disabled", true );
+		}
+	}
+
+	function doReadyShareMedia(){
+		//console.log(localVideo.srcObject, localMediaVideo.srcObject);
+		if ((localVideo.srcObject) && (localMediaVideo.srcObject)) {
+			$('#mixedScreen').show();
+			doReadyShareAll();
+			$('#btn-start-getLocalMedia').prop( "disabled", true );
+		}
+	}
+
+	function doStopShareScreen() {
+		doCallCloseMedia();
+		var promiseList = new Promise(function(resolve, reject){
+			localPeers.forEach((item) => {
+				item.localConn.close();
+			});
+		});
+		Promise.all([promiseList]).then((ob)=>{
+			localStream = null;
+			localMediaStream = null;
+			mixedStream = null;
+			localPeers = [];
+		});
+	}
+
+	function doPropmtStopShare(){
+		$('#btn-disconnect-server').prop( "disabled", false );
+		$('#btn-disconnect-server').reddy();
+	}
+
+	function doSendMessage() {
+		var userMsg = $('#usermessage').val();
+		if (userMsg !== '') {
+			var isRude = doCheckRude(userMsg);
+			if (!isRude) {
+			   ws.send(JSON.stringify({ 
+					channel: "chat",
+					type: "message", 
+					message: {msgtype: 'text', msg: userMsg, timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
+					name: myname,
+					sender: 'master',
+					sendto: 'all',
+					roomName: roomname,
+					rootname: rootname
+			   	})); 
+			   	$('#usermessage').val('');
+			} else {
+				$('#ErrorInputMessage').empty();
+				$('#ErrorInputMessage').text('ข้อความที่คุณกำลังจะส่งมีคำไม่สุภาพประกอบอยู่ โปรดแก้ไขด้วย');
+				$('#usermessage').focus();
+			}
+
+		} else {
+			alert("โปรดพิมพ์ข้อความที่ต้องการส่ง");
+			$('#usermessage').focus();
+		}
+	}
+
+	let screenMsgActive = '00';
+ 	let backupMsgContent = '';
+
+	function doManageClientProfileClickEvent(){
+		let doShowQRCode = function(roomname, screenNo) {
+			let params = {entryType: 'client', roomId:'', roomName: roomname, screenId: '', screenNo: screenNo};
+			doRequestClientEntryQRCode(params).then((qrLink) => {
+				let qrcodeFrm = document.createElement('div');
+				let saveQRCmd = document.createElement('button');
+				let shareQRCmd = document.createElement('button');
+				let qrcodeImgDiv = document.createElement('div');
+				let qrcodeImg = document.createElement('img');
+				let link = document.createElement('a');		
+				link.style.textAlign = 'center';
+				link.appendChild(qrcodeImg);
+				qrcodeImgDiv.appendChild(link);
+				qrcodeImgDiv.style.textAlign = 'center';
+				qrcodeImgDiv.setAttribute("width", "100%");
+				qrcodeImg.setAttribute("src", qrLink);
+				qrcodeImg.setAttribute("width", "250px");
+				qrcodeImg.setAttribute("height", "auto");
+				saveQRCmd.textContent = 'Save';
+				shareQRCmd.textContent = 'Share';
+				saveQRCmd.addEventListener("click", function(e){
+				    let imgsrcPaths = qrLink.split('/')
+				    let filename = imgsrcPaths[imgsrcPaths.length-1];
+				    link.setAttribute('download', filename);
+				    link.setAttribute('href', qrLink);
+				    link.click();
+				});
+				shareQRCmd.addEventListener("click", function(e){
+					const hostname = window.location.hostname;
+					let qrUrl = 'https://' + hostname + qrLink;
+					$('#ShareBox').dialog('open');
+					$('#ShareButtonCmd').empty();
+					let qrCmdBox = $('<div style="text-align: center;"></div>');
+					$(qrCmdBox).append("<a href='https://www.facebook.com/sharer/sharer.php?u=" + qrUrl + "' onclick='javascript:window.open(this.href, \"\", \"menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600\");return false;' target='_blank' title='Share on Facebook'><img src='/" + rootname + "/imgs/logo/Share-on-Facebook.png' width='220px' height='60px'/></a>");
+					
+					$(qrCmdBox).append("&nbsp;&nbsp;&nbsp;&nbsp;");
+					$(qrCmdBox).append("<a href='https://social-plugins.line.me/lineit/share?url=" + qrUrl + "' target='_blank'><img src='/" + rootname + "/imgs/logo/wide-default.png' width='140px' height='50px'/></a>");
+					$(qrCmdBox).append("&nbsp;&nbsp;&nbsp;&nbsp;");
+					$(qrCmdBox).append('<div><input type="button" id="CloseShareBoxCmd" value=" ปิด " onclick="doCloseShareBox()"/></div>');
+					$('#ShareButtonCmd').append($(qrCmdBox));
+				});
+
+				qrcodeFrm.appendChild(qrcodeImgDiv);
+
+				let qrcodeCmdDiv = document.createElement('div');
+				qrcodeCmdDiv.style.textAlign = 'center';
+				qrcodeCmdDiv.appendChild(saveQRCmd);
+				qrcodeCmdDiv.appendChild(shareQRCmd);
+				qrcodeFrm.appendChild(qrcodeCmdDiv);
+
+				msgScreen.innerHTML = "";
+
+				msgScreen.appendChild(qrcodeFrm);	
+
+				let isOnStatus = getCurrentConnectionStatus({screenNo: screenNo});
+				//console.log(isOnStatus);
+
+				if (!isOnStatus){
+					let controlClientCmdDiv = document.createElement('div');
+					controlClientCmdDiv.style.textAlign = 'center';
+					controlClientCmdDiv.classList.add('AlignBottom');
+					let cleareSessionCmd = document.createElement('button');
+					cleareSessionCmd.textContent = 'Clear Session';
+					cleareSessionCmd.addEventListener("click", function(e){
+						doGetRequestRemoveScreen(roomname, screenNo).then((sts) => {
+							if (sts.status.code === 200 ) {
+								alert('The system clear this seesion success.');								
+							} else {
+								alert('The system cannot clear this seesion, Please try agian later.');
+							}
+						});
+
+					});
+					controlClientCmdDiv.appendChild(cleareSessionCmd);
+
+					let spanBlank = document.createElement('span');
+					spanBlank.textContent = '  ';
+					let openClientWindowCmd = document.createElement('button');
+					openClientWindowCmd.textContent = 'Open';
+					openClientWindowCmd.addEventListener("click", function(e){
+						let clientUrl = 'https://' + hostname + '/' + rootname + '/client/' + roomname + '/m/' + screenNo; 
+						window.open(clientUrl, "_blank");
+					});
+					controlClientCmdDiv.appendChild(spanBlank);
+					controlClientCmdDiv.appendChild(openClientWindowCmd);
+
+					msgScreen.appendChild(controlClientCmdDiv);
+				}
+	
+			});	
+		}
+		document.addEventListener("ClientProfileClick", function(e) {
+			console.log('event detail=> ', e.detail);
+ 			if (e.detail.screenNo === '00') {
+				//console.log(screenMsgActive);
+ 				if (screenMsgActive == '00') {
+					//console.log(screenMsgActive);
+					if (e.detail.isOnStatus === false) {
+						backupMsgContent = msgScreen.innerHTML;
+						doShowEditUserProfileForm(e.detail.screenNo); 
+					}
+				} else {
+ 					//Rollback
+ 					msgScreen.innerHTML = backupMsgContent;
+				}
+ 			} else {
+ 				//Backup and Show Entry QR Code
+ 				if (screenMsgActive === '00') {
+ 					backupMsgContent = msgScreen.innerHTML;
+					if (e.detail.isOnStatus === false) {
+	 					doShowQRCode(roomname, e.detail.screenNo); 	
+					} else {
+						doShowUserProfile(e.detail.screenNo);
+					} 			
+ 				} else { 
+					if (e.detail.isOnStatus === false) {
+	 					doShowQRCode(roomname, e.detail.screenNo); 	
+					} else {
+						doShowUserProfile(e.detail.screenNo);
+					}				
+				}
+ 			}
+			screenMsgActive = e.detail.screenNo; 			
+		});
+	}
+	function doSendImage() {
+		const defSize = 200000;
+		var fileSize = $('#ImgUpload')[0].files[0].size;
+		if (fileSize <= defSize) {
+			var uploadUrl = "/" + rootname+ "/uploadimagemsg/" + roomname + '/' + screenno;
+			$('#ImgUpload').simpleUpload(uploadUrl, {
+				start: function(file){ },
+				progress: function(progress){ },
+				success: function(data){
+					//console.log('Uploaded.', data);
+					//$('#avatarImg').attr('src', data.link);
+
+					ws.send(JSON.stringify({ 
+						channel: "chat",
+						type: "message", 
+						message: {msgtype: 'image', msg: data.link, timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
+						name: myname,
+						sender: 'client',
+						sendto: 'all',
+						roomName: roomname,
+						rootname: rootname
+					})); 
+					$("#ImgUpload").replaceWith($("#ImgUpload").val('').clone(true));
+				},error: function(error){ }
+			});
+		} else {
+			alert('File not excess ' + defSize + ' Byte.');
+		}
+	}
+	function doOpenClientProfilePopup(roomname, screenno, calleeno, calleeId) {
+		let params = {rootname: rootname, roomname: roomname, screenno: calleeno};
+		//console.log(params);
+		doRequestUserProfile(params).then((user)=>{
+			//console.log(user);
+			if (user.screen) {
+				if (user.profile.avatarUrl){
+					let avatarImg = $('<img>');
+					$(avatarImg).attr('src', user.profile.avatarUrl);
+					$(avatarImg).css('width', '100px');
+					$(avatarImg).css('height', 'auto');
+					$('#AvatarImgDiv').append($(avatarImg));
+				}
+				$('#DisplayName').html('<h2 class="ClientProfile ClientStatusOn">' + user.screen.screenno + '</h2>');
+				if (user.profile.displayname) $('#DisplayName').append('<h3>' + user.profile.displayname + '</h3>');
+				$('#OpenVideoCallCmd').attr( "onclick", "doCallOpenVchat('" + roomname + "', '" + screenno +"', '" + calleeno + "', '" + user.screen.clientId + "')" );
+				$('#OpenTextChatCmd').attr( "onclick", "doCallOpenTchat('" + roomname + "', '" + screenno +"', '" + calleeno + "')" );
+				$('#ClientProfilePopup').dialog('option', 'title', 'User Profile');
+				$('#ClientProfilePopup').dialog('open');
+			} else {
+				alert('Something Wrong!!');
+			}
+		});
+
+	}
+	function doCallOpenVchat(roomname, screenno, calleeno, calleeId) {
+		doCloseClientProfilePopup();
+		$('#VchatPopup').dialog('option', 'title', 'Video Call');
+		$('#VchatPopup').dialog('option', 'width', '720');
+		$('#VchatPopup').dialog('option', 'height', '750');
+		$('#VchatPopup').dialog('open');
+		$('#VchatContent').load('content/vconf.html', function() {
+			initCaller(screenno, calleeno, clientId, calleeId);
+		});
+	}
+
+	function doCallOpenTchat(RoomName, ScreenNo, Callee) {
+		/** Initial Admin Chat *******/
+		console.log(RoomName, ScreenNo, Callee);
+		let sendername = RoomName + '-' + ScreenNo;
+		let receivname = RoomName + '-' + Callee;
+		setSenderName(sendername);
+		setReceiverName(receivname);
+		doCreateNewBox(receivname);
+		doCloseClientProfilePopup();
+	}
+	function doShowClockCountdown(countdownTo){
+		$('#ClockCountDown').show();
+		$('#ClockCountDown').timeTo(countdownTo, function(){
+	    	$('#ClockCountDown').hide();
+	    });
+	}
+	function doCloseShareBox() {
+		$('#ShareBox').dialog('close');
+	}
+	function doCloseClientProfilePopup() {
+		$('#ClientProfilePopup').dialog('close');
+	}
+
+	function doFullView() {
+		if (mixedVideo.srcObject) {
+			requestFullScreen(mixedVideo).then((wh) => {
+				//Other Setting on exitFullScreenHandler() function.
+			});
+		} else {
+			alert('Please mixed your streams before full view.');
+		}
+	}
+
+	if (document.addEventListener)	{
+		document.addEventListener('fullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('mozfullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('MSFullscreenChange', exitFullScreenHandler, false);
+		document.addEventListener('webkitfullscreenchange', exitFullScreenHandler, false);
+	}
+
+	var toggleFullScreen = false;
+
+	function exitFullScreenHandler(){
+		if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement !== null)	{
+			toggleFullScreen = !toggleFullScreen;
+			if (toggleFullScreen){
+				$('#mixedVideo').addClass('mixedVideoFullView');
+			} else {
+				$('#mixedVideo').removeClass('mixedVideoFullView');
+			}
+		}
+	}
+	
+	const doUpdateStream = function (mergedStream){
+		let videoTrack = mergedStream.getVideoTracks()[0];
+		let audioTracks = mergedStream.getAudioTracks();
+		//console.log('All Tracks', mergedStream.getTracks());
+		//console.log('audioTracks in mergeStream', audioTracks);
+		localPeers.forEach((item) => {
+			var sender = item.localConn.getSenders().find(function(s) {
+				return s.track.kind == videoTrack.kind;
+			});
+			//console.log('found sender:', sender);
+			sender.replaceTrack(videoTrack);
+
+			if (audioTracks.length > 0){
+				audioTracks.forEach((aTrack) => {
+					sender = item.localConn.getSenders().find(function(s) {
+						return s.track.kind == aTrack.kind;
+					});
+					if (sender)	{
+						sender.replaceTrack(aTrack);
+					} else {
+						sender.addTrack(aTrack);
+					}
+				});
+			}
+		});
+	}
+
+	function doToggleYoutubeBar(){
+		$('#YoutubeShareDiv').slideToggle("slow");
+	}
+
+	function doBroadcastYoutube() {
+		//https://www.youtube.com/watch?v=TUmzyLS6wAQ
+		let youTubeUrl = $('#YouTubeUrl').val();
+		if (youTubeUrl){
+			let urlParams = urlQueryToObject(youTubeUrl);
+			console.log(urlParams);
+			if ((urlParams.v) && (urlParams.v.length === 11)){
+				var ytUrl = "https://"+urlParams.v+"-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url=https%3A%2F%2Fwww.youtube.com%2Fget_video_info%3Fvideo_id%3D" + urlParams.v;
+				fetch(ytUrl).then(response => {
+					if (response.ok) {
+						response.text().then(schdata => {
+							let data = parse_str(schdata);
+							console.log(data);
+							let metaData = JSON.parse(data.player_response);
+							let fullVideo = metaData.streamingData.formats[0];
+							console.log(fullVideo.url);
+							ws.send(JSON.stringify({ 
+								channel: "chat",
+								type: "message", 
+								message: {msgtype: 'youtube', msg: fullVideo.url, timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname, videowidth: fullVideo.width, videoheight: fullVideo.height},
+								name: myname,
+								sender: 'master',
+								sendto: 'all',
+								roomName: roomname,
+								rootname: rootname
+							})); 
+						});
+					} else {
+						alert('Error From Origin Clip.');
+					}
+				});
+				doToggleYoutubeBar();
+				$('#YouTubeUrl').val('');
+			} else {
+				alert('ลิงค์ยูทูปของคลิปที่ต้องการแชร์ไม่ถูกต้อง');
+			}
+		} else {
+			alert('โปรดป้อนลิงค์ยูทูปของคลิปที่ต้องการแชร์');
+		}
+	}
+
+	function parse_str(str) {
+		return str.split('&').reduce(function(params, param) {
+			var paramSplit = param.split('=').map(function(value) {
+				return decodeURIComponent(value.replace('+', ' '));
+			});
+			params[paramSplit[0]] = paramSplit[1];
+			return params;
+		}, {});
+	}
+
+	document.addEventListener("SwithYoutube", function(e) {
+		let clipUrl = e.detail.url;
+		const doForcePlayClip = function(url) {
+			localVideo.onended = function() {
+				let event = new CustomEvent("SwithBackMain", { "detail": {}});
+				document.dispatchEvent(event);
+			};
+			localVideo.src = url;
+			localVideo.play();
+		}
+		if (localVideo.srcObject)	{
+			localVideo.srcObject = null;
+			doForcePlayClip(clipUrl);
+		} else {
+			doForcePlayClip(clipUrl);
+		}
+	});
+
+	document.addEventListener("SwithBackMain", function(e) {
+		localVideo.src = null;
+		localVideo.srcObject = localStream;
+	});
+
+	function doToggleLocalFileBar(){
+		$('#LocalFileShareDiv').slideToggle("slow");
+		if ($('#LocalFileShareDiv').css("display") === 'block'){
+			$('#video-file-message').empty();
+			inputNode = document.querySelector('#LocalFile');
+			inputNode.addEventListener('change', playSelectedFile, false);
+		}
+	}
+	var displayMessage = function(message, isError) {
+		var element = document.querySelector('#video-file-message');
+		element.innerHTML = message;
+		element.className = isError ? 'video-file-error' : 'video-file-info';
+	}
+	
+	const SOURCE_ELEMENT_NODES = new WeakMap();
+	const DEST_ELEMENT_NODES = new WeakMap();
+
+	var playSelectedFile = function(event) {
+		var URL = window.URL || window.webkitURL;
+		var file = this.files[0];
+		var type = file.type;
+		var canPlay = localVideo.canPlayType(type);
+		if (canPlay === '') canPlay = 'no';
+		var message = 'Can play type "' + type + '": ' + canPlay;
+		var isError = canPlay === 'no';
+		displayMessage(message, isError);
+		if (isError) {
+			return
+		}
+		var fileURL = URL.createObjectURL(file);
+		localVideo.srcObject = null;
+		localVideo.src = fileURL;
+
+		localStream.getVideoTracks().forEach((item)=>{
+			localStream.removeTrack(item);
+		});
+		if (localStream.getAudioTracks().length > 0){
+			localStream.getVideoTracks().forEach((item)=>{
+				item.stop();
+			});
+		}
+
+		localVideo.oncanplay = function() {
+			localVideo.play();
+			let aStream = localVideo.captureStream();
+			var ctx, source, dest;	
+			aStream.onactive = function(){
+				//console.log(aStream.getVideoTracks().length);
+				let videoTrack = aStream.getVideoTracks()[0];
+				//console.log('videoTrack', videoTrack);
+
+				var audioContext;
+				var audioSource;
+				var dest;
+
+				if (SOURCE_ELEMENT_NODES.has(localVideo)) {
+					audioSource = SOURCE_ELEMENT_NODES.get(localVideo);
+					dest = DEST_ELEMENT_NODES.get(localVideo);
+					audioSource.connect(dest);
+				} else {
+					audioContext = new (window.AudioContext || window.webkitAudioContext)();
+					audioSource = audioContext.createMediaElementSource(localVideo);
+					dest = audioContext.createMediaStreamDestination();
+					audioSource.connect(dest);
+					SOURCE_ELEMENT_NODES.set(localVideo, audioSource);
+					DEST_ELEMENT_NODES.set(localVideo, dest);
+				}
+
+
+				let bStream = dest.stream;
+				//console.log(bStream);
+
+				let audioTrack = bStream.getAudioTracks()[0];
+				//console.log('audioTrack', audioTrack);
+
+				localStream.addTrack(videoTrack);
+				localStream.addTrack(audioTrack);
+				//console.log('localStream new Tracks', localStream.getTracks());
+
+				localStream.onended = function() {
+					let event = new CustomEvent("SwithBackMain", { "detail": {}});
+					document.dispatchEvent(event);
+				};
+				doReMixStream();
+				setTimeout(() => {
+					doUpdateStream(mixedStream);
+				}, 2500);
+			};
+		};
+
+		$('#LocalFileShareDiv').slideToggle("slow");
+		
+	}
+
+	function doToggleControlScreenBar() {
+		$('#control-local-screen').slideToggle("slow");		
+	}
+</script>

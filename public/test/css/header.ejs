@@ -1,0 +1,71 @@
+<!-- header.ejs -->
+<!DOCTYPE html>
+<html lang="en" >
+<html>
+    <head>
+        <title><%= title %></title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="shortcut icon" type="image/x-icon" href="/<%=appname%>/img/icon/foodOS.ico">
+		<%- include ../script/jsscript.ejs %> 
+		<%- include ../style/style.ejs %> 
+    </head>
+    <body>
+		<div data-role="page" data-theme="a">
+			<div id="header">
+				<h1 style="display: inline-block;"><%= title %></h1>
+				<div class="menu-tab">
+					<div id="one"></div>
+					<div id="two"></div>
+					<div id="three"></div>
+				</div>
+				<div class="menu-hide">
+				  <nav>
+					<ul>
+						<li><a id="home-command" href="/<%=appname%>">หน้าหลัก</a></li>
+						<li><a id="terminal-command" href="/<%=appname%>/foodgroup">กลุ่มเมนู</a></li>
+						<li><a id="point-command" href="/<%=appname%>/fooditem">รายการเมนู</a></li>
+						<li><a id="route-command" href="/<%=appname%>/dintable">โต๊ะที่นั่ง</a></li>
+						<li>-----------------------------------</li>
+						<li><a id="schtran-command" href="/<%=appname%>/orders">จัดการออเดอร์</a></li> 
+						<li><a id="schtran-command" href="/<%=appname%>/reviews">จัดการรีวิว</a></li> 
+						<li>-----------------------------------</li>
+						<li><a id="win-profile-command" href="/<%=appname%>/about">เกี่ยวกับ Food Bot</a></li>
+						<li><a id="win-profile-command" href="#" onclick="closeLiff()">ปิด</a></li>
+					</ul>
+				  </nav>
+				</div>
+			</div>
+			<!--<div style="height: 120px; width: 100%;">&nbsp;</div>-->
+			<!-- Add Hidden Command-->
+
+<script>
+	const appname = "food";
+	const cookiename = "foodconst";
+	const cookieStr = $.cookie(cookiename).substr(2);
+	const cookie = $.parseJSON(cookieStr);
+	//console.log('cookie-> ' + JSON.stringify(cookie));
+	/*[{"id":1,"type":"adm","shopid":1,"fname":"ประเสริฐ","lname":"สุดชดา","name":"ซันไรซ์ ซีฟู้ด","tel":"0990183245","address":"หาดซันไรซ์ ต.ท่าศาลา อ.ท่าศาลา จ.นครศรีธรรมราช","slogan":"เปิดบริการ 09.00-22.00น. ทุกวัน"}] */
+
+	/* initial system params */
+	var params = {};
+</script>
+
+<script>
+	$('.menu-tab').click(function(){
+		$('.menu-hide').toggleClass('show');
+		$('.menu-tab').toggleClass('active');
+	});
+	$('a').click(function(){
+		$('.menu-hide').removeClass('show');
+		$('.menu-tab').removeClass('active');
+	});
+
+	function closeLiff() {
+		var msgSendBack = [];
+		msgSendBack.push({	type: 'text', text: 'close', data: 'action=close'});
+		liff.sendMessages(msgSendBack).then(() => {
+			liff.closeWindow();
+		});	
+	}
+</script>

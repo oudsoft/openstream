@@ -1,0 +1,52 @@
+<div id="RoomName"></div>				
+<h1>Client Screen</h1>
+<div id="SystemMessageBox"></div>
+<div id="Main">
+	<div id="ControlRefresh">
+		<div id="RefreshWarnning"></div>
+		<div id="RefreshBttnBox">
+			<div class="RefreshBttnDiv"><a class="RefreshLink" href="#" onclick="doRefreshPage()">Refresh</a></div>
+		</div>
+	</div>
+	<div id="Connection-Control">
+		<button id="btn-connect-server" onclick="doConnect()">Start Connect</button>
+		<button id="btn-start-screen-call" onclick="doStartShareScreen()">Call Stream</button>
+		<button id="btn-start-media-call" onclick="doStartShareMedia()">Call Media</button>
+		<!-- <button id="btn-stop-screen-call" onclick="doDisconnect()">Stop Connect</button> -->
+		<button id="btn-request-fullscreen" onclick="doRequestFullScreen()">Full Screen</button>
+	</div>
+	<div>&nbsp;</div>
+	<div id="MainScreen">
+		<div id="ClientScreen">
+			<div id="Client-Area">
+				<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+				<video id="remoteMediaVideo" class="remoteMediaNormal" autoplay playsinline></video>
+			</div>
+		</div>
+		<div id="ChatScreen">
+			<div id="ScreenProfile"></div>
+			<div id="MessageScreen">
+			</div>
+			<div>&nbsp;</div>
+			<div id="ChatInput">
+				<p style="font-weight: bold;">โปรดใช้คำสุภาพในข้อความที่ต้องการส่ง</p>
+				<input type="text" id="usermessage" size="20" placeholder="พิมพ์ข้อความ"/>
+				<input type="button" id="sendcommand" value=" ส่ง "/>
+				<input type="button" id="sendImgcommand" value=" ส่งรูป "/>
+				<input type="file" id="ImgUpload" name="imagemsg" style="display: none;" onChange="doSendImage()"/>
+				<p id="ErrorInputMessage" style="color: red;"></p>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="WaitingLayout" class="loading"></div>
+<div class="error-box"></div>
+<div class="stats-box"></div>
+
+<div id="ClientProfilePopup">
+	<div id="AvatarImgDiv"></div>
+	<div id="DisplayName"></div>
+	<div id="VideoChatCmdDiv"><button id="OpenVideoCallCmd">Video Call</button></div>
+	<div id="TextChatCmdDiv"><button id="OpenTextChatCmd">ส่งข้อความ</button></div>
+	<div id="CloseCmdDiv"><button id="ClosePopupCmd" onclick="doCloseClientProfilePopup()">ปิด</button></div>
+</div>

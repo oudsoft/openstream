@@ -1,0 +1,412 @@
+ขั้นตอนการติดตั้งระบบ EDOC
+**************************************
+Remark 
+ให้เปลี่ยน deploy path เป็น /var/www/rails/edoc-api แทนทุกจุด เพื่อให้ unicorn ทำงานได้ถูกต้อง
+
+1.ใช้ SSH (Secure shell) เข้าระบบด้วย Root
+ $ ssh root@xxx.xxx.xxx.xxx
+ 
+ Remark
+ Check Ubuntu Server Version.
+ $ lsb_release -a
+ $ cat /etc/*release
+ $ cat /etc/issue
+
+2.เพิ่มผู้ใช้งานสำหรับ deploy ระบบ
+ $ adduser deployer
+
+3.เพิ่มสิทธิการใช้ Sudo
+ $ visudo
+ deployer ALL=(ALL:ALL) ALL
+
+4.แก้ไขการตั้งค่า SSH
+ $ vi /etc/ssh/sshd_config
+ Port 22
+ Protocol 2
+ #Remark https://www.it.chula.ac.th/th/node/3166
+ PermitRootLogin no  #ต้องเพิ่มยูสเซอร์ deployer ให้สามารถล็อกอินเข้าใช้งานให้ได้ก่อน แล้วค่อยใช้งานบรรทัดนี้
+ UseDNS no
+ AllowUsers deployer
+	=> ป้อง ssh session timeout
+	ClientAliveInterval 30
+	ClientAliveCountMax 10
+
+5.โหลดข้อมูล SSH
+ $ reload ssh
+Remark
+ $ /etc/init.d/ssh start
+ $ service ssh start
+
+6.เปิดแท็บใหม่แล้วใช้ SSH (Secure shell) เข้าระบบด้วย Deployer
+ $ ssh deployer@xxx.xxx.xxx.xxx
+
+7.ติดตั้งโปรแกรม Curl
+ $ sudo apt-get update
+ $ sudo apt-get install curl
+
+8.ติดตั้งโปรแกรม RVM
+ $ curl -L get.rvm.io | bash -s stable
+Remark เป็นการสร้าง pub key เพื่อดาวน์โหลด rvm สามารถใช้ คำสั่ง curl -sSL https://rvm.io/pkuczynski.asc | gpg --import - แทนได้ หรืออ่านคำแนะนำจาก console log ของ ubuntu ได้
+ $ source ~/.rvm/scripts/rvm
+Remark อ่านคำแนะนำจาก console log ของ ubuntu ซึ่งแนะนำให้ใช้สำคั่ง source /etc/profile.d/rvm.sh
+source cmd manual => https://phyblas.hinaboshi.com/20190125#source
+ $ rvm requirements
+ $ rvm install 2.4.2
+ $ rvm use 2.4.2 –default
+ $ rvm rubygems current
+ Remark 
+ Ubuntu 16 => https://www.digitalocean.com/community/tutorials/how-to-install-ruby-on-rails-with-rvm-on-ubuntu-16-04
+ Ubuntu 18 => https://phoenixnap.com/kb/how-to-install-ruby-on-ubuntu-18-04
+ 	select option 2
+		ถ้า ติดตั้งไม่ผ่านจะติดเรื่อง Permission ให้แก้ตามนี้
+		Your RVM is installed in /usr/local/rvm - it's often called system installation, this requires that your user ubuntu will be added to rvm group:
+		rvm group add rvm "$USER"
+		yes use $USER it will be replaced by your shell with your user name
+		then log out and log in, ensure with:
+		id
+		that your user is in rvm group,
+		finally just in case update permissions for RVM:
+		rvm fix-permissions
+	rvm จะมีความสำคัญต่อ cap/deploy
+		ให้ดุ location ของ rvm ให้ดีว่าถูกติดตั้งที่ไหนระหว่าง /usr/local กับ /usr/share/
+		ในกรณีมีปัญหาในการ deploy ด้วย cap มันจะฟ้องว่า
+			rvm stderr: bash: /usr/local/rvm/bin/rvm: No such file or directory
+		ให้แก้โดย
+			sudo ln -s /usr/share/rvm/ /usr/local/
+
+9.ติดตั้งฐานข้อมูล PostgreSQL https://www.postgresql.org/download/linux/ubuntu/
+ $ sudo apt-get install postgresql-9.6 postgresql-server-dev-9.6
+Remark ubuntu 18 เปลี่ยไปใช้ postgresql-10 แทน (9.6 ไม่มี)
+sudo apt-get install postgresql-10 postgresql-server-dev-10
+ $ gem install pg -- --with-pg-config=/usr/bin/pg_config
+
+10.สร้างผู้ใช้งานฐานข้อมูล PostgreSQL
+ $ sudo -u postgres psql
+ create user deployer with password 'password';
+ alter role deployer superuser createrole createdb replication;
+ create database edoc_production owner deployer;
+Remark
+https://www.mindphp.com/developer/21-sql-pgsql/3419-postgresql-password.html
+alter user postgres with password 'password';
+https://www.liquidweb.com/kb/listing-switching-databases-postgresql/
+http://postgresguide.com/utilities/psql.html
+
+11.ติดตั้งโปรแกรม GIT
+ $ sudo apt-get install git-core
+
+12.ติดตั้งโปรแกรม Bundler
+ $ gem install bundler
+
+13.ตั้งค่า Nginx
+ $ sudo apt-get install nginx
+ $ nginx -h
+ $ cat /etc/init.d/nginx
+ $ /etc/init.d/nginx -h
+ $ sudo service nginx start
+ $ sudo vim /etc/nginx/sites-enabled/default
+
+ upstream unicorn {
+	server unix:/tmp/unicorn.MYAPP.sock fail_timeout=0;
+	#server unix:/home/deployer/apps/edoc-api/current/tmp/sockets/unicorn.edocapi.sock fail_timeout=0;
+ }
+ server {
+	listen 80 default deferred;
+	# server_name example.com;
+	root /home/deployer/apps/MYAPP/current/public;
+	location ^~ /assets/ {
+		gzip_static on;
+		expires max;
+		add_header Cache-Control public;
+	}
+	location ~ ^/(robots.txt|sitemap.xml.gz)/ {
+		root /home/deployer/apps/MYAPP/current/public;
+	}
+	try_files $uri/index.html $uri @unicorn;
+	location @unicorn {
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header Host $http_host;
+		proxy_redirect off;
+		proxy_pass http://unicorn;
+	}
+	error_page 500 502 503 504 /500.html;
+	client_max_body_size 4G;
+	keepalive_timeout 10;
+ }
+
+
+14.แก้ไขการตั้งค่า Deploy สำหรับ Production server
+ $ vim config/deploy/production.rb
+ set :port, 22
+ set :user, 'deployer'
+ set :deploy_via, :remote_cache
+ set :use_sudo, false
+
+ server 'xxx.xxx.xxx.xxx',
+ roles: [:web, :app, :db],
+ port: fetch(:port),
+ user: fetch(:user),
+ primary: true
+
+ set :deploy_to, "/home/#{fetch(:user)}/apps/#{fetch(:application)}"
+
+ set :ssh_options, {
+	forward_agent: true,
+	auth_methods: %w(publickey),
+	user: 'deployer',
+ }
+
+ set :rails_env, :production
+ set :conditionally_migrate, true    
+
+15.เพิ่ม SSH Key ให้กับ BitBucket
+ $ cat ~/.ssh/id_rsa.pub | ssh -p 22 username@xxx.xxx.xxx 'cat >> ~/.ssh/authorized_keys'
+
+16.ตรวจสอบการติดตั้ง
+ $ cap production deploy:check
+
+17.อัพโหลดข้อมูลขึ้นระบบ
+ $ cap production deploy
+
+18. run app.
+https://guides.rubyonrails.org/command_line.html
+
+19. ที่ local สำหรับ restart unicorn
+cap nrru unicorn:stop
+cap nrru unicorn:start
+
+----------------------------------------------------------------
+Remark Additional.
+----------------------------------------------------------------
+ข้อ 13 แก้ไขไฟล์ [server]
+13.1 sudo vim /etc/nginx/sites-enabled/default
+
+ข้อ 14 แก้ไขไฟล์ [local]
+14.1 /home/blueseas/workshop/edoc-api/config/deploy/production.rb
+14.2 /home/blueseas/workshop/edoc-api/config/application.yml
+14.3 deploy/deploy.rb
+	scp /home/blueseas/workshop/edoc-api/config/application.yml deployer@202.29.4.211:
+	login เข้าเซิร์ฟเวอร์
+	ที่ home shell
+	cp application.yml apps/edoc-api/shared/config
+
+ข้อ 15 ทำให้เครื่อง local สามารถเข้าใช้งาน server ด้วย ssh -keygen เพราะต้อง upload ไฟล์ในข้อ 14 ไปที่ server ในตอน deploy
+Client <อย่าลืมเครื่องหมาย : ท้ายคำสั่งด้วย>
+	scp id_rsa.pub deployer@202.29.4.211:
+Server
+	cat id_rsa.pub >> .ssh/authorized_keys
+	chmod 644 .ssh/authorized_keys
+https://na5cent.blogspot.com/2013/11/ssh-keys-linux-ubuntu.html
+Short cut command.
+	cat ~/.ssh/id_rsa.pub | ssh -p 22 deployer@202.29.4.211 'cat >> ~/.ssh/authorized_keys'
+	cat ~/.ssh/id_rsa.pub | ssh -p 22 deployer@147.50.3.117 'cat >> ~/.ssh/authorized_keys'
+
+ข้อ 16 - 17
+ให้รันคำสั่งผ่านทาง Terminal ของ VS Code
+$ chown -R deployer:deployer /var/www/
+
+วิธีใช้งาน cap (Capistrano)
+https://nontster.wordpress.com/2014/05/03/deploying-wordpress-part2/
+
+ข้อ 16
+มักมีปัญหาเรื่อง 
+	1. id_rsa.pub ของ localhost ไม่ตรงกับ SSH Key ของ bitbucket.org
+	2. ERROR linked file /home/deployer/apps/edoc-api/shared/config/database.yml does not exist on 202.29.4.211
+		scp database.yml deployer@202.29.4.211:
+		scp application.yml deployer@202.29.4.211:
+
+		cp database.yml apps/edoc-api/shared/config
+		chmod 766 apps/edoc-api/shared/config/database.yml
+
+		cp application.yml apps/edoc-api/shared/config
+		chmod 766 apps/edoc-api/shared/config/application.yml
+
+		/var/www/rails/edoc-api/shared/config
+
+		scp config/database.yml deployer@147.50.3.117:/var/www/rails/dmh-edoc-api/shared/config/database.yml
+		scp config/application.yml deployer@147.50.3.117:/var/www/rails/dmh-edoc-api/shared/config/application.yml
+
+วิธีใช้ vi / vim
+https://spalinux.com/2012/04/how-to-use-vi-text-editor-on-linux
+
+https://www.digitalocean.com/community/tutorials/how-to-install-ruby-on-rails-with-rvm-on-ubuntu-16-04
+
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+$ wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -
+
+# Linux Redirection Operator
+https://www.lifewire.com/redirection-operator-2625979
+https://www.guru99.com/linux-pipe-grep.html
+https://www.unix.com/shell-programming-and-scripting/42417-what-does-mean-double-pipe.html
+
+list all user
+awk -F: '{ print $1}' /etc/passwd
+
+remove ssh key
+ssh-keygen -f "/home/blueseas/.ssh/known_hosts" -R "202.29.4.211"
+
+download file from server with scp
+scp deployer@202.29.4.211:~/apps/edoc-api/shared/log/production.log ~
+
+search directory with name
+find ~/workshop/edoc-api -name current -type d
+
+----------------------------------------------------------------------------
+Pg Dump & Restore
+pg_dump -U deployer -W -F t edoc_production > ~/db/edoc_production-2019-11-18.backup
+
+
+Restore
+scp deployer@202.29.4.211:~/db/edoc_production-2019-09-27.tar ~/
+pg_restore -d edoc_production edoc_production-2019-09-27.tar -c -U deployer
+pg_restore -h localhost -d edoc_production /home/blueseas/edoc_production-2019-09-27.tar -c -U deployer -W
+----------------------------------------------------------------------------
+pg_dump -U postgres -W -F t edoc_production_nrru > ~/backup/edoc_production_nrru-2019-12-16.backup
+pg_restore -c -d edoc_production edoc_production_nrru-2019-12-16.backup 
+----------------------------------------------------------------------------
+
+System Log
+/var/www/rails/edoc-api/current/log/production.log
+
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/current/log/production.log ~/production.log
+
+leaving nobody behind
+----------------------------------------------------------------------------
+System Logo change [Login Page]
+remove orgin logo
+Picture dimension 163 x 299
+/public/static/media/edoc-logo.c247a4e3.png
+/public/favicon.ico
+
+scp ~/Downloads/pic/nrru/edoc-logo.c247a4e3.png deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/media/edoc-logo.c247a4e3.png
+scp ~/Downloads/pic/nrru/edoc-logo.c247a4e3.png deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/media/rmuti-logo.af7623e2.png
+scp ~/Downloads/pic/nrru/favicon.ico deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/favicon.ico
+
+cp edoc-logo.c247a4e3.png /var/www/rails/edoc-api/current/public/static/media/edoc-logo.c247a4e3.png
+
+scp deployer@147.50.3.113:/var/www/rails/edoc-api/current/public/static/media/edoc-logo.c247a4e3.png ~/test.png
+
+----------------------------------------------------------------------------
+Kill Rails Process Server
+killall -9 rails
+
+ps aux | grep rails
+kill -9 {process_id} 
+
+----------------------------------------------------------------------------
+e-doc Input Data Form
+Organ. unit form
+https://docs.google.com/spreadsheets/d/1c2RAgkePWSoT_IMUlNTA2ymHGQy_Wj5NEyZVSU50UO0/edit?usp=sharing
+
+user form
+https://docs.google.com/spreadsheets/d/1o1rBm7wmsD0YXtNUbOBQume_on5SIeLsDyY1A3K0Xik/edit?usp=sharing
+----------------------------------------------------------------------------
+How to use login with LDAP
+
+
+
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/shared/config/application.yml ~/application.yml
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/shared/config/database.yml ~/database.yml
+
+cap nrru deploy
+
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/current/app/models/position.rb ~/position.rb
+
+How to psql
+https://www.liquidweb.com/kb/listing-switching-databases-postgresql/
+ALTER DATABASE edocdb OWNER TO deployer;
+ALTER DATABASE edocdb RENAME TO edoc_production;
+show hba_file;
+
+vi /etc/postgresql/10/main/pg_hba.conf
+sudo vi /etc/postgresql/10/main/postgresql.conf
+
+traceroute edoc.nrru.ac.th
+http://edoc.nrru.ac.th/
+
+git config --global user.email "prasert@blueseas.co.th"
+
+https://vitux.com/how-to-install-latest-ruby-on-rails-on-ubuntu/
+
+----------------------------------------------------------------------------
+
+จัดทำคู่มือการติดตั้งระบบ โดยเอา ขั้นตอนการติดตั้งระบบ EDOC ด้านบนนี้ ไปพัฒนาปรับปรุง เป็นคู่มือ ฉบับใหม่
+
+จัดทำฟอร์มกรอกข้อมูล สำหรับให้ฝ่ายขายกรอก เพื่อระบุว่า ลูกค้าต้องการอะไรจากระบบบ้าง
+----------------------------------------------------------------------------
+วิธีใช้งาน Capistrano
+https://nontster.wordpress.com/2014/05/03/deploying-wordpress-part2/
+เขียนอธิบายได้ดี
+
+----------------------------------------------------------------------------
+git ls-remote https://github.com/oudsoft/mrqr.git
+git remote add origin https://github.com/oudsoft/mrqr.git
+echo "# mrqr" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/oudsoft/mrqr.git
+git push -u origin master
+---------------------------------------------------------------------------
+$ mkdir myproduct
+$ cd myproduct
+myproduct$ git init
+Initialized empty Git repository in /home/myaccount/myproduct/.git/
+myproduct$ git checkout -b mycustom
+Switched to a new branch 'mycustom'
+
+การแก้ไขค่า รูปแบบเลขหนังสือ
+site_setting table
+issue_numbers table
+receive_numbers table
+
+---------------------------------------------------------------------------
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/js/main.b7e0e215.js ~/main.b7e0e215.js
+
+scp ~/main.b7e0e215.js deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/js/main.b7e0e215.js
+
+/home/blueseas/workshop/edoc-api/app/controllers/api/v1/manuals_controller.rb
+
+
+การแก้ ลิงค์ต่างๆหน้างล็อกอิน
+เข้าไปแก้ไฟล์ /var/www/rails/edoc-api/current/public/static/js/main.b7e0e215.js ~/main.b7e0e215.js
+การแก้ usermanul
+แก้ไขไฟล์ /home/blueseas/workshop/edoc-api/app/controllers/api/v1/manuals_controller.rb
+การแก้ไข อักษรย่อ(หมายเลขหนังสือ)
+ตาราง site_seting, issue_numbe, reciev_number
+---------------------------------------------------------------------------
+การเชื่อต่อ LDAP 
+config ในไฟล์ application.yml
+	AD_DOMAIN: "rmutr.local"
+	AD_USER: "service-aruba"
+	AD_PASSWORD: "ArubaAdmin"
+	AD_SERVER: "203.158.221.82"
+---------------------------------------------------------------------------
+ISSUE:: ปัญหาการแก้ไข site_sittings ที่บันทึกไม่ได้ เนื่องจาก
+
+field 'seal_file_name' ของ ตาราง site_settings เก็บค่า เป็น download_(1).png 
+แต่ลีนุกซ์มองไฟล์นี้เป็นชื่อ 'download_(1).png' มีเครื่องหมาย single quote ครอบชื่อไฟล์ [/var/www/rails/edoc-api/shared/public/system/site_settings/seals/69d/4a7/ec-/original]
+ทำให้ระบบมองไฟล์ ไม่เหมือนกัน แล้วหาไฟล์ไม่เจอ แล้วเกิด Error
+
+>> Fixed -> RegExp. ชื่อไฟล์ตอนอัพโหลด
+
+---------------------------------------------------------------------------
+IPV6 Disabling
+
+Open Terminal
+Type su and enter to log in as the super user
+Enter the root password
+Type cd /etc/modprobe.d/ to change directory to /etc/modprobe.d/
+Type vi disableipv6.conf to create a new file there
+Press Esc + i to insert data to file
+Type install ipv6 /bin/true on the file to avoid loading IPV6 related modules
+Type Esc + : and then wq for save and exit
+Type reboot to restart fedora
+After reboot open terminal and type lsmod | grep ipv6
+If no result, it means you properly disabled IPV6
+
+---------------------------------------------------------------------------
+$ bundle exec cap nrru unicorn:stop
+$ bundle exec cap nrru unicorn:start
+
+
+rake db:migrate RAILS_ENV=production

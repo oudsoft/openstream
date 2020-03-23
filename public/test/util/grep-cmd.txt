@@ -1,0 +1,63 @@
+linux grep cmd.
+------------------------------------------------------------------------
+grep --include=*.txt -Riln "qr" ~/
+
+search directory with name
+find ~/workshop/edoc-api -name current -type d
+
+scp deployer@202.29.4.211:/var/www/rails/edoc-api/current/app/controllers/api/v1/site_settings_controller.rb ~/site_settings_controller.rb
+scp ~/site_settings_controller.rb deployer@202.29.4.211:/var/www/rails/edoc-api/current/app/controllers/api/v1/site_settings_controller.rb
+
+
+sudo rm -rf /var/www/rails/edoc-api/current/log/production.log
+
+
+grep --include=*.* -Riln "ระบบเดิม" ~/workshop/edoc-api
+grep --include=*.* -Riln "main.b7e0e215.js" ~/workshop/edoc-api
+grep --include=*.* -Riln "user_manuals" ~/workshop/edoc-api
+
+workshop/edoc-api/public/static/js/main.b7e0e215.js.map
+
+
+scp workshop/edoc-api/public/static/js/main.b7e0e215.js.map deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/js/main.b7e0e215.js.map
+scp workshop/edoc-api/public/static/js/main.b7e0e215.js deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/static/js/main.b7e0e215.js
+
+
+
+
+scp workshop/edoc-api/public/user_manuals/NRRU/การรับเอกสารภายใน.pdf deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/user_manuals/NRRU/การรับเอกสารภายใน.pdf
+
+scp workshop/edoc-api/public/user_manuals/NRRU/การรับเอกสารภายนอก.pdf deployer@202.29.4.211:/var/www/rails/edoc-api/current/public/user_manuals/NRRU/การรับเอกสารภายนอก.pdf
+
+scp workshop/edoc-api/app/controllers/api/v1/manuals_controller.rb deployer@202.29.4.211:/var/www/rails/edoc-api/current/app/controllers/api/v1/manuals_controller.rb
+
+------------------------------------------------------------------------
+ี- update  /api/line/home
+
+QR Share WIFI Text Format
+WIFI:S:<SSID>;T:<WPA|WEP|>;P:<password>;
+
+
+linux mv cmd.
+------------------------------------------------------------------------
+In this example, move /home/vivek/data/ directory to /nas/home/vivek/archived/ directory:
+$ mv /home/vivek/data/ /nas/home/vivek/archived/
+
+OR
+$ cd /home/vivek
+$ mv data/ /nas/home/vivek/archived/
+
+To get verbose output (explain what is being done), type:
+$ mv -v /home/vivek/data/ /nas/home/vivek/archived/
+
+
+
+////////////////////////////////////////////////////////////////////////////
+React Tutorial
+
+tar command
+tar -xvf ~/pkgs/PanGPLinux-4.1.0.tgz
+
+-------------------------------------------------------------------------------
+How to get ubuntu version
+$ lsb_release -a

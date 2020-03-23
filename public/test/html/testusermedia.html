@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+	<head>
+	<meta charset="utf-8"/>
+	<title>Test Local User Media</title>
+	<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+	<script type="text/javascript">
+		var mediaStream;
+
+		function doTest() {
+			if (navigator.getUserMedia) {
+				navigator.getUserMedia(
+				// constraints
+				{
+					video: true,
+					audio: true
+				},
+				// successCallback
+				function (localMediaStream){
+					mediaStream = localMediaStream;
+					var video = document.querySelector('video');
+					//video.src = window.URL.createObjectURL(localMediaStream);
+					// do whatever you want with the video
+					video.srcObject = localMediaStream;
+					video.play();
+				},
+				// errorCallback
+				function (err) {
+					alert("The following error occured: " + err);
+				});
+			} else {
+				alert("getUserMedia not supported by your web browser or Operating system version");
+			}
+		}
+
+		function doStop() {
+			mediaStream.getTracks().forEach(function(track) {
+				track.stop();
+			});
+			var video = document.querySelector('video');
+			video.srcObject = null;
+		}
+	</script>
+	</head>
+	<body>
+		<h1>Test Local User Media</h1>
+		<h2>Media Capture and Streaming</h2>
+		<p>Congratulation for your local user media support.</p>
+		<div>
+			<video id="remoteVideo" height="240" width="320" autoplay playsinline></video>
+		</div>
+		<div>
+			<button onclick="doTest()">Test</button>
+			<button onclick="doStop()">Stop</button>
+		</div>
+	</body>
+</html>
+

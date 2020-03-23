@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Getting started with React</title>
+</head>
+<body>
+    <!-- The core React library -->
+    <script src="https://fb.me/react-0.14.3.js"></script>
+    <!-- The ReactDOM Library -->
+    <script src="https://fb.me/react-dom-0.14.3.js"></script>
+
+    <div id="main"></div>
+
+    <script>
+    var HelloMessage = React.createClass({
+      render: function() {
+        // return <h1>Hello World! This is {this.props.name}</h1>;
+        return React.createElement("h1", null, "Hello World!, This is ", this.props.name);
+      }
+    });
+
+    ReactDOM.render(
+      React.createElement(HelloMessage, {name: "Chuck Norris"}),
+      document.getElementById('main')
+    );
+    </script>
+
+</body>
+</html>

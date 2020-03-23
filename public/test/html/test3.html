@@ -1,0 +1,220 @@
+<!-- test3.html -->
+<!doctype html>
+<html lang="en">
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>		
+		<title>My Job on this Holiday</title>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	</head>
+	<body>
+		<div id="accordion">
+			<div id="main">
+				<h1>Job on this Holiday</h1>
+				<div>
+					<ul>
+						<li><a href="#job-1">Build STUN/TURN server.</a></li>
+						<li><a href="#job-2">Update Openstream Project.</a></li>
+						<li><a href="#job-3">Start First React Application by WebPack.</a></li>
+					</ul>	
+				</div>	
+			</div>
+			<div id="job-1">
+				<h1>Build STUN/TURN server.</h1>
+				<div>
+					<p><b>Ref. From</b></p>
+					<p><a href="https://www.nomachine.com/AR07N00894" target="_blank">https://www.nomachine.com/AR07N00894</a></p>
+					<p><a href="https://www.allerstorfer.at/install-coturn-on-ubuntu/" target="_blank">https://www.allerstorfer.at/install-coturn-on-ubuntu/</a></p>
+					<p><a href="https://webrtc.ventures/2017/08/quick-guide-stunturn-webrtc/" target="_blank">https://webrtc.ventures/2017/08/quick-guide-stunturn-webrtc/</a></p>
+					<p><a href="https://testrtc.com/find-webrtc-active-connection/" target="_blank">https://testrtc.com/find-webrtc-active-connection/</a></p>
+					<p><a href="https://stackoverflow.com/questions/42801361/install-rfc5766-turn-server-trying-to-bind-fd-to-ip-address-errno-99" target="_blank">https://stackoverflow.com/questions/42801361/install-rfc5766-turn-server-trying-to-bind-fd-to-ip-address-errno-99</a></p>
+					<p><a href="https://stackoverflow.com/questions/53664145/need-help-for-coturn-configuration-for-my-public-ip-address" target="_blank">https://stackoverflow.com/questions/53664145/need-help-for-coturn-configuration-for-my-public-ip-address</a></p>
+					<p><a href="https://stackoverflow.com/questions/53664145/need-help-for-coturn-configuration-for-my-public-ip-address" target="_blank">https://stackoverflow.com/questions/53664145/need-help-for-coturn-configuration-for-my-public-ip-address</a></p>
+					<p><b>เอกสารอ้างอิง STUN/TURN/ICE</b></p>
+					<p><a href="https://tools.ietf.org/id/draft-ietf-tram-turnbis-15.html" target="_blank">https://tools.ietf.org/id/draft-ietf-tram-turnbis-15.html</a></p>
+
+
+					<p><b>Google Key Word</b></p>
+					<p><b>coturn server javascript connect ip address</b></p>
+
+
+
+					<p>ถ้า node (Web Session) ไม่ได้อยู่หลัง NAT จะมีสถานการณ์ที่เป็นไปได้ดังนี้:</p>
+
+					<p>1. ถ้า Firewall บล็อคทั้ง outbound และ inbound พอร์ต</p>
+						<p>WebRTC connection ไม่สามารถเกิดขึ้นได้</p>
+						<p>ในสถานการณ์นี้ จำเป็นต้องใช้ STUN/TURN server </p>
+
+					<p>2. ถ้า Firewall บล็อคเฉพาะ inbound พอร์ต</p>
+						<p>ในสถานการณ์นี้ WebRTC connection จะเกิดขึ้นได้ ก็ต่อเมื่อ</p>
+						<p>อุปกรณ์ของ User ต้องไม่อยู่ด้านหลัง NAT และได้ใช้ IP จริง เท่านั้น</p>
+						<p>แต่ถ้า</p>
+						<p>อุปกรณ์ของ User จำเป็นต้องอยู่ด้านหลัง NAT และนั่นหมายถึงไม่ได้ IP จริง ใช้งาน</p> 
+						<p>ในสถานการณ์นี้ จำเป็นต้องใช้ STUN/TURN server เพื่อสร้าง WebRTC connection</p>
+
+					<p>3. ถ้า Firewall บล็อคเฉพาะ outbound พอร์ต</p>
+						<p>ในสถานการณ์นี้ WebRTC connection จะเกิดขึ้นได้ ก็ต่อเมื่อ</p>
+						<p>อุปกรณ์ของ User ต้องได้ใช้ IP จริง และไม่อยู่ด้านหลัง NAT</p>
+						<p>และหาก Router ไม่บล็อค inbound connections</p>
+						<p>อุปกรณ์ของ User ก็สามารถสร้าง WebRTC connection ได้ โดยไม่มีปัญหา</p>
+					<div  style="border: 3px solid blue;; padding: 5px; background-color: blue; color: white; margin-top: 10px;">
+						/* การเชื่อมต่อ TURN Server แบบต้องระบุ Username & Password
+						var servers = {
+						  'iceServers': [{
+						    'urls': 'turn:numb.viagenie.ca',
+						    'credential': '<your TURN password>',
+						    'username': '<your TURN username>'
+						}]
+						};
+						*/
+					</div>
+					<div style="border: 3px solid blue;; padding: 5px; background-color: blue; color: white;; margin-top: 10px;">
+						/* ตัวอย่างการเชื่อมต่อ STUN & TURN Server แบบต้องระบุ Username & Password
+						var servers = {
+						  'iceServers': [{
+						    'urls': 'stun:stun.services.mozilla.com'
+						  }, {
+						    'urls': 'stun:stun.l.google.com:19302'
+						  }, {
+						    'urls': 'turn:numb.viagenie.ca',
+						    '******': 'connectah',
+						    'raplizard97@gmail.com': 'raplizard97@gmail.com'
+						  }]
+						}; */
+					</div>
+					<div  style="border: 3px solid blue; padding: 5px; text-align: center;; margin-top: 10px;">
+							<button onclick="doTestConnect()">Test Connection</button>
+					</div>
+					<div  style="border: 3px solid blue;; padding: 5px; background-color: gray;; margin-top: 10px;">
+						<h2>Ubuntu UFW Config</h2>
+						<p><a href="https://linuxize.com/post/how-to-setup-a-firewall-with-ufw-on-ubuntu-18-04/" target="_blank">https://linuxize.com/post/how-to-setup-a-firewall-with-ufw-on-ubuntu-18-04/</a></p>
+
+						<p><a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-18-04" target="_blank">https://www.digitalocean.com/community/tutorials/how-to-set-up-a-firewall-with-ufw-on-ubuntu-18-04</a></p>
+						<h2>วิธีเช็ค STUN/TURN Server</h2>
+						<p><a href="https://stackoverflow.com/questions/28772212/stun-turn-server-connectivity-test" target="_blank">https://stackoverflow.com/questions/28772212/stun-turn-server-connectivity-test</a></p>		
+					</div>
+					<div  style="border: 3px solid blue;; padding: 5px; background-color: gray; ; margin-top: 10px;">
+						<h2>SSL Key Pem</h2>
+
+						<p>#cert=/usr/local/etc/turn_server_cert.pem</p>
+
+						<p>#pkey=/usr/local/etc/turn_server_pkey.pem</p>
+
+						<p>cd /usr/local/etc</p>
+
+						<p>sudo openssl genrsa -out turn_server_cert.pem 1024</p>
+
+						<p>sudo openssl rsa -in turn_server_cert.pem <b>-pubout</b> -out turn_server_pkey.pem</p>
+					</div>
+				</div>
+			</div>
+			<div id="job-2">
+				<h1>Update Openstream Project.</h1>
+				<div><p>คิดไรออกก็แก้อันนั้นไปก่อนเด้อ</p></div>
+			</div>
+			<div id="job-3">
+				<h1>Start First React Application by WebPack.</h1>
+				<div></div>
+			</div>
+			<div id="Log"></div>
+		</div>
+	</body>
+</html>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		//$( "#accordion" ).accordion();
+	});
+
+	const stunserver = {"url": "stun:58.137.157.66:3478", "username": "myusername", "credential": "mypasswd"};
+	const turnserver = {"url": "turn:58.137.157.66:3478", "username": "myusername", "credential": "mypasswd"};
+
+	/*
+	const turnConfig = {
+				'urls': 'turn:58.137.157.66:3478',
+				'credential': 'testdriver',
+				'username': 'test01'	
+	}
+	*/
+
+const USERNAME="some-username"
+const PASSWORD="some-password"
+const PORT=3478
+const IP="58.137.157.66" // you will have to change this
+
+const turnServerTCP = {
+    url: `turn:${IP}:${PORT}`, /*?transport=tcp*/
+    username: USERNAME,
+    credential: PASSWORD,
+};
+
+const turnServerUDP =  {
+    url: `turn:${IP}:${PORT}`, /* ?transport=tcp */
+    username: USERNAME,
+    credential: PASSWORD,
+};
+
+const stunServerTCP = {
+    url: `stun:${IP}:${PORT}`, /*?transport=tcp*/
+    username: USERNAME,
+    credential: PASSWORD,
+};
+
+function doTestConnect() {
+	checkTurnOrStun(turnServerTCP).then(function(result){
+		console.log(
+		result ? 'YES, TURN Server active as '+result : 'NO, TURN server not active');
+	}).catch(console.error.bind(console));
+
+	checkTurnOrStun(stunServerTCP).then(function(result){
+		console.log(
+		result ? 'YES, STUN Server active as '+result : 'NO, STUN Sserver not active');
+	}).catch(console.error.bind(console));
+}
+
+function checkTurnOrStun(turnConfig, timeout){ 
+  return new Promise(function(resolve, reject){
+
+    setTimeout(function(){
+        if(promiseResolved){
+            if (promiseResolved == 'STUN') resolve('STUN');
+            return;
+        }
+        resolve(false);
+        promiseResolved = true;
+    }, timeout || 5000);
+
+    var promiseResolved = false
+      , myPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection   //compatibility for firefox and chrome
+      , pc = new myPeerConnection({iceServers:[turnConfig]})
+      , noop = function(){};
+    pc.createDataChannel("");    //create a bogus data channel
+    pc.createOffer(function(sdp){
+		console.log('sdp=> ', sdp);
+      if(sdp.sdp.indexOf('typ relay') > -1){ // sometimes sdp contains the ice candidates...
+        promiseResolved = 'TURN'; 
+        resolve(true);
+      }
+      pc.setLocalDescription(sdp, noop, noop);
+    }, noop);    // create offer and set local description
+    pc.onicecandidate = function(ice){  //listen for candidate events
+      if( !ice || !ice.candidate || !ice.candidate.candidate) { return; } else {
+		$("#Log").empty();
+		$("#Log").append(JSON.stringify(ice));
+		//console.log('ice=> ', ice);
+	}
+
+      if (ice.candidate.candidate.indexOf('typ relay')!=-1) { promiseResolved = 'TURN'; resolve('TURN');}
+      else if (!promiseResolved && (ice.candidate.candidate.indexOf('typ prflx')!=-1 || ice.candidate.candidate.indexOf('typ srflx')!=-1)){
+          promiseResolved = 'STUN';
+		  console.log('stun=> ', 'stun');
+        if (turnConfig.url.indexOf('turn:')!==0) resolve('STUN');
+      }
+      else return;
+    };
+  });   
+}
+</script>

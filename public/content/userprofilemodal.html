@@ -1,0 +1,186 @@
+<!-- userprofilemodal.html-->
+<style>
+ .modal {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(1.1);
+        transition: visibility 0s linear 0.25s, opacity 0.25s 0s, transform 0.25s;
+    }
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 1rem 1.5rem;
+        width: 24rem;
+        border-radius: 0.5rem;
+    }
+    .close-button {
+        float: right;
+        width: 1.5rem;
+        line-height: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        border-radius: 0.25rem;
+        background-color: lightgray;
+    }
+    .close-button:hover {
+        background-color: darkgray;
+    }
+    .show-modal {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1.0);
+        transition: visibility 0s linear 0s, opacity 0.25s 0s, transform 0.25s;
+    }
+</style>
+<div class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="ModalContent"></div>
+        </div>
+</div>
+<script>
+    let caller, callee, roomname, rootname, screenno;
+
+    var modal = document.querySelector(".modal");
+
+    var closeButton = document.querySelector(".close-button");
+
+    function toggleModal(message) {
+		if (message) {
+			caller = message.clientNo;
+			callee = message.fromId;
+			roomname = message.roomName;
+			rootname = message.rootname;
+			screenno = message.fromId;
+			doShowUserProfile().then((data)=>{
+				console.log(data);
+				modal.classList.toggle("show-modal");
+			});
+		} else {
+			modal.classList.toggle("show-modal");
+		}
+    }
+
+    function windowOnClick(event) {
+        if (event.target === modal) {
+            toggleModal();
+        }
+    }
+
+   function doCloseModal() {
+	modal.classList.toggle("show-modal");
+   }
+
+    //trigger.addEventListener("click", toggleModal);
+    closeButton.addEventListener("click", doCloseModal);
+    window.addEventListener("click", windowOnClick);
+
+   function doShowUserProfile() {
+	return new Promise(function(resolve, reject) {
+		let params = {rootname: rootname, roomname: roomname, screenno: screenno};
+		console.log(params);
+		doRequestUserProfile(params).then((user)=>{
+			console.log(user);
+			if (user.screen) {
+				let modalContent = document.querySelector("#ModalContent");
+				modalContent.innerHTML = '';
+				let userProfileScreen = document.createElement('div');
+				let userProfileScreenNo = document.createElement('h2');
+				userProfileScreenNo.textContent = user.screen.screenno;
+				userProfileScreen.appendChild(userProfileScreenNo);
+				userProfileScreen.style.textAlign = 'center';
+				modalContent.appendChild(userProfileScreen);
+				if (user.profile.displayname) {
+					let userProfileName = document.createElement('div');
+					userProfileName.textContent = user.profile.displayname;
+					modalContent.appendChild(userProfileName);
+				}
+				if (user.profile.avatarUrl) {
+					let userProfileAvatar = document.createElement('div');
+					userProfileAvatar.style.textAlign = 'center';
+					let userImageAvatar = document.createElement('img');
+					userImageAvatar.src = user.profile.avatarUrl;
+					userImageAvatar.setAttribute("width", '80px');
+					userImageAvatar.setAttribute("height", '80px');
+					userProfileAvatar.appendChild(userImageAvatar);
+					modalContent.appendChild(userProfileAvatar);
+				}
+				let userProfileToolBox = document.createElement('div');
+
+				let openVchatDiv = document.createElement('div');
+				openVchatDiv.style.textAlign = 'center';
+				openVchatDiv.style.padding = '10px';
+				let vchatButton = document.createElement('button');
+				vchatButton.textContent = 'Open Video Call';
+				vchatButton.setAttribute("width", '100%');
+				vchatButton.addEventListener("click", function(e){
+					//open vchat window popup
+					doCallOpenVchat();
+				});
+				openVchatDiv.appendChild(vchatButton);
+				userProfileToolBox.appendChild(openVchatDiv);
+				/*
+				let openTchatDiv = document.createElement('div');
+				openTchatDiv.style.textAlign = 'center';
+				openTchatDiv.style.padding = '10px';
+				let tchatButton = document.createElement('button');
+				tchatButton.textContent = ' ส่งข้อความ ';
+				tchatButton.setAttribute("width", '100%');
+				tchatButton.addEventListener("click", function(e){
+					doCallOpenTchat(roomname, screenno);
+				});
+				openTchatDiv.appendChild(tchatButton);
+				userProfileToolBox.appendChild(openTchatDiv);
+				*/
+				userProfileToolBox.style.textAlign = 'center';
+				modalContent.appendChild(userProfileToolBox);
+				resolve('OK');
+			} else {
+				reject('Error!');
+			}
+		});
+	});
+   }
+
+function doRequestUserProfile(params){
+	return new Promise(function(resolve, reject) {
+		var url = "/" + params.rootname + "/getuserprofile";
+		$.post(url, params, function(data){
+			console.log(data);
+			resolve(data);
+		}).fail(function(error) { 
+			console.log(JSON.stringify(error));
+			reject(error); 
+		});
+	});
+}
+
+function doCallOpenVchat() {
+	var strWindowFeatures = "location=yes,height=570,width=720,scrollbars=yes,status=yes";
+	var URL = "/" + rootname + "/vchat/" + roomname + "/caller/" + caller + "/" + callee;
+	var win = window.open(URL, "_blank", strWindowFeatures);
+	doCloseModal();
+}
+
+function doCallOpenTchat(RoomName, ScreenNo) {
+	/** Initial Admin Chat *******/
+	console.log(RoomName, ScreenNo);
+	let sendername = RoomName + '-' + ScreenNo;
+	doConnectChatWebScket(RoomName, sendername);
+	doCreateNewBox(sendername);
+	doCloseModal();
+}
+
+(function() {
+//toggleModal();
+})();
+</script>

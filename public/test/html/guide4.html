@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+</head>
+
+<body>
+  <br>
+
+
+  <script>
+    (async() => {
+
+
+      const urls = ["https://nickdesaulniers.github.io/netfix/demo/frag_bunny.mp4", "https://raw.githubusercontent.com/w3c/web-platform-tests/master/media-source/mp4/test.mp4","https://nickdesaulniers.github.io/netfix/demo/frag_bunny.mp4", "https://www.myshopman.com/openstream/simplevideo"]; //
+
+
+      const request = url => fetch(url).then(response => response.arrayBuffer());
+	console.log(request);
+
+      const files = await Promise.all(urls.map(request));
+	console.log(files);
+
+    })()
+  </script>
+
+
+</body>
+
+</html>

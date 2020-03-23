@@ -1,0 +1,849 @@
+<div id="vchat">
+	<div id="Vchat-Area">
+		<video id="vchatRemoteVideo" height="120" width="160" autoplay playsinline></video>
+		<video id="vchatLocalVideo" height="120" width="160" autoplay playsinline></video>
+	</div>
+	<div id="vchat-control">
+		<div class="ControlBar">
+			<label class="switch-onoff">
+				<input type="checkbox">
+				<div class="slider"></div> 
+			</label> <span class="SwitchLabel"> ON / OFF </span>
+		</div>
+		<div  class="ControlBar">
+			<input id="videoCallButton" type="button" disabled value="Video Call"/>
+		</div>
+		<div  class="ControlBar" id="InviteBttnDiv">
+			<input id="inviteCmdButton" type="button" value=" เชิญ " onclick="doOpenInviteItem()"/>		
+		</div>
+		<div  class="ControlBar" id="JoibBttnDiv">
+			<input id="joinCmdButton" type="button" value=" Join " onclick="doJoinStream()"/>		
+		</div>
+
+		<div  class="ControlBar">
+			<input id="closeCmdButton" type="button" value=" ปิด " onclick="doCloseVchatPopup()"/>
+		</div>
+	</div>
+	<div id="InviteItemDiv"></div>
+</div>
+
+<style>
+	@font-face { font-family: THNiramitAS; src: url("font/THNiramitAS/THNiramitAS.ttf");}
+	#Vchat-Area {
+		/* border: 2px solid green; */
+		position: relative;
+		width: 98%;
+		clear: right;
+	}
+
+	#vchatRemoteVideo { 
+		/* border: 3px solid gray; */
+		background-color: rgba(0, 251, 255, 0.53);
+		padding: 5px;
+		z-index: 0;
+
+		width: 97%; 
+		height: 100%;
+	}
+
+	#vchatLocalVideo { 
+		background-color: rgba(0,0,0,0.5);
+		border: 3px solid yellow;
+		z-index: 2;
+
+		position: absolute; 
+		bottom: 10px; 
+		right: 15px; 
+		width: 150px; 
+		height: 100px;
+		margin-right: 5px;
+		margin-bottom: 5px;
+	}
+	#vchat-control {position: relative; border: 3px solid gray; width: 98%; height: 65px; background-color: #e1e1e1;}
+	.ControlBar {position: relative; float: left; padding: 10px;}
+	.SwitchLabel {top: 4px;}
+	.switch-onoff {
+	  position: relative;
+	  display: inline-block;
+	  width: 60px;
+	  height: 34px;
+	}
+
+	.switch-onoff input {display:none;}
+
+	.slider {
+	  position: absolute;
+	  cursor: pointer;
+	  top: 0;
+	  left: 0;
+	  right: 0;
+	  bottom: 0;
+	  background-color: #ccc;
+	  -webkit-transition: .4s;
+	  transition: .4s;
+	}
+
+	.slider:before {
+	  position: absolute;
+	  content: "";
+	  height: 26px;
+	  width: 26px;
+	  left: 4px;
+	  bottom: 4px;
+	  background-color: white;
+	  -webkit-transition: .4s;
+	  transition: .4s;
+	}
+
+	input:checked + .slider {
+	  background-color: green;
+	}
+
+	input:focus + .slider {
+	  box-shadow: 0 0 1px #2196F3;
+	}
+
+	input:checked + .slider:before {
+	  -webkit-transform: translateX(26px);
+	  -ms-transform: translateX(26px);
+	  transform: translateX(26px);
+	}
+	#InviteItemDiv {
+		position: relative;
+		width: 100%;
+		height: 100px;
+		display: none;
+		text-align: left;
+		/* border: 3px solid yellow; */
+		padding: 5px;
+	}
+</style>
+
+<script>
+	/*
+	navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+	window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+	window.RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate || window.webkitRTCIceCandidate;
+	window.RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription || window.webkitRTCSessionDescription;
+	window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition || window.oSpeechRecognition;
+	*/
+	let callType = 'caller';
+
+	let videoCallButton;
+	let closeCmdButton;
+	let inviteCmdButton;
+	let joinCmdButton;
+	let vchatLocalVideo;
+	let vchatRemoteVideo;
+
+	let callerno, calleeno, callerId, calleeId;
+	let vconPeers = [];
+
+	let vchatLocalStream;
+	let mainCanvas;
+	let remoteStreams = [];
+
+	let checkbox = document.querySelector('input[type="checkbox"]');
+
+	function getPeerById(clientId) {
+		return new Promise(function(resolve, reject) {
+			//console.log('clientId:=> ' + clientId);
+			//console.log('All Local Peers:=> ' + JSON.stringify(vconPeers));
+			var result = vconPeers.filter(function(item, inx) {
+				if(clientId === item.Id){return (item); }
+			});
+			//console.log('The Result:=> ' + JSON.stringify(result));
+			if (result.length > 0){
+				resolve(result[0].peer);
+			}else {
+				resolve(null);
+			}
+		});
+	}
+
+	function getPeerByNo(screenNo) {
+		return new Promise(function(resolve, reject) {
+			//console.log('clientId:=> ' + clientId);
+			//console.log('All Local Peers:=> ' + JSON.stringify(vconPeers));
+			var result = vconPeers.filter(function(item, inx) {
+				if(screenNo === item.screenno){return (item); }
+			});
+			//console.log('The Result:=> ' + JSON.stringify(result));
+			if (result.length > 0){
+				resolve(result[0].peer);
+			}else {
+				resolve(null);
+			}
+		});
+	}
+
+	function romovePeerById(clientId) {
+		var promiseList = new Promise(function(resolve, reject){
+			let otherPeers = vconPeers.filter((item) => {
+				if (item.Id !== clientId) {
+					return item;
+				}
+			});
+			resolve(otherPeers);
+		});
+		Promise.all([promiseList]).then((ob)=>{
+			vconPeers = ob[0];
+		});
+	}
+
+	function doSetupPage() {
+		checkbox.addEventListener('change', function () {
+			if (checkbox.checked) {
+				pageReady();
+				if (callType === 'callee'){
+					setTimeout(() => {
+						//console.log('Send ready trigger.');
+						//console.log(callerId);
+						initiateAcceptRemoteCall(callerId);
+					}, 5000);
+				} else if (callType === 'caller') {
+					setTimeout(() => {
+						//console.log('Send interrupt trigger.');
+						initiateCallRemote(callerno, calleeno, callerId, calleeId);
+					}, 2500);
+				}
+				let bgIsMute = doGetMicrophoneLocalMediaStatus();
+				console.log(bgIsMute);
+				if (!bgIsMute)	{
+					//doToggleMicrophoneLocalMedia();
+				}
+			} else {
+				closeCmdButton.removeAttribute("disabled");
+				inviteCmdButton.disabled = true;
+				willCloseConnect();
+			}
+		});
+	}
+
+	function initCaller(fromNo, toNo, sendfromId, sendtoId){
+		//console.log(fromNo, toNo, sendfromId, sendtoId);
+		callType = 'caller';
+		callerno = fromNo;
+		calleeno = toNo;
+		callerId = sendfromId;
+		calleeId = sendtoId;
+		doSetupPage();
+
+		let event = new Event('change');
+		setTimeout(() => {
+			checkbox.checked = true;
+			checkbox.dispatchEvent(event);
+		}, 3000);
+	}
+
+	function initCallee(sendtoId, sendfromId) {
+		//console.log(sendtoId);
+		callType = 'callee';
+		callerId = sendtoId;
+		calleeId = sendfromId;
+		doSetupPage();
+
+		let event = new Event('change');
+		setTimeout(() => {
+			checkbox.checked = true;
+			checkbox.dispatchEvent(event);
+		}, 3000);
+	}
+
+	function doGetSendtoId() {
+		let sendtoId;
+		if (callType === 'caller'){
+			//console.log(calleeId);
+			sendtoId = calleeId;
+		} else if (callType === 'callee'){
+			//console.log(callerId);
+			sendtoId = callerId;
+		}
+		return sendtoId;
+	}
+
+	function doGetFromtoId() {
+		let sendfromId;
+		if (callType === 'caller'){
+			//console.log(calleeId);
+			sendfromId = callerId;
+		} else if (callType === 'callee'){
+			//console.log(callerId);
+			sendfromId = calleeId;
+		}
+		return sendfromId;
+	}
+
+	function doSocketSend(data) {
+		if (ws.readyState === 1 ) {
+			ws.send(JSON.stringify(data));
+		} else {
+			console.log('I\'m can not send, Your websocket not in ready state.');
+		}
+	}
+
+	function pageReady() {
+		// check browser WebRTC availability 
+		if(navigator.getUserMedia) {
+			videoCallButton = document.getElementById("videoCallButton");
+			closeCmdButton = document.getElementById("closeCmdButton");
+			inviteCmdButton = document.getElementById("inviteCmdButton");
+			inviteCmdButton.disabled = true;
+			joinCmdButton = document.getElementById("joinCmdButton");
+			joinCmdButton.disabled = true;
+			vchatLocalVideo = document.getElementById('vchatLocalVideo');
+			vchatRemoteVideo = document.getElementById('vchatRemoteVideo');
+			if (callType === 'caller'){
+				videoCallButton.addEventListener("click", createAndSendOffer);
+			} else if (callType === 'callee'){
+				videoCallButton.style.display = 'none'; 
+			}
+			mainCanvas = doCreateMainCanvas(roomname);
+		} else {
+			alert("Sorry, your browser does not support WebRTC!")
+		}
+	};
+
+	function prepareCall() {
+
+		let vchatConn = new RTCPeerConnection(configuration);
+
+		vchatConn.onicecandidate = onIceCandidateHandler;
+
+		vchatConn.ontrack = onAddStreamHandler;
+
+		vchatConn.oniceconnectionstatechange = function(event) {
+			const peerConnection = event.target;
+			const ref = peerConnection.iceConnectionState;
+			if (ref!== "closed" && ref !== "failed" && ref !== "disconnected" && ref !== "completed") {
+				vchatConn = peerConnection;
+			}
+		};
+		return vchatConn;
+	};
+
+	// run start(true) to initiate a call
+	function initiateCallRemote(callerno, calleeno, callerId, calleeId) {
+		let peer = prepareCall();
+		peer.screenno = calleeno;
+		let peerBind = {peer: peer, Id: calleeId, screenno: calleeno};
+		vconPeers.push(peerBind);
+
+		// get the local stream, show it in the local video element and send it
+		navigator.mediaDevices.getUserMedia({audio: true, video: true}).then(function (stream) {
+			vchatLocalStream = stream;
+			vchatLocalVideo.srcObject = vchatLocalStream;
+			doMergeVconfStream(vchatLocalStream, callerno);
+			setTimeout(() => {
+				let mrgStream = vchatRemoteVideo.srcObject;
+				//console.log(mrgStream);
+				mrgStream.getTracks().forEach((track) => {
+					peer.addTrack(track, mrgStream);
+				});
+
+				doSendCall(callerno, calleeno, callerId, calleeId);
+			
+			}, 2500);
+		}).catch(function(e) {
+			alert('getUserMedia() error: ' + e.name);
+		});
+	};
+
+	function initiateAcceptRemoteCall(callerId) {
+		// get the local stream, show it in the local video element and send it
+		let peer = prepareCall();
+		peer.screenno = callerno;
+		doCallLocalMedia(callerId, peer);
+		let peerBind = {peer: peer, Id: callerId, screenno: screenno};
+		vconPeers.push(peerBind);
+	}
+
+	function doCallLocalMedia(callerId, peer) {
+		navigator.mediaDevices.getUserMedia({audio: true, video: true}).then(function (stream) {
+			vchatLocalStream = stream;
+			vchatLocalVideo.srcObject = vchatLocalStream;
+			doMergeVconfStream(vchatLocalStream, screenno);
+			setTimeout(() => {
+				let mrgStream = vchatRemoteVideo.srcObject;
+				mrgStream.getTracks().forEach((track) => {
+					peer.addTrack(track, mrgStream);
+				});
+				willReadyCall(callerId);
+			}, 2500);
+		}).catch(function(e) {
+			alert('getUserMedia() error: ' + e.name);
+		});
+	};
+
+	function createAndSendOffer() {
+		let sendtoId = doGetSendtoId();
+		//console.log(sendtoId);
+		let sendfromId = doGetFromtoId();
+		//console.log(sendfromId);
+		//console.log(vconPeers);
+		getPeerById(sendtoId).then((vchatConn) => {
+			//console.log(vchatConn);
+			vchatConn.createOffer(
+				function (offer) {
+					var off = new RTCSessionDescription(offer);
+					vchatConn.setLocalDescription(new RTCSessionDescription(off), 
+						function() {
+							let skdata = {channel: "vchat", type: "vchat-offer", offer: off, sender: 'local', name: myname, clientId: sendtoId, roomName: roomname, fromId: sendfromId};
+							doSocketSend(skdata);
+						}, 
+						function(error) { console.log(error);}
+					);
+				}, 
+				function (error) { console.log(error);}
+			);
+		});
+	};
+	function doHandleOffer(fromId, offer, callerno) {
+		//console.log(vconPeers);
+		callerno = callerno;
+		getPeerById(fromId).then((vchatConn) => {
+			console.log("Received Offer from remote peer.");
+			vchatConn.screenno = callerno;
+			vchatConn.setRemoteDescription(new RTCSessionDescription(offer));
+			createAndSendAnswer(vchatConn);
+		});
+	}
+	function createAndSendAnswer(vchatConn) {
+		let sendtoId = doGetSendtoId();
+		let sendfromId = doGetFromtoId();
+		vchatConn.createAnswer(
+			function (answer) {
+				var ans = new RTCSessionDescription(answer);
+				vchatConn.setLocalDescription(ans, function() {
+					let skdata = {channel: "vchat", type: "vchat-answer", answer: ans, sender: 'remote', name: myname, clientId: sendtoId, roomName: roomname, fromId: sendfromId};
+					doSocketSend(skdata);
+				}, 
+				function (error) { console.log(error);}
+				);
+			},
+			function (error) {console.log(error);}
+		);
+	};
+
+	function onIceCandidateHandler(evt) {
+		if (!evt || !evt.candidate) return;
+		let sendtoId = doGetSendtoId();
+		//console.log(sendtoId);
+		let sendfromId = doGetFromtoId();
+		//console.log(sendfromId);
+		let skdata = {channel: "vchat", type: "vchat-candidate", candidate: evt.candidate, sender: 'local', name: myname, clientId: sendtoId, roomName: roomname, fromId: sendfromId};
+		doSocketSend(skdata);
+	};
+
+	function onAddStreamHandler(evt) {
+		//console.log('onAddStreamHandler =>', evt.currentTarget.screenno);
+		videoCallButton.setAttribute("disabled", true);
+		closeCmdButton.setAttribute("disabled", true);
+		inviteCmdButton.disabled = false;
+		let remoteStream = evt.streams[0];
+		if (remoteStream) {
+			let scnno = evt.currentTarget.screenno;
+			/*  รับสัญญาณไป Merge */
+			doMergeVconfStream(remoteStream, scnno);
+			setTimeout(() => {
+				let mergedStream = vchatRemoteVideo.srcObject;
+				remoteStream.onended = e => {
+					vchatRemoteVideo.srcObject = null;
+				}
+				doUpdateStream(mergedStream);
+			}, 2500);
+		} else {
+			alert('Error event stream.');
+		}
+	};
+
+	function willCloseConnect() {
+		videoCallButton.setAttribute("disabled", true);
+		vconPeers.forEach((item) => {
+			let sendtoId = item.Id;
+			let skdata = {channel: "vchat", type: "vchat-closeConnection", closeConnection: true, sender: 'remote', name: myname, clientId: sendtoId, roomName: roomname};
+			doSocketSend(skdata);
+			setTimeout(() => {
+				console.log('Vchat Disconnect Websocket.');
+				endCall();
+			}, 1200);
+		});
+	}
+
+	function endCall() {
+		checkbox.checked = false;
+		closeCmdButton.removeAttribute("disabled");
+		if (vchatLocalStream) {
+			vchatLocalStream.getTracks().forEach(function (track) {
+				track.stop();
+			});
+			vchatLocalVideo.srcObject = null;
+		}
+		if (vchatRemoteVideo) vchatRemoteVideo.srcObject = null;
+		vconPeers.forEach((item) => {
+			if (item.peer)	{
+				item.peer.close();
+				item.peer = null;
+			}
+		});
+	};
+
+	function doClosePeer(peerId){
+		getPeerById(peerId).then((vchatConn) => {
+			let rmvScreenNo = vchatConn.screenno;
+			doRemoveStream(rmvScreenNo).then((remainStreams) => {
+				/*
+				doRenderCanvas().then((mergedStream) => {
+					vchatRemoteVideo.srcObject = mergedStream;
+					doUpdateStream(mergedStream);
+					romovePeerById(peerId);
+				});
+				*/
+				doRenderCanvas().then((bgStream) => {
+					romovePeerById(peerId);
+					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams}});
+					document.dispatchEvent(event);
+					//console.log(remoteStreams.length);
+					if (remoteStreams.length === 2)	{
+						joinCmdButton.disabled = false;
+					} else {
+						joinCmdButton.disabled = true;
+					}
+					doUpdateStream(vchatRemoteVideo.srcObject);
+				});
+
+			});
+		});
+	}
+
+	function willReadyCall(callerId) {
+		let skdata = {channel: "vchat", type: "vchat-readyCall", readyCall: true, sender: 'remote', name: myname, clientId: callerId, roomName: roomname, callerId: callerId};
+		doSocketSend(skdata);
+	}
+
+	function wasRejectCall(callerId) {
+		let skdata = {channel: "vchat", type: "vchat-rejectCall", rejectCall: true, sender: 'remote', name: myname, clientId: callerId, roomName: roomname, callerId: callerId};
+		doSocketSend(skdata);
+	}
+
+	function doSendCall(callerno, calleeno, callerId, calleeId) {
+		let skdata = {channel: "chat", sendto: calleeId, callerId: callerId, type: "message", message: {msgtype: "vcall", fromId: callerno, toId: calleeno, roomName: roomname, rootname: rootname, clientNo: callerno, callerId: callerId}, roomName: roomname, rootname: rootname};
+		doSocketSend(skdata);
+	}
+
+	function doHandleReject() {
+		if (callType === 'caller'){
+			alert('ปลายทางปฏิเสธการรับสาย');
+			endCall();
+		}
+	}
+
+	function doOpenInviteItem(){
+		//$('#InviteItemDiv').toggle();
+		$('#InviteItemDiv').slideDown( "slow" );
+		if ($('#InviteItemDiv').css('display')==='block')	{
+			$('#InviteItemDiv').empty();
+			let htmlcont = $('#ScreenProfile').html();
+			$('#InviteItemDiv').html(htmlcont);
+			$('.ClientProfile').click(function(e) {
+				let targetScreenNo = e.currentTarget.innerText;
+				let dataStatus = $(e.currentTarget).attr('data-status');
+				doValidInvite(targetScreenNo, dataStatus).then((res) => {
+					if (res.result){
+						doSendInvite(targetScreenNo);
+					} else {
+						if (res.code === 1){
+							alert('คุณไม่สามารถเชิญตัวเองเข้าร่วมสนทนาได้');
+						} else if (res.code === 2){
+							alert(targetScreenNo + ' ได้เข้าร่วมแล้ว');
+						} else if (res.code === 3){
+							alert(targetScreenNo + ' ยังไม่ได้เข้ามาในห้อง');
+						}
+					}
+					$('#InviteItemDiv').toggle();
+				});
+			});
+		}
+	}
+
+	function doValidInvite(scnno, status) {
+		return new Promise(async function(resolve, reject) {
+			if (scnno === '00'){
+				resolve({result: false, code: 1});
+			} else {
+				getPeerByNo(scnno).then((peer)=>{
+					if (peer) {
+						resolve({result: false, code: 2});
+					} else {
+						let sts = Number(status);
+						if (sts === 1) {
+							resolve({result: true, code: 0});
+						} else {
+							resolve({result: false, code: 3});
+						}
+					}
+				});
+			}
+		});
+	}
+
+	function doSendInvite(scnno){
+		getClientIdByNo(scnno).then((inviteId) => {
+			calleeno = scnno;
+			calleeId = inviteId;
+			doSendCall(callerno, scnno, callerId, inviteId);
+			initiateCallRemote(callerno, scnno, callerId, inviteId);
+			/* Next Step*/
+			/* 1. รอให้ฝ่าย Callee รับสาย ตอบรับ*/
+			/* 2. เมื่อ Callee ตอบรับ ไปรับสัญญาณที่ onAddStreamHandler มา Merge สัญญาณ */
+			/* 3. ที่ onAddStreamHandler ให้ get => evt.currentTarget.screenno ออกมา จะรู้ว่าเป็นสัญญาณของจอไหน */
+			//https://stackoverflow.com/questions/4429440/html5-display-video-inside-canvas
+			/* 4. Received 'close call' signal from remote peer. อย่าปิด peer*/
+		});
+	}
+
+	function doUpdateStream(mergedStream){
+		let videoTrack = mergedStream.getVideoTracks()[0];
+		vconPeers.forEach((item) => {
+			var sender = item.peer.getSenders().find(function(s) {
+				return s.track.kind == videoTrack.kind;
+			});
+			//console.log('found sender:', sender);
+			sender.replaceTrack(videoTrack);
+		});
+	}
+
+	function doCreateMainCanvas(roomName) {
+		let canvas = document.createElement('canvas');
+		let ctx = canvas.getContext('2d');
+		let cvWidth = 520;
+		let cvHeight = 360;
+		ctx.canvas.width = cvWidth;
+		ctx.canvas.height = 360;
+		/*Fill Whole Video Background Color */
+		let r_a = 0.53; 
+		ctx.fillStyle = "rgba(0, 251, 255, " + r_a + ")";
+		ctx.fillRect(0, 0, cvWidth, cvHeight);
+		ctx.fill();
+
+		/*Fill RoomName Background Color  */
+		ctx.fillStyle = "yellow";
+		ctx.fillRect(0, 0, cvWidth, 50);
+		ctx.fill();
+
+		/*Fill RoomName */
+		ctx.font = 'bold 40px THNiramitAS';
+		ctx.fillStyle = 'blue';
+		ctx.textAlign = 'center';
+		//let w = ctx.measureText(roomName + ' Room').width;
+		ctx.fillText((roomName + ' Room'), (ctx.canvas.width / 2), 37);
+
+		return canvas;
+	}
+
+	function doClearCanvas(canvas) {
+		const context = canvas.getContext('2d');
+		const w = context.canvas.width;
+		const h = context.canvas.height;
+		context.clearRect(0, 0, w, h);
+	}
+
+	function doPushStream(newstream, scnno){
+		return new Promise(async function(resolve, reject) {
+			let remoteStream;
+			if (scnno === '00'){
+				let result = remoteStreams.filter((item)=>{
+					if (item.screenno === '00'){
+						return item;
+					}
+				});
+				if (result.length === 0)	{
+					remoteStream = {stream: newstream, screenno: scnno};
+					remoteStreams.push(remoteStream);
+				}
+			} else {
+				let result = remoteStreams.filter((item)=>{
+					if (item.screenno === scnno){
+						return item;
+					}
+				});
+				if (result.length === 0)	{
+					remoteStream = {stream: newstream, screenno: scnno};
+					remoteStreams.push(remoteStream);
+				}
+			}
+			resolve(remoteStreams);
+		});
+	}
+
+	function doRemoveStream(scnno){
+		return new Promise(async function(resolve, reject) {
+			let another = null;
+			if (scnno !== '00'){
+				another = remoteStreams.filter((item)=>{
+					if (item.screenno !== scnno){
+						return item;
+					}
+				});
+			}
+			remoteStreams = another;
+			resolve(remoteStreams);
+		});
+	}
+
+	function doMergeVconfStream(newstream, scnno) {
+		doPushStream(newstream, scnno).then((allStream)=>{
+			doRenderCanvas().then((bgStream) => {
+				let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams}});
+				document.dispatchEvent(event);
+				//console.log(remoteStreams.length);
+				if (remoteStreams.length === 2)	{
+					joinCmdButton.disabled = false;
+				} else {
+					joinCmdButton.disabled = true;
+				}
+			});
+		});
+	}
+
+	function doRenderCanvas() {
+		return new Promise(async function(resolve, reject) {
+			/*
+			let cvWidth = 520;
+			let cvHeight = 360;
+			*/
+			const gapX = 5;
+			const gapY = 14;
+
+			let vWidth = 110;
+			let vHeight = 75;
+
+			let rmSize = doGetRoomSize();
+			if ((rmSize === 2) || (rmSize === 8))	{
+				vWidth = 110;
+				vHeight =	75;		
+			} else if (rmSize === 24){
+				vWidth = 55;
+				vHeight =	35;		
+			}
+
+			let bgStream;
+
+			//var canvas = document.createElement('canvas');
+			if (mainCanvas)	{
+				doClearCanvas(mainCanvas);
+				mainCanvas = doCreateMainCanvas(roomname);
+			}
+			let ctx = mainCanvas.getContext('2d');
+			ctx.font = 'bold 14px THNiramitAS';
+			ctx.fillStyle = 'yellow';
+			ctx.textAlign = 'center';
+
+			let startX = 6;
+			let startY = 50;
+
+			//console.log('remoteStreams=>', remoteStreams);
+
+			let lineCount = 1;
+			let lastX = 0;
+			let lastY = 0;
+			let x = 0;
+			let timers = [];
+
+			remoteStreams.forEach((item, i) => {
+
+				let x = 0;
+				if (rmSize === 2) {
+					x = i % 2;
+				} else if (rmSize === 8)	{
+					x = i % 4;
+				} else if (rmSize === 24){
+					x = i % 8;
+				}
+
+				let proofX = lastX + vWidth + gapX + 2;
+				if (proofX > (ctx.canvas.width-vWidth)) {
+					lineCount++;
+				}
+
+				let startXScnNo = (vWidth * x) + (gapX * x) + startX;
+				let startYScnNo = (startY) + ((lineCount - 1)* vHeight) + ((lineCount - 1)* gapY) + 12;
+
+				let startXVideo = (vWidth * x) + (gapX * x) + 2;
+				let startYVideo = (startY) + ((lineCount - 1)* vHeight) + ((lineCount - 1)* gapY) + 15;
+
+				lastX = startXVideo;
+				lastY = startYVideo;
+
+				item.tx = startXScnNo;
+				item.ty = startYScnNo;
+				item.vx = startXVideo;
+				item.vy = startYVideo;
+				item.w = vWidth;
+				item.h = vHeight;
+
+				//console.log(item.screenno, lastX, lastY);
+
+				ctx.fillText(item.screenno, item.tx,  item.ty);
+
+				/*
+				video.addEventListener('play', function() {
+					var $this = this; 
+					(function loop() {
+						if (!$this.paused && !$this.ended) {
+							ctx.drawImage($this, item.vx, item.vy, video.width, video.height);
+							let timer = window.setTimeout(loop, 1000 / 100); 
+							timers.push(timer);
+							console.log(timers.length);
+							//console.log(lineCount);
+							if (timers.length > 200){
+								window.clearTimeout(timers[0]);
+								timers.shift();
+							}
+						}
+					})();
+				}, 0);
+				video.oncanplay = function() {
+					video.play();
+				}
+				*/
+			});
+			bgStream = mainCanvas.captureStream(25);
+			resolve(bgStream);
+		});
+	}
+
+	function doGetMicrophoneLocalMediaStatus() {
+		let result = false;
+		let meStream = localMediaVideo.srcObject;
+		if (meStream){
+			meStream.getTracks().forEach((track) => {
+				if (track.kind === 'audio'){
+					result = track.enabled;
+				}
+			});
+		} else {
+			result = false;
+		}
+		return result;
+	}
+
+	function doGetRoomSize() {
+		return roomsize;
+	}
+
+	function doGetRoomType() {
+		return roomtype;
+	}
+
+	function doJoinStream() {
+		//$('#VchatPopup').parent().hide();
+		//$('#VchatPopup').parent().show();
+		joinStream = remoteStreams[1];
+		console.log(joinStream);
+		let event = new CustomEvent("MergeJoinStreamCmd", { "detail": {joinStream: joinStream}});
+		document.dispatchEvent(event);
+		$("#VchatPopup").dialog('close');
+		$("#CloseRemoteJoinCmd").toggle();
+	}
+</script>

@@ -1,0 +1,27 @@
+Cygwin Local Postgresql Server Run & Config
+==========================
+Ref.
+https://blog.dbi-services.com/postgresql-on-cygwin/
+https://blog.dbi-services.com/postgresql-on-cygwin/
+
+Start/Sto Server Command.
+
+/usr/sbin/initdb -D /usr/share/postgresql/data
+
+/usr/sbin/pg_ctl -D /usr/share/postgresql/data -l pg_log.log start
+/usr/sbin/pg_ctl stop -D /usr/share/postgresql/data -m smart
+
+
+Connect Command.
+
+ psql -U Oodsoft postgres
+ psql -h localhost -p 5434 -U Oodsoft -d postgres
+
+ $  psql -h localhost -p 5432 -U postgres -d postgres
+
+\du
+
+Another Command.
+https://www.datacamp.com/community/tutorials/10-command-line-utilities-postgresql
+
+create role openstream with createdb login password 'open@stream';

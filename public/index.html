@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+		<title>Open Stream</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script type="text/javascript" src="lib/jquery.ui.chatbox.js"></script>
+		<link type="text/css" href="css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<link rel="stylesheet" href="css/index.css" />
+		<!-- <script src="js/index.js"></script> -->
+		<script src="lib/simpleUpload.min.js" type="text/javascript"></script>
+		<script src="js/utility.js"></script>
+        <script data-main="js/mod/hello.js" src="lib/require.js"></script>
+	</head>
+	<body>
+		<div id="FirstPage" class="ToggleShow">
+			<div id="Welcome">
+				<div id="HelloVisitor">
+					<h2>Welcome to Open Stream</h2>
+					<p>โปรดเลือกว่าคุณจะทำอะไร?</p>
+					<p><b>Create New Room (Master)</b> เริ่มสร้างห้องถ่ายทอดสัญญาณ (Master) </p>
+					<p><b>Start Join Stream (Client)</b> เข้าชมการถ่ายทอดสัญญาณ (Client)</p>
+					<p><b>อ่านวิธีใช้งาน</b> เปิดอ่านคู่มือการใช้งาน</p>
+				</div>
+			</div>
+			<div id="WhatYouDoSelect">
+				<div class="ButtonCmd">
+					<div class="JoinCmd">
+						<button onclick="doStartCreateNewRoom()">Create New Room (Master)</button>
+					</div>
+					<div class="JoinCmd">
+						<button onclick="doStartOpenStream()">Start Join Stream (Client)</button>
+					</div>
+					<div class="JoinCmd">
+						<button onclick="doOpenManual()">อ่านวิธีใช้งาน</button>
+					</div>
+				</div>				
+			</div>
+		</div>
+		<div id="SecondPage" class="ToggleHide">
+			<div id="DoCreateNewRoom">
+				<div id="ShareButtonCmd"></div>
+			</div>
+		</div>
+		<div id="UseOpenStream" class="ToggleHide">
+			<div id="QRLogin">
+				<!--
+				<h2>Scan Your QR Code</h2>
+				-->
+				<div id="ScanQRCodePlugin">
+					Please Wait on next step.
+				</div>
+				<div id="ChatBoxPlugin"></div>
+				<div class="ButtonCmd">
+					<!-- <button id ="ChangeManualLoginCmd" onclick="doChangeManualLogin()">Manual Login</button>	-->	
+					<button id ="CancelQRCodeLoginCmd" onclick="doCancelQRCodeLogin()">Cancel</button>
+				</div>
+			</div>
+			<!--
+			<div id="ManualLogin">
+				<p>โปรดระบุชื่อห้องที่คุณต้องการใช้งาน แล้วคลิกปุ่ม <b>Go to Room</b></p>
+				<label>Your Room's Name</label>
+				<input type="text" id="RoomName" size="30" value="myroom"/> 
+				<input type="button" id ="doManualLoginCmd" value="Go to Room" onclick="doManuallogin()"/>
+				<input type="button" id ="doCancelManualLoginCmd" value="Cancel" onclick="doCancelManuallogin()"/>
+			</div>
+			-->
+		</div>
+		<div id="DoVerifyNewRoomName"></div>
+		<div id="AdDemo"></div>
+	</body>
+</html>
+
+<div id="Warnning"></div>
+<div id="MasterQRCode">
+	<div id="EntryQRCodeDiv">
+		<img id="EntryQRCode"/>
+	</div>
+	<div id="ControlQRCodeDialog">
+		<input type="button" id="SaveQRCodeCmd" value="Save" onclick="doSaveQRCode()"/>
+		<a id="link" styel="display: none;"></a>
+		<input type="button" id="SharQRCodeCmd" value="Share" onclick="doOpenShareBox()"/>
+		<input type="button" id="CloseQRCodeCmd" value="Close" onclick="doCloseQRCode()"/>
+	</div>
+</div>
+<div id="ShareBox">
+	<div id="ShareButtonCmd" style="text-align: center;"></div>
+</div>
+
+<script type="text/javascript">
+	//ขั้นตอนการเข้าใช้งาน
+	/*
+		1. ตรวจสอห้อง RoomName มี RoomName อยู่ใน rooms หรือไม่
+		2. ตรวจสอบ ScreenNo
+				- master ตรวจสอบ screenNo=00 ถูกใช้หรือยัง
+				- client ตรวจสอบ screenNo=ScreenNo ถูกใช้หรือยัง
+		3. ตรวจสอบ Browser Support
+		4. ตรวจสอบ WebRTC Supoort
+		5. ถ้าผ่าน 1-4 ลงทะเบียนเข้าห้อง
+	Screen Capturing extention
+		https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk
+	*/
+
+	let rootName ='';
+
+	$(document).ready(function() {
+		rootName = doGetRootName();
+		$('#Welcome').show();
+
+		$('#Warnning, #MasterQRCode, #ShareBox').dialog({ 
+			modal: true, autoOpen: false, resizable: false, title: 'ข้อกำหนดการใช้งาน' 
+		});
+		$(".ui-dialog-titlebar-close").click((e) => { 
+	      		doCancelAcceptConndition();
+		});
+	});
+
+	function doStartCreateNewRoom(){
+		$('#FirstPage').toggle();
+		$('#SecondPage').toggle();
+		$('#Warnning').empty();
+		//myDialogL = $('#Warnning').position().left;
+		$('#Warnning').load('content/warnning.html');
+		$('#Warnning').dialog('option', 'height', '720');
+		$('#Warnning').dialog('option', 'width', '440');
+   		$('#Warnning').dialog('open');
+		doLoadWarnningText().then((text)=>{
+			$('#AgreeText').val(text);
+		});
+	}
+	function doAcceptConndition(){
+		let isAccept = $('#AcceptCheck').prop('checked');
+		//console.log(isAccept);
+		if (!isAccept) {
+			alert('โปรดคลิกที่ยอมรับ');
+		} else {
+			$('#Warnning').dialog('close');	
+			$('#DoCreateNewRoom').show();
+			$('#DoCreateNewRoom').empty();				
+			$('#DoCreateNewRoom').load('content/createnewroom.html');
+			setTimeout(()=>{
+				//doTest();
+			}, 3900)
+		}
+	}
+	function doCancelAcceptConndition() {
+		$('#FirstPage').toggle();
+		$('#SecondPage').toggle();		
+		$('#Warnning').dialog('close');
+	}
+	function doCancelCreateNewRoom(){
+		doCancelAcceptConndition();
+	}
+	function doLoadScanQRCodePlugin(callback=null){
+		$('#UseOpenStream').show();	
+		$('#QRLogin').show();		
+		$('#ScanQRCodePlugin').empty();
+		$('#ScanQRCodePlugin').load('content/scanqrcodeplugin.html', function() {
+			if (callback) {
+				callback();
+			}
+		});		
+	}
+	function doLoadChatBoxPlugin(callback=null){
+		$('#ChatBoxPlugin').load('content/chatboxplugin.html', function() {
+			$('#showchatboxcmd').greenify();
+			if (callback) {
+				callback();
+			}
+		});			
+	}
+	function doStartOpenStream(){
+		$('#FirstPage').toggle();
+		$('#SecondPage').toggle();
+		$('#DoCreateNewRoom').hide();
+		doLoadScanQRCodePlugin();
+		$('#ManualLogin').hide();				
+	}
+	function doChangeManualLogin(){
+		$('#QRLogin').hide();		
+		$('#ManualLogin').show();				
+	}
+
+	function doCancelManuallogin(){
+		$('#FirstPage').toggle();
+		$('#SecondPage').toggle();
+		$('#ManualLogin').toggle();
+	}
+	function doCancelQRCodeLogin(){
+		$('#FirstPage').toggle();
+		$('#SecondPage').toggle();
+		$('#QRLogin').toggle();		
+	}
+	function doCreateNewRoom() {
+		let newRoomName = $('#NewRoomName').val();
+		let roomOption = $('input[name=rooomoption]:checked').val();
+		//console.log(roomOption);
+		doValidateNewRoomName(newRoomName).then((result) =>{
+			//console.log(result);
+			if (result.result === false){
+				$('#DoVerifyNewRoomName').show();
+				$('#DoVerifyNewRoomName').text(result.error);
+			} else {
+				doGetUniqueNewRoomName(newRoomName).then((result)=>{
+					//console.log(result);
+					if (result.result.length > 0) {
+						$('#DoVerifyNewRoomName').show();
+						$('#DoVerifyNewRoomName').text("ชื่อห้อง " + newRoomName + " มีคนอื่นใช้ไปแล้ว โปรดเลือกชื่อใหม่");
+						$('#NewRoomName').css('border', '2px solid red');
+					} else {
+						$('#DoVerifyNewRoomName').hide();
+						let roomsize = (roomOption === 'Standard'? 2 : roomOption === 'Upper'? 8 :  roomOption === 'Class'?  24 : 0);
+						let params = {roomname: newRoomName, roomoption: roomOption, roomsize: roomsize};
+						doRequestCreateNewRoom(params).then((status) =>{
+							//console.log(status);
+							if (status.status.code === 200){
+								if (roomOption === 'Standard') {
+									const hostname = window.location.hostname;
+									params = {entryType: 'master', roomId:'', roomName: newRoomName, screenId: '', screenNo: '', hostname: hostname};
+									doCreateQRCodeNewRoom(params).then((qrlink) =>{
+										$('#EntryQRCode').prop("src", qrlink);
+										$('#MasterQRCode').dialog('option', 'title', 'Master QR Code');
+										$('#MasterQRCode').dialog('open');
+										$(".ui-dialog-titlebar-close").click((e) => { 
+												doCloseQRCode();
+										});
+									});
+								} else if ((roomOption === 'Upper') || (roomOption === 'Class')) {
+									/* toggle comment before upload to myshopman */
+									/*
+									doGetAgencyData().then((agency) => {
+										//console.log(agency);
+										let promptdata = agency[0];
+										let qrType;
+										let userId = '';
+										let payAmount;
+										if (roomsize === 8) {
+											payAmount = 29;
+										} else if (roomsize === 24) {
+											payAmount = 69;
+										}
+										if (promptdata.promptpayno.length === 10) {
+											qrType = '01';
+										} else if (promptdata.promptpayno.length === 13) {
+											qrType = '02';
+										} else if (promptdata.promptpayno.length === 15) {
+											qrType = '03';
+										}
+                    					let params = {qrType: qrType, promptpayNo: promptdata.promptpayno, promptpayName: promptdata.promptpayname, payAmount: payAmount, userId: userId};
+										doGetPayQRCode(params).then((qrlink) => {
+											//console.log(qrlink);
+											$('#EntryQRCode').prop("src", qrlink);
+											let qrSubject = $('<div></div>');
+											$(qrSubject).append($('<p>โปรดชำระเงินตาม QR Code นี้ เพื่อซื้อห้องใช้งานขนาดกลาง 8 Clients. ระยะเวลา 24 ชม.</p>'));
+											$(qrSubject).append($('<p>และโปรดแจ้งการชำระเงิน โดยส่งสลิปลงในกล่องข้อความ โดยคลิกปุ่ม<b>ติดต่อเจ้าหน้าที่</b>เพื่อเปิดใช้งานห้อง <b>' + newRoomName + '</b> หลังจากปิดหน้าต่างนี้</p>'));
+											$(qrSubject).append($('<p>ใช้เวลาหลังจากแจ้งชำระไม่เกิน 10 นาที</p>'));
+											$('#EntryQRCodeDiv').append($(qrSubject));
+											$('#MasterQRCode').dialog('option', 'title', 'Promptpay QR Code สำหรับชำระเงิน');
+											$('#MasterQRCode').dialog('option', 'width', '450');
+											$('#MasterQRCode').dialog('open');
+											$('#CloseQRCodeCmd').attr('onclick', 'doClosePomptpay("' + newRoomName + '")');
+											$(".ui-dialog-titlebar-close").click((e) => { 
+													doClosePomptpay(newRoomName);
+													$('#FirstPage').toggle();
+											});
+										});
+									});
+									*/
+									
+									/**************************************************************/
+									
+									let qrlink = '/' + rootName + '/imgs/qr/qrpayment.png';
+									$('#EntryQRCode').prop("src", qrlink);
+									let qrSubject = $('<div></div>');
+									$(qrSubject).append($('<p>โปรดชำระเงินตาม QR Code นี้ เพื่อซื้อห้องใช้งานขนาดกลาง 8 Clients. ระยะเวลา 24 ชม.</p>'));
+									$(qrSubject).append($('<p>และโปรดแจ้งการชำระเงิน โดยส่งสลิปลงในกล่องข้อความ โดยคลิกปุ่ม<b>ติดต่อเจ้าหน้าที่</b>เพื่อเปิดใช้งานห้อง <b>' + newRoomName + '</b> หลังจากปิดหน้าต่างนี้</p>'));
+									$(qrSubject).append($('<p>ใช้เวลาหลังจากแจ้งชำระไม่เกิน 10 นาที</p>'));
+									$('#EntryQRCodeDiv').append($(qrSubject));
+									$('#MasterQRCode').dialog('option', 'title', 'Promptpay QR Code สำหรับชำระเงิน');
+									$('#MasterQRCode').dialog('option', 'width', '450');
+									$('#MasterQRCode').dialog('open');
+									$('#CloseQRCodeCmd').attr('onclick', 'doClosePomptpay("' + newRoomName + '")');
+									$(".ui-dialog-titlebar-close").click((e) => { 
+											doClosePomptpay(newRoomName);
+											$('#FirstPage').toggle();
+									});
+									
+									
+									/**************************************************************/
+								}
+							} else {
+								alert('System can not create new room, Please Try again.');
+							}
+						});
+					}
+				});
+			}
+		});
+	}
+
+	function doValidateNewRoomName(newName){
+		return new Promise(function(resolve, reject) {
+			if (newName.length >= 21) {
+				resolve({result: false, error: 'ชื่อห้องยาวเกิน 20 ตัวอักษร'});
+			}
+
+			if (newName.indexOf(' ') >= 0) {
+				resolve({result: false, error: 'ชื่อห้องต้องไม่มีช่องว่าง'});
+			}
+			const ENGLISH = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+	    	var index;
+
+	    	for (index = newName.length - 1; index >= 0; --index) {
+	      		if (ENGLISH.indexOf(newName.substring(index, index + 1)) < 0) {
+					resolve({result: false, error: 'ชื่อห้องต้องเป็นอักษรภาษาอังกฤษ ตัวเลข และ _ เท่านั้น'});
+	      		}
+	    	}
+	    	resolve({result: true});
+  		});
+ 	}
+	function doGetUniqueNewRoomName(newName){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/uniquenewroomname/" + newName;
+			//console.log(JSON.stringify(params));
+			$.post(url, {rootname: rootName, newname: newName}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doRequestCreateNewRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/createnewroom/" + params.roomname;
+			//console.log(JSON.stringify(params));
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doCreateQRCodeNewRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/qrservice/newentryqrcode";
+			//console.log(JSON.stringify(params));
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetAgencyData(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/getagencydata";
+			//console.log(JSON.stringify(params));
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetPayQRCode(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/mrqr/home/getpromptpayqrcode";
+			//var url = "https://www.myshopman.com/mrqr/home/getpromptpayqrcode";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doLoadWarnningText(){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/warnningtext";
+			$.post(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doSaveQRCode(){
+	    let imgsrc = $('#EntryQRCode').prop("src");
+	    let imgsrcPaths = imgsrc.split('/')
+	    //console.log(imgsrc);
+	    var link = document.getElementById('link');
+	    var filename = imgsrcPaths[imgsrcPaths.length-1];
+	    link.setAttribute('download', filename);
+	    link.setAttribute('href', imgsrc);
+	    link.click();
+	}
+	function doOpenShareBox() {
+		const hostname = window.location.hostname;
+		let QRUrl = 'https://' + hostname + $('#EntryQRCode').prop("src");
+		$('#ShareBox').dialog('open');
+		$('#ShareButtonCmd').empty();
+		$("#ShareButtonCmd").append("<a href='https://www.facebook.com/sharer/sharer.php?u=" + QRUrl + "' onclick='javascript:window.open(this.href, \"\", \"menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600\");return false;' target='_blank' title='Share on Facebook'><img src='/" + rootName + "/imgs/logo/Share-on-Facebook.png' width='220px' height='60px'/></a>");
+		
+		$("#ShareButtonCmd").append("&nbsp;&nbsp;&nbsp;&nbsp;");
+		$("#ShareButtonCmd").append("<a href='https://social-plugins.line.me/lineit/share?url=" + QRUrl + "' target='_blank'><img src='/" + rootName + "/imgs/logo/wide-default.png' width='140px' height='50px'/></a>");
+		$("#ShareButtonCmd").append("&nbsp;&nbsp;&nbsp;&nbsp;");
+		$('#ShareButtonCmd').append('<div><input type="button" id="CloseShareBoxCmd" value=" ปิด " onclick="doCloseShareBox()"/></div>');
+	}
+	function doCloseQRCode(){
+		$('#MasterQRCode').dialog('close');
+		$('#DoCreateNewRoom').hide();	
+		$('#ManualLogin').hide();
+		doLoadScanQRCodePlugin();
+	}
+	function doCloseShareBox() {
+		$('#ShareBox').dialog('close');
+	}
+	function doClosePomptpay(ARoomName) {
+		$('#MasterQRCode').dialog('close');
+		$('#DoCreateNewRoom').hide();	
+		$('#ManualLogin').hide();
+		doLoadScanQRCodePlugin(()=>{
+			doLoadChatBoxPlugin(()=>{
+				/**************************************************************/
+				/*              Begin Chat to Admin																	*/
+
+				const chathostname = window.location.hostname;
+				const chatrootname = window.location.pathname.split('/')[1];
+
+				let ws = null;
+				let timer =null;
+				let chatroomname = 'Admin';
+
+				const RootName = chatrootname;
+				const RoomName = ARoomName;
+
+
+				let box = null;
+
+				doConnectToIndivChatServer();
+
+				function doConnectToIndivChatServer() {
+					let wssUrl = 'wss://' + chathostname + '/' + chatrootname + '/' + chatroomname + '/' + RoomName + '?type=vchat&screenno=00';
+					console.log(wssUrl);
+					ws = new WebSocket(wssUrl);
+					ws.onopen = function () {
+						console.log('Websocket is connected to the indiv chat server');
+						/*
+						if(timer) {
+							window.clearTimeout(timer);
+						}
+						timer = window.setTimeout(function () { 
+							doSendTest();
+						}, pingWSDelayTime);
+						*/
+					}
+					ws.onmessage = function (msg) {
+						if (msg.data !== 'Hello world') {
+							var data = JSON.parse(msg.data);
+							console.log(data);
+							if (data.message) {
+								box.chatbox("option", "boxManager").addMsg(data.sender, data.message.msg, data.message.msgtype);
+							}
+						}/*
+						if(timer) {
+							window.clearTimeout(timer);
+						}
+						timer = window.setTimeout(function () { 
+							doSendTest();
+							console.log('test send.');
+						}, pingWSDelayTime);
+						*/
+					};
+					ws.onclose = function(event) {
+						console.log("WebSocket is closed now. with  event:=> ", event);
+						//doConnectToIndivChatServer();;
+					};
+				}
+				$("#showchatboxcmd").click(function(event, ui) {
+					if(box) {
+						box.chatbox("option", "boxManager").toggleBox();
+						let offset = box.chatbox("option", "offset");
+						//console.log(offset);
+						let user = box.chatbox("option", "user");
+						//console.log(user);
+					} else {
+						doCreateNewBox();
+					}
+				});
+
+				function doCreateNewBox(){
+					box = $("#chat_div").chatbox({id: RoomName, 
+						rootName: RootName,
+						roomName: RoomName,
+						user: {name : RoomName},
+						title : "ติดต่อเจ้าหน้าที่",
+						messageSent : function(id, user, msg, type) {
+							$("#chat_div").chatbox("option", "boxManager").addMsg('You', msg, type);
+							let sendto = 'Officer';	
+							let msgSend = {type: 'indiv-message', rootname: RootName, roomName: chatroomname, sender: RoomName, recver: sendto, message: {msgtype: type, msg}};
+							ws.send(JSON.stringify(msgSend));  
+						}
+					});
+				}
+
+				function doSendTest() {
+					//console.log(ws.readyState);
+					if (ws.readyState === 1) {
+						let dataPing = {
+							channel: "media",
+							type: "test",
+							name: RoomName,
+							sender: 'remote',
+							roomName: chatroomname,	
+							test: {test: 'test', channel: 'media', name: RoomName, id: ws.id, sender: 'remote'} 
+						};
+
+						ws.send(JSON.stringify(dataPing));  
+						//console.log(dataPing);
+					}
+				}
+
+				function doSayHello() {
+					let msgSend = {type: 'indiv-message', rootname: RootName, roomName: chatroomname, sender: 'Officer', recver: RoomName, message: {msgtype: 'text', msg: 'สวัสดีครับ'}};
+					ws.send(JSON.stringify(msgSend));  
+				}
+				setTimeout(() => {
+					doCreateNewBox();
+					setTimeout(() => {
+						doSayHello();
+					},2000);
+				},78000);
+			});
+		});
+	}
+
+	function doOpenManual() {
+		var url = '/openstream/manual/';
+		var win = window.open(url, "_blank");
+	}
+</script>

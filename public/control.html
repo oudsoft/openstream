@@ -1,0 +1,644 @@
+<!-- control.html -->
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset = "utf-8" /> 
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<title>Open Stream::Control System</title>
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script type="text/javascript" src="lib/jquery.ui.chatbox.js"></script>
+		<script type="text/javascript" src="lib/chatboxManager.js"></script>
+		<script src="lib/jquery.cookie.js"></script>
+		<script src="js/admin-chat-conn.js"></script>
+		<script src="lib/simpleUpload.min.js" type="text/javascript"></script>
+		<script src="js/utility.js"></script>
+		<link type="text/css" href="css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<link rel="stylesheet" href="css/control.css" />
+	</head>
+	<body>
+		<div id="MainControl">
+			<button onclick="doShowAllRooms()">Show All Room(s)</button>
+			<button onclick="doCreateNewRoom()">Create New Room</button>
+		</div>
+		<div id="Rooms"></div>	
+		<div id="Screens"></div>
+
+	</body>
+</html>		
+
+<div id="MasterQRCode">
+	<div id="EntryQRCodeDiv">
+		<img id="EntryQRCode"/>
+	</div>
+	<div id="ControlQRCodeDialog">
+		<input type="button" id="SaveQRCodeCmd" value="Save" onclick="doSaveQRCode()"/>
+		<a id="link" styel="display: none;"></a>
+		<input type="button" id="SharQRCodeCmd" value="Share" onclick="doOpenShareBox()"/>
+		<input type="button" id="CloseQRCodeCmd" value="Close" onclick="doCloseQRCode()"/>
+	</div>
+	<div id="NoteMessage"></div>
+</div>
+<div id="ShareBox">
+	<div id="ShareButtonCmd" style="text-align: center;"></div>
+</div>
+
+<script type="text/javascript">
+	const hostname = window.location.hostname;
+	const cookiename = "openstream";
+	let rootName ='';
+	let cookie;
+	$(document).ready(function() {
+		//console.log(doGetRootName());
+		rootName = doGetRootName();
+		//let checCookie = $.cookie(cookiename);
+		let checkCookie = $.cookie(rootName);
+		if (checkCookie){
+			//const cookieStr = $.cookie(cookiename).substr(2);
+			const cookieStr = $.cookie(rootName).substr(2);
+			if (cookieStr) {
+				try {
+					cookie = $.parseJSON(cookieStr);
+					if (cookie) {
+						//console.log(cookie);
+						if (cookie.userid) {
+							initControl();
+							$('#MainControl').append('<button id="OnoffWS">Start</button>');
+							$('#MainControl').append('<span> </span>');
+							$('#MainControl').append('<button id="SaveLogCmd">Save Log</button>');
+							$('#MainControl').append('<span> </span>');
+							$('#MainControl').append('<button id="LoadLogCmd">Load Log</button>');
+							$('#MainControl').append('<span> </span>');
+							$('#MainControl').append('<button onclick="doUserLogout()">Logout</button>');
+
+							$('#MasterQRCode').dialog({ 
+								modal: true, autoOpen: false, resizable: false, width: 450, title: 'QR Code สำหรับเข้าใช้งาน',
+							});
+							$('#ShareBox').dialog({ 
+								modal: true, autoOpen: false, resizable: false, width: 350, title: 'แชร์',
+							});
+
+							/** Initial Admin Chat *******/
+							$('#OnoffWS').attr('onclick', 'doConnectChatWebScket("Admin", "Officer")');
+							$('#OnoffWS').greenify();
+							$('#OnoffWS').text('Start');
+							$('#SaveLogCmd').attr('onclick', 'doSaveRoomlog()');
+							$('#LoadLogCmd').attr('onclick', 'doLoadLastLog()');
+
+							setSenderName('Officer');
+						} else {
+							doBackLogin();
+						}
+					} else {
+						doBackLogin();
+					}
+				}
+				catch(e){
+					throw (e);
+					doBackLogin();
+				}
+			} else {
+				doBackLogin();
+			}
+		} else {
+			doBackLogin();
+		}
+	});
+
+	function doBackLogin() {
+    		setTimeout(()=>{
+    			window.location = 'https://' + hostname + '/' + rootName + '/login.html';
+    		}, 1200);
+	}
+
+	function doShowAllRooms() {
+		initControl();
+	}
+	function initControl(){
+		$('#Rooms').empty();
+		$('#Screens').empty();
+
+		doGetRequestAllRoom().then((rooms) => {
+			//console.log(JSON.stringify(rooms));
+			if (rooms.length > 0) {
+				rooms.forEach((item) => {
+					if (item) {
+						//console.log(JSON.stringify(item));
+						let roomDiv = $('<div class="Rooms" id="' + item.roomname + '"></div>');
+						$(roomDiv).append($('<span>  ' + item.rootname + '</span>'));
+						$(roomDiv).append($('<span>  ' + item.type + '</span>'));
+						$(roomDiv).append($('<span>   </span>'));
+						let roomLink = $('<a></a>');
+						$(roomLink).attr('href', '#');
+						$(roomLink).attr('onclick', 'doOpenRoom("' + item.roomname + '")');
+						$(roomLink).text(item.roomname);
+						$(roomDiv).append($(roomLink));
+
+						let createdAt = new Date(item.createdAt);
+						createdAt = createdAt.getFullYear() + '-' + (createdAt.getMonth() +1) + '-' + createdAt.getDate() + '@' + createdAt.getHours() + ':' + createdAt.getMinutes();
+						$(roomDiv).append($('<span>   </span>'));
+						$(roomDiv).append($('<span>' + createdAt + '</span>'));
+						if (item.starttime){
+							let startAt = new Date(item.starttime);
+							startAt = startAt.getFullYear() + '-' + (startAt.getMonth() +1) + '-' + startAt.getDate() + '@' + startAt.getHours() + ':' + startAt.getMinutes();
+							$(roomDiv).append($('<span> ==>  </span>'));
+							$(roomDiv).append($('<span class="StampTimeMarker">' + startAt + '</span>'));
+						}
+						if (item.roomsize > 2) {
+							$(roomDiv).append($('<span>   </span>'));
+							let roomStatusLink = $('<a></a>');
+							$(roomStatusLink).attr('href', '#');
+							$(roomStatusLink).attr('onclick', 'doChangeStatusRoom("' + item.roomname + '", "' + item.status + '")');
+							$(roomStatusLink).text(item.status);
+							$(roomDiv).append($('<span>   </span>'));
+							$(roomDiv).append($(roomStatusLink));
+
+							$(roomDiv).append($('<span>   </span>'));
+							let qrgenBtn = $('<input></input>');
+							$(qrgenBtn).attr('type', 'button');
+							$(qrgenBtn).attr('value', 'QR');
+							$(qrgenBtn).attr('onclick', 'doShowQR("' + item.roomname + '", "' + item.type + '", "' + item.status + '")');
+							$(roomDiv).append($(qrgenBtn));
+						} else {
+							$(roomDiv).append($('<span>   </span>'));
+							$(roomDiv).append($('<span>  ' + item.status + ' </span>'));
+						}
+
+						const masterURL = 'https://' + hostname + '/' + rootName + '/master/' + item.roomname + '/00';
+						let masterBtn = $('<input></input>');
+						$(masterBtn).attr('type', 'button');
+						$(masterBtn).attr('value', 'Open Master window');
+						$(masterBtn).attr('onclick', 'doOpenNewWindow("' + masterURL + '")');
+						roomDiv.append($('<span>   </span>'));
+						roomDiv.append($(masterBtn));
+
+						let removeBtn = $('<input></input>');
+						$(removeBtn).attr('type', 'button');
+						$(removeBtn).attr('value', 'Remove');
+						$(removeBtn).attr('onclick', 'doRemoveRoom("' + item.roomname + '")');
+						$(roomDiv).append($('<span>   </span>'));
+						$(roomDiv).append($(removeBtn));
+
+						if (item.paymentlogid){
+							let billBtn = $('<input></input>');
+							$(billBtn).attr('type', 'button');
+							$(billBtn).attr('value', 'Bill');
+							if (item.billlink){
+								$(billBtn).attr('onclick', 'doShowBill("'  + item.billlink + '")');
+							} else {
+								$(billBtn).attr('onclick', 'doCreateBill("'  + item.roomname + '", "' + item.paymentlogid + '")');
+							}
+							$(roomDiv).append($('<span>   </span>'));
+							$(roomDiv).append($(billBtn));
+						}
+
+						$('#Rooms').append($(roomDiv));
+					}
+				});
+			}
+		});	
+	}
+
+	function doOpenRoom(roomname){
+		//console.log(roomname);
+		//$('#Screens').empty();
+		let roomnameDiv = '#' + roomname;
+		if ($(roomnameDiv).find($('.Screens')).css('display') === 'block') {
+			$(roomnameDiv).find($('.Screens')).css('display', 'none');
+		} else {
+			doGetRequestAllScreen(roomname).then((screens) => {
+				if (screens.length > 0) {
+					$(roomnameDiv).find($('.Screens')).remove();
+					screens.forEach((item) => {
+						//console.log(item);
+						//{profile: {displayname: '', avatarUrl: ''}, screen: {screenno: screenno, clientId: ''}}
+
+						let screenDiv = $('<div class="Screens"></div>');
+						$(screenDiv).text(JSON.stringify(item));
+						
+						if (item.screen.screenno !== '00') {
+							const clientURL = 'https://' + hostname + '/' + rootName + '/client/' + roomname + '/d/' + item.screen.screenno;
+							let clientBtn = $('<input></input>');
+							$(clientBtn).attr('type', 'button');
+							$(clientBtn).attr('value', 'Open Client window');
+							$(clientBtn).attr('onclick', 'doOpenNewWindow("' + clientURL + '")');
+							screenDiv.append($('<span>   </span>'));
+							screenDiv.append($(clientBtn));
+						}
+
+						let removeBtn = $('<input></input>');
+						$(removeBtn).attr('type', 'button');
+						$(removeBtn).attr('value', 'Remove');
+						$(removeBtn).attr('onclick', 'doRemoveSreen("' + roomname + '","' + item.screen.screenno + '")');
+						$(screenDiv).append($('<span>   </span>'));
+						$(screenDiv).append($(removeBtn));
+
+						$(roomnameDiv).append($(screenDiv));
+						//$('#Screens').append($(screenDiv));
+						//$('#Screens').css('padding', '5px');
+					});
+				}
+			});
+		}
+	}
+
+	function doRemoveSreen(roomname, screenno){
+		//console.log(roomname);
+		//console.log(screenno);
+		doGetRequestRemoveScreen(roomname, screenno).then((sts) => {
+			if (sts.status.code === 200 ) {
+				let roomnameDiv = '#' + roomname;
+				$(roomnameDiv).find($('.Screens')).css('display', 'none');
+				doOpenRoom(roomname);
+			}
+		});
+	}
+
+	function doRemoveRoom(roomname){
+		doGetRequestRemoveRoom(roomname).then((sts) => {
+			if (sts.status.code === 200 ) {
+				initControl();
+			}
+		});
+	}
+
+	function doCreateNewRoom() {
+		let newRoomName = prompt('Please type your new room name', 'Sanook');
+		if (newRoomName){
+			let roomOption = prompt('Please type your new room option', 'Standard');
+			if (roomOption){
+				let roomsize = (roomOption === 'Standard'? 2 : roomOption === 'Upper'? 8 :  roomOption === 'Class'? 24 : 0);
+				let params = {roomname: newRoomName, roomoption: roomOption, roomsize: roomsize};
+				doRequestCheckRoom(params).then((statusR) => {
+					//console.log('statusR', JSON.stringify(statusR));
+					if (statusR.status.code === 200) {
+						doRequestCreateNewRoom(params).then((sts) => {
+							if (sts.status.code === 200 ) {
+								setTimeout(()=> {
+									initControl();
+								}, 2500);
+							} else {
+								alert('Can not create new room');
+							}		
+						});
+					} else {
+						alert('ไม่สามารถเปิดห้องใหม่ชื่อ ' + newRoomName + ' ในขณะนี้ได้\nโปรดตั้งชื่อห้องใหม่ด้วยครับ');
+					}
+				});
+			} else {
+				alert('Option ที่สามารถระบุได้สองอย่างคือ Standard และ Upper\nโปรดระบบุ Option อีกครั้งครับ');
+			}
+		} else {
+			alert('โปรดตั้งชื่อห้องใหม่ด้วยครับ');
+		}
+	}
+
+	function doChangeStatusRoom(roomname, curstatus) {
+		let nextStatus;
+		if (curstatus === 'Pending') {
+			nextStatus = 'Active';
+		} else if (curstatus === 'Active') {
+			nextStatus = 'Pending';
+		}
+		let newStatus = prompt('Please type your new status', nextStatus);
+		if ((newStatus === 'Pending') || (newStatus === 'Active')) {
+			doRequestChangeStatusRoom(roomname, newStatus).then((sts) => {
+				//console.log(sts.status.code);
+				if ((sts.status.code === 200 ) || (sts.status.code === 201 ) || (sts.status.code === 202 )) {
+					setTimeout(()=> {
+						initControl();
+					}, 2500);
+				} else {
+					alert('Can not change room status.');
+				}		
+			});
+		} else {
+			alert('โปรดระบุสถานะใหม่ให้ถูกต้อง');
+		}
+	}
+	function doLoadLastLog(){
+		doLoadLastRoomlog().then((lastlog)=>{
+			console.log(lastlog);
+			console.log(lastlog[0].log);
+			let cfm = confirm('Are you sure., It will be replace all room current data.');
+			if (cfm === true) {
+				let thelog = JSON.stringify(lastlog[0].log);
+				doAssignRoomFromLog(thelog).then((sts) => {
+					console.log(sts);
+					if (sts.status.code === 200) {
+						alert('OK');
+					} else {
+						alert('It happen some probles.');
+					}
+				}); 
+			}
+		});
+	}
+
+	function doSaveRoomlog() {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/saveroomlog";
+			$.get(url, {}, function(data){
+				alert('Succesful.');
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doLoadLastRoomlog() {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/loadlastroomlog";
+			$.post(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doAssignRoomFromLog(log) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/assignroomfromlog";
+			$.post(url, {log: log}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doGetRequestAllRoom(){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/viewlistrooms";
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetRequestAllScreen(roomname){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/viewuserrooms/" + roomname;
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetRequestRemoveScreen(roomname, screenno){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/removescreen/" + roomname + "/" + screenno;
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doGetRequestRemoveRoom(roomname){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/closeroom/" + roomname;
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestCheckRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/checkroom/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestCreateNewRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/createnewroom/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doRequestUpdatePaymentLog(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/updatepaymentlog/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doRequestUpdateBillLink(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/updatebilllink/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doCreateQRCodeNewRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/qrservice/newentryqrcode";
+			//console.log(JSON.stringify(params));
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doRequestChangeStatusRoom(roomname, newstatus) {
+		return new Promise(function(resolve, reject) {
+			var url = '';
+			url = "/" + rootName + "/changestatusroom/" + roomname;
+			/*
+			if (newstatus === 'Pending') {
+				url = "/" + rootName + "/changestatusroom/" + roomname;
+			} else if (newstatus === 'Active') {
+				url = "/" + rootName + "/stampstarttime/" + roomname;
+			}
+			*/
+			$.post(url, {roomname, newstatus}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doSavepaymentLog(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/savepaymentlog";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doSaveBillData(params) {
+		//params = {logid: paymentlogid, customername: customerName, customertelno: customerTelno};
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/savebilldata";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+	function doRequestCreateBill(params) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/createnewbill";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doUserLogout() {
+		$.cookie(cookiename, null, { path: '/' });
+		doBackLogin();
+	}
+	function doShowQR(roomname, roomtype, roomstatus) {
+		const hostname = window.location.hostname;
+		let roomPrice = 0;
+		if (roomtype === 'Upper')	{
+			roomPrice = 29;
+		} else if (roomtype === 'Class')	{
+			roomPrice = 69;
+		}
+		let params = {entryType: 'master', roomId:'', roomName: roomname, screenId: '', screenNo: '', hostname: hostname};
+		if (roomstatus === 'Pending'){
+			let conf = confirm('โปรดยืนยันว่าคุณได้รับเงินจากการแจ้งชำระเรียบร้อยแล้ว');
+			if (conf) {
+				doCreateQRCodeNewRoom(params).then((qrlink) =>{
+					$('#EntryQRCode').prop("src", qrlink);
+					$('#MasterQRCode').dialog('option', 'title', 'QR Code สำหรับเข้าใช้งาน');
+					$('#MasterQRCode').dialog('open');
+					let newstatus = 'Active';
+					doRequestChangeStatusRoom(roomname, newstatus).then((sts1) => {
+						if ((sts1.status.code === 200 ) || (sts1.status.code === 201 ) || (sts1.status.code === 202 )) {
+							params = {agencyid: cookie.agencyid, roomtype: roomtype, roomname: roomname, amount: roomPrice};
+							doSavepaymentLog(params).then((status2) => {
+								//console.log(status2);
+								if (status2.status.code === 200) {
+									$('#NoteMessage').html('<b class="blink">ระบบได้บันทึกการชำระเงินเรียบร้อยแล้ว</b>');
+									doShowAllRooms();
+									params = {roomname: roomname, paymentlogid: status2.logid.id};
+									doRequestUpdatePaymentLog(params);
+								}
+							});
+						}
+					});
+				});
+			} else {
+				alert('โปรดเรียกใช้คำสั่งนี้อีกครั้งเมื่อได้รับแจ้งขำระเงินเรียบร้อยแล้ว');
+			}
+		} else {
+			doCreateQRCodeNewRoom(params).then((qrlink) =>{
+				$('#EntryQRCode').prop("src", qrlink);
+				$('#MasterQRCode').dialog('option', 'title', 'QR Code สำหรับเข้าใช้งาน');
+				$('#MasterQRCode').dialog('open');
+			});
+		}
+	}
+	function doCreateBill(roomname, paymentlogid) {
+		let customerName = prompt('Please type your Customer Name', 'มงคล ทองเอก');
+		if (customerName)	{
+			let customerTelno = prompt('Please type your Customer Phone Number', '0904443322');
+			if (customerTelno)	{
+				let params = {logid: paymentlogid, customername: customerName, customertelno: customerTelno};
+				doSaveBillData(params).then((status) => {
+					params = {logid: paymentlogid};
+					//console.log(params);
+					doRequestCreateBill(params).then((bill) => {
+						let billLink = "/" + rootName + bill.bill.link;
+						console.log(billLink);
+						$('#EntryQRCode').prop("src", billLink);
+						$('#MasterQRCode').dialog('option', 'title', 'ใบเสร็จรับเงิน');
+						$('#MasterQRCode').dialog('open');
+						$('#NoteMessage').empty();
+						params = {roomname: roomname, billlink: billLink};
+						doRequestUpdateBillLink(params);
+					});
+				});
+			} else {
+				alert('ไม่สามารถออกบิลให้ลูกค้าด้วยหมายเลขโทรศัพท์ที่ว่างเปล่าได้ครับ');
+			}
+		} else {
+			alert('ไม่สามารถออกบิลให้ลูกค้าด้วยชื่อที่ว่างเปล่าได้ครับ');
+		}
+	}
+	function doShowBill(billlink) {
+		$('#EntryQRCode').prop("src", billlink);
+		$('#MasterQRCode').dialog('option', 'title', 'ใบเสร็จรับเงิน');
+		$('#MasterQRCode').dialog('open');
+		$('#NoteMessage').empty();
+	}
+	function doSaveQRCode(){
+	    let imgsrc = $('#EntryQRCode').prop("src");
+	    let imgsrcPaths = imgsrc.split('/')
+	    //console.log(imgsrc);
+	    var link = document.getElementById('link');
+	    var filename = imgsrcPaths[imgsrcPaths.length-1];
+	    link.setAttribute('download', filename);
+	    link.setAttribute('href', imgsrc);
+	    link.click();
+	}
+	function doCloseQRCode(){
+		$('#MasterQRCode').dialog('close');
+	}
+	function doOpenShareBox() {
+		const hostname = window.location.hostname;
+		let QRUrl = 'https://' + hostname + $('#EntryQRCode').prop("src");
+		$('#ShareBox').dialog('open');
+		$('#ShareButtonCmd').empty();
+		$("#ShareButtonCmd").append("<a href='https://www.facebook.com/sharer/sharer.php?u=" + QRUrl + "' onclick='javascript:window.open(this.href, \"\", \"menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600\");return false;' target='_blank' title='Share on Facebook'><img src='/" + rootName + "/imgs/logo/Share-on-Facebook.png' width='220px' height='60px'/></a>");
+		
+		$("#ShareButtonCmd").append("&nbsp;&nbsp;&nbsp;&nbsp;");
+		$("#ShareButtonCmd").append("<a href='https://social-plugins.line.me/lineit/share?url=" + QRUrl + "' target='_blank'><img src='/" + rootName + "/imgs/logo/wide-default.png' width='140px' height='50px'/></a>");
+		$("#ShareButtonCmd").append("&nbsp;&nbsp;&nbsp;&nbsp;");
+		$('#ShareButtonCmd').append('<div><input type="button" id="CloseShareBoxCmd" value=" ปิด " onclick="doCloseShareBox()"/></div>');
+	}
+	function doOpenNewWindow(url) {
+		//var strWindowFeatures = "location=yes,height=570,width=520,scrollbars=yes,status=yes";
+		//var URL = "https://www.linkedin.com/cws/share?mini=true&amp;url=" + location.href;
+		//var win = window.open(url, "_blank", strWindowFeatures);
+		var win = window.open(url, "_blank");
+	}
+	function doCloseShareBox() {
+		$('#ShareBox').dialog('close');
+	}
+</script>

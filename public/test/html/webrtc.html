@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+		<title>Open Stream Video-Chat</title>
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script src='../lib/socket.io.js'></script>
+		<script src="../js/utility.js"></script>
+		<link rel="stylesheet" href="../css/vchat.css" />
+		<script src="vchat.js"></script>
+	</head>
+	<body>
+		<div id="Client-Area">
+			<video id="remoteVideo" height="120" width="160" autoplay playsinline></video>
+			<video id="localVideo" height="120" width="160" autoplay playsinline></video>
+		</div>
+		<div>
+			<div>
+				<label class="switch">
+					<input type="checkbox">
+					<div class="slider"></div> 
+				</label> ON / OFF
+			</div>
+			<input id="videoCallButton" type="button" disabled value="Video Call"/>
+			<!-- <input id="endCallButton" type="button" disabled value="End Call"/> -->
+		</div>
+	</body>
+</html>
+<script>
+
+	var urlParams = location.search.split(/[?&]/).slice(1).map(function(paramPair) {
+					return paramPair.split(/=(.+)?/).slice(0, 2);
+				}).reduce(function (obj, pairArray) {            
+					obj[pairArray[0]] = pairArray[1];
+					return obj;
+				}, {});
+				/*
+				Usage:
+				For url: http://example.com?one=1&two=2
+				console.log(urlParams.one) // 1
+				console.log(urlParams.two) // 2
+				*/
+
+	var callType = urlParams.t;
+	console.log(callType);
+
+	var checkbox = document.querySelector('input[type="checkbox"]');
+
+	document.addEventListener('DOMContentLoaded', function () {
+		checkbox.addEventListener('change', function () {
+			if (checkbox.checked) {
+				pageReady();
+				console.log('Connect Websocket.');
+				initiateCallRemote();
+				console.log('Start Create Peer.');
+				if (callType === 'callee'){
+					setTimeout(() => {
+						console.log('Send ready trigger.');
+						willReadyCall();
+					}, 1200);
+				}
+			} else {
+				willCloseConnect();
+			}
+		});
+	});
+
+	function willReadyCall() {
+		//console.log(wsc.readyState);
+		let skdata = {channel: "vchat", type: "vchat-readyCall", readyCall: true, sender: 'remote', name: myname, clientId: x.clientId, roomName: roomname};
+		doSocketSend(skdata);
+	}
+
+	function willCloseConnect() {
+		videoCallButton.setAttribute("disabled", true);
+		endCall();
+		let skdata = {channel: "vchat", type: "vchat-closeConnection", closeConnection: true, sender: 'remote', name: myname, clientId: x.clientId, roomName: roomname};
+		doSocketSend(skdata);
+		setTimeout(() => {
+			wsc.close();
+			console.log('Disconnect Websocket.');
+			//console.clear();
+		}, 1200);
+	}
+
+	//window.addEventListener("load", pageReady);
+
+</script>

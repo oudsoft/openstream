@@ -1,0 +1,40 @@
+<!-- createnewroom.html -->
+<div id="DoChooseNewRomName">
+	<p>โปรดตั้ง<b>ชื่อห้อง</b>ใหม่ และเลือกขนาดห้องของคุณ จากนั้นคลิกปุ่ม <b>Create New Room</b> เพื่อเริ่มสร้างห้องถ่่ายทอดสัญญาณจอภาพ</p>
+	<div>
+		<label>
+			ชื่อห้อง:
+		</label>
+		<input type="text" id="NewRoomName" size="30" value="Sanook"/><!--placeholder="What are your new room's name?"-->
+		<span id="DoVerifyNewRoomName" style="color: red; display: none;"></span>
+	</div>
+	<div>
+		<label>
+			ขนาดห้อง:
+		</label>
+		<div id="SystemRoomOptionBox">
+			<div class="RoomOptionInline">
+				<input type="radio" name="rooomoption" id="roomstandard" value="Standard" checked/>
+				<span>ขนาดมาตรฐาน 2 Clients.</span> <b>ฟรี/วัน</b>
+			</div>
+			<div  class="RoomOptionInline">
+				<input type="radio" name="rooomoption" id="roomupper" value="Upper"/>
+				<span>ขนาดกลาง 8 Clients.</span> <b>29 บาท/วัน</b>
+			</div>
+			<div  class="RoomOptionInline">
+				<input type="radio" name="rooomoption" id="roomclass" value="Class"/>
+				<span>ขนาดใหญ่ 24 Clients.</span> <b>69 บาท/วัน</b>
+			</div>
+		</div>
+	</div>
+	<div id="UserOptionEntry">
+		<input type="button" id="DoCreateNewRoomCmd" value="Create New Room" onclick="doCreateNewRoom()">
+		<input type="button" id="DoCancelCreateNewRoomCmd" value="Cancel" onclick="doCancelCreateNewRoom()">
+	</div>
+</div>
+<script type="text/javascript">
+	function doTest(){
+		alert('OK')
+	}
+</script>
+

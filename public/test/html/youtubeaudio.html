@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+		</style>
+	</head>
+	<body>
+		<div><video id="Monitor" style="width: 520px; height: auto;" autoplay controls playsinline></video></div>
+		<div><audio id="youtube" autoplay controls loop></audio></div>
+		<!--
+		<button onclick="doPlay()">Play</button>
+		<button id="recordButton">Record/Stop</button>
+		-->
+		<div><button id="ytButton" onclick="doTestYoutube()">Test Youtube</button></div>
+		<div id="Logger"></div>
+	</body>
+</html>
+
+<script>
+	function doLoadYoutubeAudioStream(){
+		return new Promise(function(resolve, reject) {
+			var url = "/openstream/youtubaudio/jLh9eqO1IUk";
+			$.post(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	let monitor;
+	function doPlay(){
+		monitor = document.querySelector('#Monitor');
+		doLoadYoutubeAudioStream().then((stream) => {
+			/*
+			console.log(stream);
+			monitor.src = stream;
+			monitor.play();
+			*/
+			process(stream);
+		});
+	}
+
+	function process(Data) {
+		window.AudioContext = window.AudioContext||window.webkitAudioContext;
+		var context = new AudioContext();
+		source = context.createBufferSource(); // Create Sound Source
+			context.decodeAudioData(Data, function(buffer){
+			source.buffer = buffer;
+			source.connect(context.destination); 
+			source.start(context.currentTime);
+		}) ;
+		monitor.src = source;
+		monitor.play();
+	}
+
+	/* https://stackoverflow.com/questions/8690255/how-to-play-only-the-audio-of-a-youtube-video-using-html-5/45375023 */
+	function doTestYoutube() {
+		/*Big Bug Bunny
+		https://www.youtube.com/watch?v=dRqJ0cMWbWo
+
+		https://r4---sn-npoe7nez.googlevideo.com/videoplayback?expire=1584870250&ei=Ct92XpD3DKGGsfIPvqK_uAQ&ip=66.249.84.109&id=o-AIy2TGfkf-ct7FBXhw_z3AcpNsADjpegwSPBchPLB7YP&itag=18&source=youtube&requiressl=yes&vprv=1&mime=video%2Fmp4&gir=yes&clen=89391986&ratebypass=yes&dur=1539.250&lmt=1496772884386358&fvip=4&beids=9466585&c=WEB&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=ADKhkGMwRgIhANuXFfTH3-XRqtXOA5FZaT_2Os9tFq4jTGLl0e1ONtQPAiEAu4oujrxH3jOrOX9iVxogWnxOISf5Mjt3GH0L3NGOItA%3D&redirect_counter=1&cm2rm=sn-qxos67z&fexp=9466585&req_id=9f0ae08032db36e2&cms_redirect=yes&mh=k9&mip=223.24.188.110&mm=34&mn=sn-npoe7nez&ms=ltu&mt=1584848545&mv=m&mvi=3&pl=24&lsparams=mh,mip,mm,mn,ms,mv,mvi,pl&lsig=ALrAebAwRAIgPuiPTjOv5ykcxi8vGmyxtcjgqRFBYyyjSB0X71yx11wCIGqMSdHRoxBFroye8sNoqceywiONA6pacKH2hL5-lKEF
+		*/
+		//https://www.youtube.com/watch?v=TUmzyLS6wAQ
+		//var vid = "TUmzyLS6wAQ";
+		//https://www.youtube.com/watch?v=5Dfd4M8_Xn4
+		//var vid = "5Dfd4M8_Xn4";
+		//https://www.youtube.com/watch?v=7W2_QxMgaRg
+		//var vid = "7W2_QxMgaRg";
+		var vid = "dRqJ0cMWbWo";
+		var audio_streams = {};
+		var video_streams = {};
+		var audio_tag = document.getElementById('youtube');
+		var video_tag = document.getElementById('Monitor');
+		var ytUrl = "https://"+vid+"-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url=https%3A%2F%2Fwww.youtube.com%2Fget_video_info%3Fvideo_id%3D" + vid;
+		//fetch(ytUrl, fetchOPtion).then(response => {
+		fetch(ytUrl).then(response => {
+			//console.log(response.ok);
+			if (response.ok) {
+				response.text().then(data => {
+					//console.log(data);
+					var data = parse_str(data);
+					//console.log(data);
+					let metaData = JSON.parse(data.player_response);
+					//console.log(metaData.playabilityStatus);
+
+					//console.log(metaData.streamingData);
+					//console.log(metaData.streamingData.adaptiveFormats);					
+					
+					var AudioStreams = metaData.streamingData.adaptiveFormats;
+					//console.log(AudioStreams);
+
+					AudioStreams.forEach(function(s, n) {
+						//var stream = parse_str(s),
+						var stream = s;
+						var itag = stream.itag * 1;
+						var quality = true;
+						console.log(stream);
+						switch (itag) {
+							case 139:
+								quality = "48kbps";
+								break;ik
+							case 140:
+								quality = "128kbps";
+								break;
+							case 141:
+								quality = "256kbps";
+								break;
+							case 133:
+								quality = video_streams.url = stream.url;
+								break;
+						}
+						if (quality) audio_streams[quality] = stream.url;
+					});
+
+					console.log(audio_streams['128kbps']);
+
+					var audioObj = new Audio();
+					audioObj.controls = true;
+					audioObj.autoplay = true;
+					audioObj.src = audio_streams['128kbps'];
+					//audioObj.crossorigin = "myshopman.com";
+					audioObj.crossorigin = "anonymous";
+					const ctx = new (window.AudioContext || window.webkitAudioContext)();
+					const stream_dest = ctx.createMediaStreamDestination();
+					const source = ctx.createMediaElementSource(audioObj);
+					source.crossorigin = 'anonymous';
+					source.connect(stream_dest);
+
+					const bStream = stream_dest.stream;
+					console.log(bStream);
+
+					console.log(audioObj);
+					audioObj.play();
+
+					var audioTest = new Audio();
+					audioTest.controls = true;
+					audioTest.autoplay = true;
+
+					audioTest.srcObject = bStream;
+					//audioTest.srcObject = audioObj.captureStream();
+					console.log(audioTest);
+					audioTest.play();
+
+					document.body.appendChild(audioObj);
+					document.body.appendChild(audioTest);
+
+					/*
+					const aStream = audioObj.captureStream();
+					console.log(audioObj.src);
+					console.log(aStream);
+					audioObj.play();
+					*/
+					//audio_tag.src = audio_streams['128kbps'];
+					//audio_tag.play();
+					
+					var VideoStream = metaData.streamingData.formats[0];
+					console.log(VideoStream.url);
+					//https://r2---sn-qxoedn7z.googlevideo.com/videoplayback?expire=1584733567&ei=H8l0Xq_sEcqJkwbY5r84&ip=66.249.84.115&id=o-ANuOweDuo6R_zL-nuv_YKAwMpU_zt2tdVfj_-DJID1Oz&itag=18&source=youtube&requiressl=yes&mh=-L&mm=31%2C29&mn=sn-qxoedn7z%2Csn-qxo7rn7s&ms=au%2Crdu&mv=u&mvi=1&pl=28&vprv=1&mime=video%2Fmp4&gir=yes&clen=99617725&ratebypass=yes&dur=1912.093&lmt=1548003572174861&mt=1584711419&fvip=2&c=WEB&txp=5531432&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=ADKhkGMwRQIhAOg3fQGOp6R5rvDVkDAjNk6EV1dmXedteSSd0ipSlQ8WAiB2Tx7UwpCuwnyuyMLX1sbzDbq9TQkQg_QTRxws8U7Slw%3D%3D&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl&lsig=ABSNjpQwRQIgZ2F0fiLxmPF8-Lfj9GIWZD3mVsyMTwf-tZ-eC-wRrcUCIQDK0biwyhiXgj9zpaph-caO2bdG2BDuSZjT3nGjgB-Hpg%3D%3D
+					
+					video_tag.src = VideoStream.url;
+					
+					/*
+					video_tag.src = video_streams.url;
+					console.log(video_streams.url);
+					*/
+					video_tag.play();
+					let avStream = video_tag.captureStream();
+					console.log(avStream);
+					console.log(avStream.getTracks());
+					console.log(avStream.getAudioTracks());
+					console.log(avStream.getVideoTracks());
+					/*
+					video_tag.onplay = function() {
+						const ytstream = video_tag.captureStream();
+						console.log(ytstream);
+						console.log(ytstream.getVideoTracks());
+						console.log(ytstream.getAudioTracks());
+					}
+					*/
+					/*
+					const audioC = new Audio();
+					audioC.controls = true;
+					audioC.autoplay = true;
+					audioC.play();
+					const cStream = audioC.captureStream(video_tag);
+					console.log(cStream);
+					document.body.appendChild(audioC);
+					*/
+					/*
+					ติดปัญหาเรื่อง CORS ที่ connect
+					video_tag.play().then(_=> {
+						const AudioContext = window.AudioContext || window.webkitAudioContext;
+						var ctx = new AudioContext();
+						// create an source node from the <video>
+						var source = ctx.createMediaElementSource(video_tag);
+						// now a MediaStream destination node
+						var stream_dest = ctx.createMediaStreamDestination();
+						// connect the source to the MediaStream
+						source.connect(stream_dest);
+						// grab the real MediaStream
+						audio_tag.srcObject = stream_dest.stream;
+						audio_tag.play();
+					});
+					*/
+					/* Guide เรื่อง MediaRecoder */
+					/* https://stackoverflow.com/questions/21234902/record-sound-of-a-webaudio-apis-audio-context */
+
+					//checkAudioTrack(video_tag, audio_tag);
+				})
+			}
+		});
+	}
+
+	function checkAudioTrack(videoElement, audioElement) {
+		const AudioContext = window.AudioContext || window.webkitAudioContext;
+		var ctx = new AudioContext();
+		// create an source node from the <video>
+		var source = ctx.createMediaElementSource(videoElement);
+		// now a MediaStream destination node
+		var stream_dest = ctx.createMediaStreamDestination();
+		// connect the source to the MediaStream
+		source.connect(stream_dest);
+		// grab the real MediaStream
+		console.log(stream_dest.stream.getTracks());
+		audioElement.srcObject = stream_dest.stream;
+		audioElement.play();
+	}
+
+	function parse_str(str) {
+		return str.split('&').reduce(function(params, param) {
+			var paramSplit = param.split('=').map(function(value) {
+				return decodeURIComponent(value.replace('+', ' '));
+			});
+			params[paramSplit[0]] = paramSplit[1];
+			return params;
+		}, {});
+	}
+
+	function doTestRecord() {
+
+		var recorder, gumStream;
+		var preview;
+		var recordButton = document.getElementById("recordButton");
+		recordButton.addEventListener("click", toggleRecording);
+
+		function toggleRecording() {
+			if (recorder && recorder.state == "recording") {
+				recorder.stop();
+				gumStream.getAudioTracks()[0].stop();
+			} else {
+				navigator.mediaDevices.getUserMedia({
+					audio: true
+				}).then(function(stream) {
+					gumStream = stream;
+					recorder = new MediaRecorder(stream);
+					recorder.ondataavailable = function(e) {
+						var url = URL.createObjectURL(e.data);
+						preview = document.createElement('audio');
+						preview.controls = true;
+						preview.src = url;
+						console.log(preview.srcObject);
+						document.body.appendChild(preview);
+						preview.play();
+					};
+					recorder.start();
+				});
+			}
+		}
+	}
+</script>

@@ -1,0 +1,115 @@
+<!-- test4.html -->
+<!doctype html>
+<html lang="en">
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>		
+		<title>Test STUN/TURN Server</title>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	</head>
+	<body>
+		<div>
+			<h3>How to Start Coturn Server</h3>
+			<p><b>Ref. From</b></p>
+			<p><a href="https://stackoverflow.com/questions/25546098/installing-a-turn-server-on-ubuntu-for-webrtc" target="_blank">https://stackoverflow.com/questions/25546098/installing-a-turn-server-on-ubuntu-for-webrtc</a></p>
+			<p># configure & run</p>
+			<p>USERNAME="some-username"</p>
+			<p>PASSWORD="some-password"</p>
+			<p>PORT=3478</p>
+
+			<p># -n: use only commandline parameters, no config file</p>
+			<p>sudo turnserver \</p>
+				<p>-o \</p>
+				<p>--verbose \</p>
+				<p>--lt-cred-mech \</p>
+				<p>--user $USERNAME:$PASSWORD \</p>
+				<p>--realm "someRealm" \</p>
+				<p>--no-dtls \</p>
+				<p>--no-tls \</p>
+				<p>--listening-port $PORT</p>
+				<p>-a, --lt-cred-mech&nbsp;&nbsp;&nbsp;<b>If open STUN Server</b></p>
+				<p>-f, --fingerprint&nbsp;&nbsp;&nbsp;<b>If open STUN Server</b></p>
+				<p><b>sudo turnserver -o -f --verbose --lt-cred-mech --user $USERNAME:$PASSWORD --realm "myshopman.com" --no-dtls --no-tls --listening-port $PORT</b></p>
+				<p><b>sudo turnserver -o -f --verbose --lt-cred-mech --user $USERNAME:$PASSWORD --realm "myshopman.com" --listening-port $PORT</b></p>
+		</div>
+	</body>
+</html>
+
+<script type="text/javascript">
+
+function checkTurnOrStun(turnConfig, timeout){ 
+  return new Promise(function(resolve, reject){
+
+    setTimeout(function(){
+        if(promiseResolved){
+            if (promiseResolved == 'STUN') resolve('STUN');
+            return;
+        }
+        resolve(false);
+        promiseResolved = true;
+    }, timeout || 5000);
+
+    var promiseResolved = false
+      , myPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection   //compatibility for firefox and chrome
+      , pc = new myPeerConnection({iceServers:[turnConfig]})
+      , noop = function(){};
+    pc.createDataChannel("");    //create a bogus data channel
+    pc.createOffer(function(sdp){
+      if(sdp.sdp.indexOf('typ relay') > -1){ // sometimes sdp contains the ice candidates...
+        promiseResolved = 'TURN'; 
+        resolve(true);
+      }
+      pc.setLocalDescription(sdp, noop, noop);
+    }, noop);    // create offer and set local description
+    pc.onicecandidate = function(ice){  //listen for candidate events
+      if( !ice || !ice.candidate || !ice.candidate.candidate)  return;
+      console.log(turnConfig.url, JSON.stringify(ice.candidate));	
+      if (ice.candidate.candidate.indexOf('typ relay')!=-1) { 
+		promiseResolved = 'TURN'; 
+		resolve('TURN'); 
+	} else if (!promiseResolved && (ice.candidate.candidate.indexOf('typ prflx')!=-1 || ice.candidate.candidate.indexOf('typ srflx')!=-1)){
+          	promiseResolved = 'STUN';
+        	if (turnConfig.url.indexOf('turn:')!==0) resolve('STUN');
+      	} else {
+		return;
+	}
+    };
+  });   
+}
+
+const USERNAME="some-username"
+const PASSWORD="some-password"
+const PORT=3478
+const IP="58.137.157.66" // you will have to change this
+
+const turnServerTCP = {
+    url: `turn:${IP}:${PORT}`, /*?transport=tcp */
+    username: USERNAME,
+    credential: PASSWORD,
+};
+
+const stunServerUDP =  {url: 'stun:58.137.157.66:3478'};
+
+/*
+{
+"urls": [
+"turn:13.250.13.83:3478?transport=udp"
+],
+"username": "YzYNCouZM1mhqhmseWk6",
+"credential": "YzYNCouZM1mhqhmseWk6"
+}
+*/
+
+checkTurnOrStun({url: "stun:58.137.157.66:3478"}).then((bool) => {
+	console.log('STUN server reachable on UDP?', bool);
+});
+
+checkTurnOrStun(turnServerTCP).then((bool)=>{
+	console.log('TURN server reachable on TCP?',  bool);
+});
+
+
+</script>

@@ -1,0 +1,349 @@
+<!DOCTYPE html> 
+<html>
+ 
+   <head> 
+      <meta charset = "utf-8" /> 
+			<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+      <title>Mobile Check Support WebRTC</title>
+			<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+	   	<style>
+		   	#result{
+		   		display: block;
+		   	}
+	   	</style>
+   </head> 
+   <body> 
+      <div id = "result">Test</div> 
+      <div id="ClientProfile"></div>
+      <input type="button" id="rtcconnectcmd" value="Connect" onclick="doConnect()"/>  	
+      <video autoplay id="remoteMediaVideo"></video> 
+      <input type="button" id="rtcdisconnectcmd" value="Disconnect" onclick="doDisconnect()"/>
+   </body>
+</html>
+<script>
+	const myname = 'client';
+	const roomname = 'socket';
+
+	const hostname = window.location.hostname;
+
+	var ws = null;
+
+	const resultDiv = $('#result');
+
+	const remoteMediaVideo = $('#remoteMediaVideo');
+
+	const clientProfile = $('#ClientProfile');
+
+	var remoteMediaConn;
+	var remoteMediaStream;
+
+	var desktopConstraints = { 
+
+	   video: { 
+	      mandatory: { 
+	         maxWidth:800,
+	         maxHeight:600   
+	      }  
+	   }, 
+		
+	   audio: true 
+	}; 
+
+	$('#rtcconnectcmd').prop('disabled', false);	 
+	$('#rtcdisconnectcmd').prop('disabled', true);
+
+	//constraints for mobile browser 
+	var mobileConstraints = { 
+
+	   video: { 
+	      mandatory: { 
+	         maxWidth: 480, 
+	         maxHeight: 320, 
+	      } 
+	   }, 
+		
+	   audio: true 
+	}
+	  
+	const configuration = { 
+		"iceServers": [{ "url": "stun:stun2.1.google.com:19302" }, {'url': 'stun:stun.services.mozilla.com'}]
+	}; 
+
+	const offerOptions = {
+		offerToReceiveVideo: 1,
+		offerToReceiveAudio: 1
+	};
+
+	//if a user is using a mobile browser 
+	if(/Android|iPhone|iPad/i.test(navigator.userAgent)) { 
+		  var constraints = mobileConstraints;   
+		  $(resultDiv).html("Android");
+	} else { 
+	   	var constraints = desktopConstraints; 
+		  $(resultDiv).html("Not Android");   
+	}
+	  
+	function hasUserMedia() { 
+	   //check if the browser supports the WebRTC 
+	   return !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia); 
+	}
+
+
+	function doCheckMedia(){
+		if (hasUserMedia()) {
+		  
+		   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+		   //enabling video and audio channels 
+		   navigator.getUserMedia(constraints, function (stream) { 
+		      var video = document.querySelector('video');
+				
+		      //inserting our stream to the video tag     
+		      
+		      remoteMediaStream = stream;
+			  	video.srcObject = remoteMediaStream;
+
+
+		      $(resultDiv).html("<h1>Congratulation!!</h1><p>Your Mobile is Support WebRTC</p>");
+				
+		   }, function (err) {
+		   		$(resultDiv).html("<h1>Sorry</h1><p>Check Error => " + JSON.stringify(err) + "</p>");
+		   }); 
+
+		} else { 
+		   	//alert("WebRTC is not supported"); 
+		   $(resultDiv).html("<h1>Your Mobile is not Support WebRTC</h1>");
+		}
+	}
+
+	function doCallMedia() {
+	   ws.send(JSON.stringify({
+			channel: "media",
+			type: "start",
+			name: myname,
+			sender: 'remote',
+			start: {start: 'start', channel: 'media', name: myname, id: ws.id, sender: 'remote'} 
+		}));  
+	}
+
+	function doStopMedia() {
+	   ws.send(JSON.stringify({
+			channel: "media",
+			type: "stop",
+			name: myname,
+			sender: 'remote',
+			stop: {stop: 'stop', channel: 'media', name: myname, id: ws.id, sender: 'remote'} 
+		}));  
+	}
+
+	function doConnect(){
+		ws = new WebSocket('wss://' + hostname + '/' + roomname + '?type=' + myname);
+		ws.onopen = function () {
+			console.log('Websocket is connected to the signaling server');
+		}
+
+		ws.onmessage = function (msg) {
+			//console.log("WS Got message", msg.data);
+			if ((msg.data !== '') && (msg.data !== 'Hello world')) {
+			   var data = JSON.parse(msg.data); 
+				if (data.type !== 'newclient')	{
+					switch(data.channel) { 
+					case "screen":
+					   switch(data.type) { 
+						//when somebody wants to call us 
+						case "offer": 
+							wsHandleOffer(data.offer, data.sender); 
+							break; 
+						case "answer": 
+							wsHandleAnswer(data.answer, data.sender); 
+							break; 
+						//when a remote peer sends an ice candidate to us 
+						case "candidate": 
+							wsHandleCandidate(data.candidate, data.sender); 
+							break; 
+						case "leave": 
+							wsHandleLeave(data.sender); 
+							break; 
+						default: 
+							break; 
+					   }
+					break;
+					case "media":
+					   switch(data.type) { 
+						//when somebody wants to call us 
+						case "offer": 
+							xsHandleOffer(data.offer, data.sender); 
+							break; 
+						case "answer": 
+							xsHandleAnswer(data.answer, data.sender); 
+							break; 
+						//when a remote peer sends an ice candidate to us 
+						case "candidate": 
+							xsHandleCandidate(data.candidate, data.sender); 
+							break; 
+						case "start": 
+							(function(data){
+								$('#rtcconnectcmd').prop('disabled', true);	 
+								$('#rtcdisconnectcmd').prop('disabled', false);
+							})(data.start);
+							break; 
+						case "leave": 
+							xsHandleLeave(data.sender); 
+							break; 
+						case "close": 
+							xsHandleClose(data.close, data.sender); 
+							break; 
+
+						default: 
+							break; 
+					   }
+					break;
+					case "chat":
+						switch(data.type) {
+						case "register": 
+							handleRegister(data);
+						break;
+						case "message": 
+							handleMessage(data.message);
+						break;
+						case "refresh": 
+							handleRefreshWindow();
+						break;
+						default: 
+							break; 
+						}
+					break;
+					default: 
+					break; 
+					}
+				} else {
+					//clientId = data.clientId;
+				}
+			}
+		}
+
+		ws.onerror = function (err) { 
+		   console.log("WS Got error", err); 
+		}
+
+		doInitConnecttion().then(function(connectStatus){
+			if (connectStatus.status.code === 200) {
+				setTimeout(function(){
+					doCheckMedia();
+					doCallMedia();
+				},4500);
+				$(resultDiv).html("<h1>Your Mobile is Support WebRTC</h1>");
+			}else {
+				$(resultDiv).html("<h1>Your Mobile is not Support WebRTC</h1>");
+			}
+		});
+	}
+
+	function doDisconnect(){
+		remoteMediaStream = null;
+		doStopMedia();
+		$('#rtcconnectcmd').prop('disabled', false);	 
+		$('#rtcdisconnectcmd').prop('disabled', true);
+	}
+
+	function doInitConnecttion(){
+		return new Promise(function(resolve, reject) {
+			remoteMediaConn = new RTCPeerConnection(configuration); 
+
+			remoteMediaConn.onicecandidate = function (event) { 
+				if (event.candidate) { 
+				   ws.send(JSON.stringify({ 
+						channel: "media",
+						type: "candidate", 
+						candidate: event.candidate,
+						sender: 'remote',
+						name: myname,
+						clientId: this.clientId
+				   })); 
+				} 
+			};
+
+		 	remoteMediaConn.oniceconnectionstatechange = function(event) {
+				console.log('RemoteMedia ICE state change event: ', event);
+				const peerConnection = event.target;
+				//console.log('remoteMediaConn.iceConnectionState: ' + remoteMediaConn.iceConnectionState);
+				const ref = peerConnection.iceConnectionState;
+				if (ref!== "closed" && ref !== "failed" && ref !== "disconnected" && ref !== "completed") {
+					remoteMediaConn = peerConnection;
+				}
+			};
+
+			remoteMediaConn.ontrack = function(event) {
+				remoteMediaStream = event.streams[0];
+				//console.log('Remote MediaConn ontrack event: ', event);
+				remoteMediaVideo.srcObject = remoteMediaStream;
+				event.track.onended = e => {
+					console.log('Remote Media Stream End!!');
+					remoteMediaVideo.srcObject = remoteMediaVideo.srcObject;
+				}
+			};
+			resolve({status: {code: 200}});
+		});
+	}
+
+	function xsHandleOffer(offer, sender) {
+		remoteMediaConn.setRemoteDescription(new RTCSessionDescription(offer));
+		
+		//create an answer to an offer 
+		remoteMediaConn.createAnswer(function (answer) { 
+			//console.log('Client\'s Answer with message' + JSON.stringify(answer));
+			remoteMediaConn.setLocalDescription(answer); 
+			ws.send(JSON.stringify({ 
+				channel: "media",
+				type: "answer", 
+				answer: answer,
+				sender: 'remote',
+				name: myname,
+				clientId: this.clientId,
+			})); 
+			
+	   }, function (error) { 
+			console.log('Media Creaate Answer Error: ' + JSON.stringify(error));
+	   }); 
+	}
+
+	//when we got an answer from a remote user
+	function xsHandleAnswer(answer, sender) { 
+		//console.log('The Answer from Remote: ' + JSON.stringify(answer));
+	   //remoteMediaConn.setLocalDescription(new RTCSessionDescription(answer)); 
+	};
+	  
+	//when we got an ice candidate from a remote user 
+	function xsHandleCandidate(candidate, sender) { 
+		//console.log('xsHandleCandidate=> ' + JSON.stringify(candidate));
+		console.log('xsHandleCandidate sender=> ' + sender);
+		if (sender === 'local') {
+			remoteMediaConn.addIceCandidate(new RTCIceCandidate(candidate)).then(
+				function() {
+					//$(statsBox).append('<p style="font-weight: bold;">remoteConn AddIceCandidate success.</p>');
+					console.log("remoteMediaConn AddIceCandidate success.");
+					//console.log("xsHandleCandidate ICE connection state: <After> " + remoteConn.iceConnectionState); 
+				},
+				function(error) {console.log('<p>remoteMediaConn Failed to add Ice Candidate:'+ error.toString() + '</p>');}
+			);
+		}
+	}
+
+	function handleRegister(data) {
+		console.log('Register Data: ' + JSON.stringify(data));
+		const userProfile = $('h2');
+		$(userProfile).text(data.clientNo);
+		$(clientProfile).css("display","block");	
+		$(clientProfile).append(userProfile);
+		clientId = data.clientId;
+		clientNo = data.clientNo;
+		if (data.masterId){
+			masterId = data.masterId;
+			console.log('data.masterId: ' + data.masterId);
+		}
+		if (data.masterNo){
+			masterNo = data.masterNo;
+		}
+	}
+
+
+</script>

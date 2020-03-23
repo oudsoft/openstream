@@ -1,0 +1,239 @@
+/* master.css */
+@font-face { font-family: THChakraPetch; src: url("../font/THChakraPetch/THChakraPetch.ttf");}
+@font-face { font-family: THNiramitAS; src: url("../font/THNiramitAS/THNiramitAS.ttf");}
+@font-face { font-family: THSarabunNew; src: url("../font/THSarabunNew.ttf");}
+@font-face { font-family: EkkamaiStandard-Light; src: url("../font/EkkamaiStandard-Light.ttf");}
+
+#Main {position: relative; width: 100%; /*min-height: 100%;*/ top: 110px;}
+#RoomHeaderDiv {position: relative;}
+#RoomName{
+	text-align: center;
+	display: block;
+	padding: 2px;
+	height: 100px;
+	width: 100%;
+	background-color: gray;
+	border-color: blue;
+	box-shadow: 3px 3px 5px 6px #ccc;
+}
+#ClockCountDown {z-index: 100; display: none; position:relative; bottom:40px; left:10px;}
+#MasterScreenLabel{position: relative;}
+#MasterScreenId{position: absolute; float: left; top: 5px; /* border: 3px solid blue; */}
+#ScreenProfile{position: absolute; /* border: 3px solid red; */ top: 35px; width: 99%; display: flex; justify-content: flex-end; }
+
+#VideoBox{position: relative; width: 69%; float: left;}
+#localScreen, #localMediaScreen, #mixedScreen{
+	position: relative;
+	margin-right: 10px;
+	left: 5px;
+	top: 5px;
+	bottom: 5px;
+	padding: 5px;
+	/* float: left; */
+}
+#localScreen {
+	border: 3px solid red;
+	height: auto;
+
+}
+#localMediaScreen {
+	border: 3px solid green;
+	height: 350px;
+}
+#mixedScreen {
+	border: 3px solid blue;
+	height: 420px; 
+	display: none; 
+}
+.NumberStep {
+	position: relative;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	height: 80px;
+	border: 1px solid blue;
+}
+.StepName {
+	margin-left: 10px;
+}
+.CicleStepMark {
+	border-radius: 50%;
+	width: 40px; 
+	height: 40px;
+	border: 3px solid red; 
+	background: #fff;
+	color: #666;
+	text-align: center;
+	padding: 10px; 
+	display: block;
+	font-size: 32px;
+	float: left;
+}
+.StreamSource {
+	position: absolute;
+	bottom: 24px;
+	right: 20px;
+}
+#control-local-screen {position: relative; left: 5px; padding: 5px; top: 5px;}
+video {
+	padding: 5px;
+	width: 50%;
+	/* border-radius: 5px; */
+	/* border: 1px solid black; */
+}
+#mixedVideo {
+	width: 520px;
+	height: auto;
+}
+.mixedVideoFullView {
+	max-width: 98%;
+	min-height: 112px;
+}
+.error-box {
+	border: 3px solid red;
+	display: none;
+	position: relative;
+	float: left;
+	clear: left;
+	color: red;
+	width: 100%;
+	top: 120px;
+	margin-top: 10px;
+}
+.stats-box {
+	border: 3px solid blue;
+	display: none;
+	position: relative;
+	float: left;
+	color: blue;
+	width: 100%;
+	top: 120px;
+	margin-top: 10px;
+}
+#AdXCanvasDiv {position: relative; z-index: 0; 	display: none;}
+/* Chat Area*/
+#ChatScreen {position: relative; width: 30%; float: left; right: 2px; top: 5px;}
+#MessageScreen {position: static; border: 1px solid black; height: 620px; right: 2px; top: 5px; 	overflow: auto; background-color: rgba(0,0,0,0.5); color: white; 	padding: 4px;}
+.ClientProfile {
+	position: relative;
+	border-radius: 50%;
+	width: 30px; 
+	height: 30px;
+	border: 3px solid blue; 
+	text-align: center;
+	padding: 5px; 
+	display: block;
+	cursor: pointer;
+	float: left;
+	font-size: 25px;
+}
+.ClientStatusOn {
+	background-color: rgba(255,255,0,0.5);
+}
+.ClientStatusOff {
+	background-color: rgba(160,160,160,0.5);
+}
+#ChatInput{position: relative;}
+#usermessage, #YouTubeUrl{
+	height: 40px;
+	font-size: 28px;
+}
+#sendcommand{
+	height: 40px;
+}
+.FrameMessage {
+	display: block;
+	width: 100%;
+	height: fit-content;
+	position: relative;
+	float: left;
+	/* border: 2px solid red; */
+}
+.SelfMessage {
+	/* text-align: right; */
+	float: right;
+	padding: 5px;
+	border: 1px solid green;
+	background-color: rgba(0, 255, 0, 0.75);
+	border-radius: 10px;
+	width: fit-content; 
+	height: fit-content;
+}
+.OtherMessage {
+	/*text-align: left; */
+	/*float: left;*/
+	clear: right;
+	padding: 5px;
+	border: 1px solid blue;
+	background-color: rgba(0, 0, 255, 0.75);
+	border-radius: 10px;
+	width: fit-content; 
+	height: fit-content;
+}
+.MeSenderMessage{
+	float: right;
+	clear: right;
+	font-size: 10px;
+	color: black;
+	display: block;
+	position: relative;
+	right: 4px;
+	top: -10px;
+}
+.SenderMessage{
+	font-size: 10px;
+	color: black;
+	display: block;
+	position: relative;
+	left: 4px;
+	top: -10px;
+}
+.SenderLogoProfile {
+	border-radius: 50%;
+	width: 30px; 
+	height: 30px;
+	border: 2px solid blue; 
+	text-align: center;
+	font-size: 14px;
+	margin-top: 2px;
+	vertical-align: middle;
+	display: block;
+	cursor: pointer;
+	color: black;
+}
+input[type="button"], input[type="file"], button { font-size: 24px;}
+
+#ConnectCmdBox {
+	text-align: center;
+	min-height: 150px;
+}
+#ClientProfilePopup {
+	padding: 10px;
+	text-align: center;
+}
+#VideoChatCmdDiv, #TextChatCmdDiv, #CloseCmdDiv {
+	padding: 10px;
+	width: 96%;
+}
+#SystemMessageBox{ display: none; top: 30px;}
+.error{ color: red;}
+.blink {  animation: blinker 1s linear infinite; }
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+.AlignBottom{position: absolute; width: 100%; bottom: 190px; padding: 2px;}
+.FullWidthCenter { position: relative; width: 100%; text-align: center; }
+#MediaTrackDiv, #ControlMediaTrack, #FrameMixedVideo, #ControlRemoteJoinTrack { position: relative;  float: left;}
+#ControlMediaTrack, #ControlRemoteJoinTrack {width: 60px; height: auto; }
+.switch{cursor: pointer; padding: 5px; position: relative; float: left;}
+.switch:hover{ zoom: 1.025;}
+#Mic-On-Cmd, #Webcam-On-Cmd {display: none; position: relative; float: left;}
+#Mic-Off-Cmd, #Webcam-Off-Cmd {display: none; position: relative; float: left;}
+#CloseRemoteJoinCmd {display: none; position: relative; float: left;}
+#ControlLocalDiv {position: relative;}
+#YoutubeShareDiv, #LocalFileShareDiv, #control-local-screen {position: absolute; padding: 5px; right: 1px; display: none; z-index: 11; background-color: #3cb344;}
+.video-file-info {background-color: aqua;}
+.video-file-error { background-color: red;  color: white;}
+#CallOpenLocalFileBar, #CallOpenYoutubeBar{display: none;}

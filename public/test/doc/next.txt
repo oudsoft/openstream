@@ -1,0 +1,352 @@
+-----------------------------------------------------------------------------------------------------------
+การประยุกต์ใช้งาน openstream
+==================================================
+ร้านอาหารกลางวัน จุดจอดพักรถ คุณสาหร่าย
+ร้านอาหารกลางคืน โรงเบียร์ฯ
+รถทัวร์ที่มีจอบนรถ
+รถเมล์ ขสมก.
+งานอีเวนต์
+งานแต่งงาน(แบบเลี้ยงโต๊ะจีน)
+ร้านกาแฟ อะเมซอล สามารถใช้วิธีเสียงตามสายแบบในโลตัสได้ โดยแยกภาพแยกเสียง
+
+คิดว่ายังมีอะไรอีกเยอะให้ค้นหามาผนวกอีกเยอะ คิดดีๆ คิดสิ คิดสิ คิด คิด
+	ชมหนังตะลุง/มโนราห์ แบบ สดๆ
+-----------------------------------------------------------------------------------------------------------
+สิ่งที่ต้องแก้ไขและปรับปรุงใน Openstream WebApp
+==================================================
+1. ทดสอบระบบ
+	7.1 หาวิธีเทสระบบข้ามเครือข่ายให้แน่ใจก่อนปล่อย <เทสครั้งที่ 1 ใช้ vpn ของ ราชมงคลอิสาน เป็น client ผลทดสอบ ผ่าน (2020-0116)>
+	7.2 ทดสอบเปิดห้อง 2, 3 ใช้งานพร้อมๆ กัน
+
+2. ทำ Video Chat มาใช้เล่นๆ เพื่อทดสอบการทำงานข้ามเครือข่าย และการใช้งานหลายห้องพร้อมๆ กัน
+	ใช้โครงของ Client.html
+		<Roomname>/<master>/00
+		<Roomname>/<client>/<d/m>/<00 ... 04>
+		<Roomname>/<vchat>/<r/e>/<00 ... 04>/<00 ... 04>
+
+3. Design Production version
+	3.1 Add Login of control.html
+		- Add Special Chat <ช่องทางแจ้งชำระเงิน>
+	3.2 Add Agency <openstream/panstream/auystream/ponstream/...>
+	3.3 Add Database
+		dbname openstremdb
+		user <userid/username/password/type/createat/updateat>
+		agency <userid/agencyname/promptpayNo/promptpayName/status<active/disable>/createat/updateat>
+		packagesale<id/name/size/uprice/>
+		paymentlog<agencyid/packagesaleid/roomname/openat/amount/>
+	3.4 Design Process
+		- Master ตั้งชื่อห้อง on satus=pending
+		- จะแยก type room อย่างไร ? ฟรี กับ จ่ายเงิน
+		- ออก QR ชำระเงิน
+		- ชำระเงิน
+		- แจ้งชำระเงิน ใช้ สลิป ชื่อห้อง
+		- ตรวจสอบหารชำระเงิน
+		- ตรวจสอบชื่อห้อง
+			- ผ่าน ปลดล็อค pendding -> active เข้าห้องได้
+			- ไม่ผ่าน ให้ตั้งชื่อห้องใหม่
+				- แจ้งชื่อใหม่ 
+				- ตรวจสอบชื่อห้องใหม่
+				- วน จนกว่าจะผ่าน
+				- ถ้าไม่ผ่าน คืนเงิน
+	3.5 ปรับปรุงระบบ Chat
+		- user แก้ไข profile ได้
+		- บันทึกข้อความ chat ลงใน localStoreage
+	3.5 สามารถจอง/ซื้อห้องได้ล่วงหน้า
+		- ระบุวันเวลาเริ่มเข้าใช้งาน
+	3.6 ปรับระบบเดืม(ฟรี) ให้สามารถปิดห้องได้เองด้วย node-cron
+	3.7 ในหน้า Client/Master ฟรี เพิ่ม javascript load Ad โฆษณา
+	3.8 เพิ่ม roomPackageType<Free/Paid>
+-----------------------------------------------------------------------------------------------------------------------------------
+Capture Screen Plugin
+
+https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk
+
+custom Capture Screen for Chrome Guide
+https://www.twilio.com/blog/2017/10/screen-capture-in-google-chrome.html
+-----------------------------------------------------------------------------------------------------------------------------------
+ $ sudo -u postgres psql
+ <psql --username postgres --host localhost --port 5432>
+ # create user openstream with password 'open@stream';
+ # alter role openstream superuser createrole createdb replication;
+ # create database openstreamdb owner openstream;
+ # \c openstreamdb
+
+CREATE TABLE users (
+  userid              SERIAL PRIMARY KEY,
+  username         VARCHAR(100) UNIQUE NOT NULL,
+  password  	VARCHAR(100) NULL,
+  type		VARCHAR(10) NULL,
+  createat		timestamp without time zone,
+  updateat		timestamp without time zone
+);
+
+CREATE TABLE users ( userid  SERIAL PRIMARY KEY, username  VARCHAR(100) UNIQUE NOT NULL, password  VARCHAR(100) NULL, type	VARCHAR(10) NULL, createat	 timestamp without time zone, updateat	timestamp without time zone );
+
+insert into users (username, password, type, createat, updateat) values ('openstream', md5('open@stream'), 'admin', now(), now());
+
+CREATE TABLE agency (id SERIAL PRIMARY KEY, userid integer, agencyname VARCHAR(100), promptpayno VARCHAR(20), promptpayname VARCHAR(100), status VARCHAR(20), createat timestamp without time zone, updateat timestamp without time zone);
+
+insert into agency (userid, agencyname, promptpayno, promptpayname, status, createat, updateat) values (1, 'openstream', '140000835077746', 'ประเสริฐ สุดชดา', 'active', now(), now());
+
+<paymentlog เอาบันทึกการปลดล็อค pending -> active>
+CREATE TABLE paymentlog (id SERIAL PRIMARY KEY, agencyid integer, roomtype VARCHAR(20), roomname VARCHAR(60), amount float, lastupd timestamp without time zone, billid integer);
+
+ALTER TABLE paymentlog ADD COLUMN new_column_name data_type;
+/*
+ id | agencyid | roomtype | roomname | amount | lastupd | billid
+----+----------+----------+----------+--------+---------+--------
+(0 rows)
+*/
+insert into paymentlog (agencyid, packagesaleid, roomname, amount, lastupd) values ();
+
+CREATE TABLE roomlogs (id serial NOT NULL PRIMARY KEY, rootname VARCHAR(40), log json NOT NULL, createat timestamp without time zone);
+SELECT id, rootname, log, createat FROM roomlogs ORDER BY createat DESC LIMIT 1
+
+CREATE TABLE bill (id SERIAL PRIMARY KEY, logid integer, customername VARCHAR(80), customertelno VARCHAR(20), lastupd timestamp without time zone);
+
+insert into bill (logid, customername, customertelno) values ();
+-----------------------------------------------------------------------------------------------------------------------------------
+
+	0. ค้างการปรับคลิกเปิดป็อปอัพโปรไฟล์จอลูกในหน้า master เพื่อเปิดระบบ vchat จาก master ไปหา client
+		- อาจจะเอามาต่อท้าย QR Code
+		- เอาไปทำพร้อมกับข้อ 5.
+	1. อัพโหลดรูป User Profile ผ่าน https
+		- ปรับ create New Roome ให้มี folder สำหรับอัพโหลดรูปของห้องนั้นได้
+			public/upoad/<Roomname>/
+		- ปรับ Close/Remove Room ให้ลบ folder นั้นทิ้ง
+		- กำหนด ประเภท ขนาด ไฟล์
+		- upload เสร็จ คืน link มา update avatarUrl
+	2. อัพโหลดรูปในห้อง Chat ผ่าน https
+	3. ปรับฐานข้อมูลเพิ่มเติม
+		agent
+			แก้ไขการล็อกอินของ agent/admin เช็ค staus==active จึงให้เข้าได้
+			ปรับหน้า control ให้แสดงเฉพาะ  rootname ของตัวเอง
+		render qrcode ของ callee vchat
+		render qrcode promptpay ของ agent เพื่อรับชำระเงิน
+	4.เปิด Chat ของ agency/admin ในหน้า control 
+		- เพิ่มการแจ้งชำระ
+			- file content/chatboxplugin.html 	รอการเอา ChatBoxe จาก http://magma.cs.uiuc.edu/wenpu1/chatbox.html เข้ามา apply
+		- เพิ่มตาราง paymentlog
+		- ปลดล็อค pendding ไปสู่ active
+	5. เปิดระบบตัว VIP ขาย 12 จอ
+		1 .master เข้าเปิดห้อง
+			เลือก stansard/upper
+		2. ปรับส่วนหัวของ chat Box ในหน้า Master เพราะมีลูก 12 จอ เป็นแนวตั้ง
+		3. เมื่อปรับ Master เสร็จแล้ว (รวมทั้งมีระบบแจ้งการชำระเงินด้วย) ให้เพิ่มปุ่ม ส่งข้อความ ในป็อปอัพ profile เพื่อส่งข้อความไปหาปลายทางเป็นรายบุคคล
+		4. ทดสอบ
+			ปัญหาที่พบ
+				การส่งข้อความ
+					การลบ room ในหน้า contol เมื่อสั่งลบห้องใดๆ ยังมีการลบห้องอื่นๆ ตามไปด้วย (เป็นบางครั้ง)
+				local video file
+					การเล่น local video file หลายๆ ไฟล์ แล้ววกกลับมา Get Screen ทำให้สัญญาณจอภาพค้าง
+			รายการที่ต้องแก้ไข/ปรับปรุง
+				upload image ของ indiChat พออัพหลายๆ รูปแล้วไม่ไป และไม่มี error msg  อะไร ทั้ง server[app/uploader.js] และ client/master
+				Save / Load Room to/from DB
+					Save ไม่มน่ามีปัญหา
+					Load น่ามีปัญหากับ Task Cron Job ของห้องที่ได้ stamptime แล้ว
+
+			cronjob แบบใหม่
+
+			upload stream ที่มาจากการ play AdTextTrack Stream ขึ้นไปบันทึกไฟล์ที่เซิร์ฟเวอร์
+				https://github.com/node-webrtc/node-webrtc
+				https://github.com/node-webrtc/node-webrtc-examples
+			Master เมื่อเปลี่ยน Screen ขณะ Realtime แล้วเหมือนมี Strem ค้างอยู่ใน page ไม่สามารถ refresh master page ได้
+			เสียงจากคลิปยูทูป
+				https://github.com/JamesKyburz/youtube-audio-stream
+			หาวิธีทำ api ให้ user login จากภายในองค์กร
+				https://www.npmjs.com/package/activedirectory
+				https://stackoverflow.com/questions/50622797/active-directory-authentication-with-nodejs
+			เพิ่ม ตัวอักษรวิ่งลงในจอ Conference
+
+
+		5. รายการแก้ไขแล้ว
+
+
+	6. ปรับหน้า Scan QR Login ให้ใช้งานง่ายขึ้น
+	7. รออัพเดท paymentlog (insert into paymentlog()) ในหน้า control
+		ติดปัญหาเรื่อง ใบเสร็จรับเงิน จะเอาอย่างไร?
+	8. สรุปสิ่งที่ต้องทำเพิ่ม ใน master
+		countdown clock
+		simple upload
+		show profile <seft/client>		
+		edit profile <self>
+		vchat
+		indivchat
+
+	9. ปรับข้อความต่างๆ เช่น warnning, วิธีใช้งานของ จอ master จอ client
+		- Warnning ให้แสดง เงื่อนไขการใช้งานต่างๆ อยู่ใน textarea โดยโหลดมาจาก text file
+		Open Stream หมายถึงระบบถ่ายทอดสัญญาณจอภาพระยะไกล จาก ต้นทาง แห่งหนึ่ง ไปยัง ปลายทาง หลายๆ แห่ง พร้อมๆ กัน
+		ปลายทางสามารถเข้าชมสัญญาณได้ในเวลาเดียวกัน On-Time / On-Air
+			ต้นทาง คือ Master
+			ปลายทาง คือ Client
+			กระแสข้อมูลที่เป็นภาพและเสียง จาก Master ไปยัง Client คือ สตรีมมิ่ง (Stream)
+		- master สามารถเป็นอุปกรณ์ใดได้บ้าง?
+		- Client ใช้กับอุปกรณ์ใดได้บ้าง?
+		- ต้องติดตั้งอะไรเพิ่มเติมอีกบ้าง
+		- เข้าใช้งานอย่างไร
+			-เปิดห้อง/ปิดห้อง
+		- ภาพ
+		- เสียง
+		- Chat ข้อความ/ข้อความ
+		- VChat
+		- การแก้ไขโปรไฟล์ รูป ชื่อ
+		- การปิดห้อง Stop Share
+	10. merge two streams
+		- แนวทางการ merge
+			https://github.com/t-mullen/video-stream-merger
+			แนวทางการใช้ require js file ใน html
+				https://github.com/volojs/create-template
+				https://www.tutorialspoint.com/requirejs/requirejs_quick_guide.htm
+
+		- แนวทางการสร้าง share screen บนสมาร์โฟน
+			https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API
+			https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API/Using_Screen_Capture
+		- แนวทาง get browser's tabs
+			https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows/getAll
+		- แนวทาง Recording Media Stream
+			https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API/Recording_a_media_element
+		- แนวทางการส่ง stream ขึ้น servers
+			upload stream
+				https://stackoverflow.com/questions/45402263/how-to-send-getusermedia-recorded-stream-to-server-nodejs-realtime
+				https://stackoverflow.com/questions/35899536/method-for-streaming-data-from-browser-to-server-via-http
+			view stream แบบระบุ จุด start stop
+				https://medium.com/better-programming/video-stream-with-node-js-and-html5-320b3191a6b6	
+
+		- ปรับ Code ของ Master ยกเลิกการใช้ localMediaStream ส่วน localStream เอา mixedStream มาใช้แทน
+			ทำค้างอยู่ที่ ปุ่ม Start/Stop
+				- เอา localStream กลับมา
+				- แยก mixedStream ไปต่างหาก เผื่อยังแก้ปัญหาความคมชัดของ screen ไม่ได้ จะได้ใช้ช่องทางเดิม
+		- ปรับ Code ของ Client
+			- css ClientProfile
+
+		- ปรับ candidate ของ server/openstream.js ให้สอดคล้องกับ offer และ answer ให้ใช้ PromiseList ด้วย
+		- หาวิธีปรับปรุงสัญญาณ mixedStream ที่ Master ให้ละเอียดขึ้น
+		- ให้ master สามารถส่ง stream ได้เป็นรายคน/Client
+		- ให้ master clear client session ได้
+	11. การโฆษณา
+		- แบบ (html+js) plugin on page
+		- แบบ add track to stream โดยบังคับให้เครื่อง master ไป load คลิปโฆษณา mp4 มา Add Track ลงใน mixedStream
+			- mergerStream สามารถเพิ่ม/ลด track ได้แบบ realtime
+
+	12. สร้าง javascript course
+		https://medium.com/20scoops-cnx/%E0%B9%80%E0%B8%A3%E0%B8%B4%E0%B9%88%E0%B8%A1%E0%B9%80%E0%B8%A3%E0%B8%B5%E0%B8%A2%E0%B8%99-javascript-js-cf8fb165545e
+	
+
+Note ICE
+	ตามความเข้าใจหมายถึง ทั้งฝั้ง Master และ Client อาจจะมีการเปลียนแปลงเส้นทาง
+	ในการเปลี่ยนเส้นทางที่เลือกใหม่จะต้องแจ้งให้อีกฝั่งรู้ด้วย
+ทดสอบว่า web browser สนับสนุน WebRTC หรือไม่
+	ที่ https://test.webrtc.org/
+	TURN => 	url => turn:58.137.157.66:3478
+			credential   =>  some-password
+			username   =>  some-username'	
+	STUN => url => stun:58.137.157.66:3478
+
+Google Chrome สามารถตรวจสอบการทำงานของ WebRTC ได้โดยเปิดแท็บใหม่แล้วป้อน chrome://webrtc-internals/ ลงในช่อง url
+วิธีแก้ปัญหาเมื่อต้องการแชร์พื้นที่ส่วนที่เป็น google chrome application แล้วติดจอ Master ไปด้วย
+	ให้เปิดใช้ google chrome application ใหม่แยกไปอีกหนึ่ง window แทน
+-----------------------------------------------------------------------------------------------------------------------------------
+
+Webscocket Upload
+	Client
+	https://www.esegece.com/websockets/articles/features/225-websocket-upload-files-from-javascript
+	Node Server
+	https://www.npmjs.com/package/socketio-file-upload
+
+-----------------------------------------------------------------------------------------------------------------------------------
+// hello.mjs
+export function hello(text) {
+  const div = document.createElement('div');
+  div.textContent = `Hello ${text}`;
+  document.body.appendChild(div);
+}
+<script type="module">
+  import('hello.mjs').then(module => {
+      module.hello('world');
+    });
+</script>
+
+-----------------------------------------------------------------------------------------------------------------------------------
+SCP UP
+$ cd workshop/node/openstream/public/js
+$ scp vchat.js sasurean@202.28.68.6:~/node/openstream/public/js
+SCP DOWN
+$ scp sasurean@202.28.68.6:~/node/openstream/public/js/vchat.js 
+-----------------------------------------------------------------------------------------------------------------------------------
+https://stackoverflow.com/questions/53684668/how-to-stop-a-node-cron-job
+https://www.npmjs.com/package/node-cron
+hoe to cancel node-cron
+2. NODE-CRON
+
+var cron = require('node-cron');
+
+const url_taskMap = {};
+const task = cron.scheduleJob('*/1 * * * * *',()=>{
+    //Foo the bar..
+});
+url_taskMap[url] = task;
+// for some condition in some code
+let my_job = url_taskMap[url];
+my_job.stop();
+
+-----------------------------------------------------------------------------------------------------------------------------------
+Individual Chat WS Server
+
+รีเซ็ตพาสเวิร์ด root
+https://www.cyberciti.biz/faq/change-root-password-ubuntu-linux/
+
+lsof -iTCP -sTCP:LISTEN -P
+
+kill node on 58.137.157.66
+pkill -f node
+-----------------------------------------------------------------------------------------------------------------------------------
+aspectRatio: => 14:10
+frameRate: => 25
+resolutions: => 1080 / 720
+-----------------------------------------------------------------------------------------------------------------------------------
+Javascript Function
+The function:
+
+function () {}
+returns nothing (or undefined).
+
+Sometimes we want to call a function right as we create it. You might be tempted to try this:
+
+function () {}()
+but it results in a SyntaxError.
+
+Using the ! operator before the function causes it to be treated as an expression, so we can call it:
+
+!function () {}()
+This will also return the boolean opposite of the return value of the function, in this case true, because !undefined is true. If you want the actual return value to be the result of the call, then try doing it this way:
+
+(function () {})()
+-----------------------------------------------------------------------------------------------------------------------------------
+
+save log ให้เก็บ rootname ด้วย
+
+เฟสบุค ให้แชร์เข้า messager
+
+-----------------------------------------------------------------
+		[ LOGO ]				เลขที่
+							วันที่
+		ใบเสร็จรับเงิน
+ลูกค้า/ผู้รับบริการ
+	ชื่อ
+	หมายเลขโทรศัพท์
+-----------------------------------------------------------------
+รายการสินค้า
+1. ห้องถ่ายทอดสัญญาณระยะใกล
+	ชื่อห้อง
+	ระยะเวลาใช้งาน 24 ชั่วโมง
+	จำนวน		ห้อง
+	ราคา			บาท
+-----------------------------------------------------------------
+รวม				บาท
+-----------------------------------------------------------------
+ขอบคุณที่ช่วยอุดหนุนสินค้าและบริการ
+
+เงื่อนของฟรทั้ง มหาลัย
+1. ต้องจัดหาอุปกรณ์ server ip domain name และ cert
+2. ต้องมี api ให้ user login เข้าใช้งาน
+3. พื้นที่ใต้ขอบจอ 1.5 ซม. ของทุกจอ เราขอ

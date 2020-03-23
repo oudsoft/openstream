@@ -1,0 +1,27 @@
+<video id="video1" width="160" height="120" autoplay></video>
+<video id="video2" width="160" height="120" autoplay muted></video><br>
+<div id="div"></div>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
+<script>
+var remoteConn = new RTCPeerConnection(), localConn = new RTCPeerConnection();
+
+var haveGum = navigator.mediaDevices.getUserMedia({video: true, audio: true});
+
+remoteConn.ontrack = e => video1.srcObject = e.streams[0];
+remoteConn.onicecandidate = e => localConn.addIceCandidate(e.candidate).catch(log);
+localConn.onicecandidate = e => remoteConn.addIceCandidate(e.candidate).catch(log);
+remoteConn.oniceconnectionstatechange = e => log(remoteConn.iceConnectionState);
+
+remoteConn.createOffer({offerToReceiveAudio: true, offerToReceiveVideo: true})
+  .then(d => remoteConn.setLocalDescription(d))
+  .then(() => localConn.setRemoteDescription(remoteConn.localDescription))
+  .then(() => haveGum)
+  .then(stream => localConn.addStream(video2.srcObject = stream))
+  .then(() => localConn.createAnswer()).then(d => localConn.setLocalDescription(d))
+  .then(() => remoteConn.setRemoteDescription(localConn.localDescription))
+  .catch(log);
+var div = document.getElementById("div");
+var log = msg => div.innerHTML += "<br>" + msg;
+
+</script>

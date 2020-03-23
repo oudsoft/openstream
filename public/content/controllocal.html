@@ -1,0 +1,402 @@
+<!-- controllocal.html -->
+<div id="control-medea" style="position: relative; float: right;">
+	Aspect Ratio: <select id="aspectRatio">
+		<option value="default">Default</option>
+		<option value="1.77">16:9</option>
+		<option value="1.33">4:3</option>
+		<option value="2.35">21:9</option>
+		<option value="1.4">14:10</option>
+		<option value="1.9">19:10</option>
+	</select>
+
+	Frame Rate: <select id="frameRate">
+		<option value="default">Default</option>
+		<option>30</option>
+		<option>25</option>
+		<option>15</option>
+		<option>5</option>
+	</select>
+
+	Resolutions: <select id="resolutions">
+		<option value="default">Default</option>
+		<option value="fit-screen">Fit Screen</option>
+		<option value="4K">4K</option>
+		<option value="1080p">1080p</option>
+		<option value="720p">720p</option>
+		<option value="480p">480p</option>
+		<option value="360p">360p</option>
+	</select>
+
+	<button id="btn-get-Stream" onclick="doGetScreenSignal()">OK</button>
+	<!--
+	Sound: <select id="sound">
+		<option value="off">Off</option>
+		<option value="on">On</option>
+	</select>
+
+	cursor: <select id="cursor">
+		<option value="default">Default</option>
+		<option>always</option>
+		<option>never</option>
+		<option>motion</option>
+	</select>
+
+	displaySurface: <select id="displaySurface">
+		<option value="default">Default</option>
+		<option>monitor</option>
+		<option>window</option>
+		<option>application</option>
+		<option>browser</option>
+	</select>
+
+	logicalSurface: <select id="logicalSurface">
+		<option value="default">Default</option>
+		<option>true</option>
+	</select>
+	-->
+</div>
+<!--
+<div id="locl-log" style="display: none;">
+	<textarea id="settings" style="width: 100%; height: 218px; display: none;"></textarea>
+	<br>
+	<textarea id="capabilities" style="width: 100%; height: 354px; display: none;"></textarea>
+</div>
+-->
+<script>
+
+function doGetScreenSignal() {
+
+	const doAddStopCaptureScreen = function(screen) {
+		addStreamStopListener(screen, function() {
+			if (screen === localStream){
+				let conf = confirm('โปรดยืนยันว่า "คุณต้องการปิดสัญญาณจอภาพที่กำลังแชร์อยู่ในขณะนี้ เพื่อออกจากห้อง?"\nยืนยันโดย ตกลง หรือ OK');
+				if (conf)	{
+
+					console.log('Screen Streaming Stop!!');
+					$('#btn-get-Stream').prop( "disabled", false );
+					let event = new CustomEvent("ReleaseStreamMergerCmd", { "detail": {}});
+					document.dispatchEvent(event);
+					localStream = null;
+					localMediaStream = null;
+					mixedStream = null;
+					doCallCloseMedia();
+				}
+			} else {
+				console.log('Remove Capture Id ' + screen.id);
+			}
+		});
+	}
+
+	const doGetScreenSignalSuccess = function(screen){
+		doAddStopCaptureScreen(screen);
+		localStream = screen;        
+      
+		localVideo.srcObject = localStream;
+
+		/*
+		var _capabilities = screen.getTracks()[0].getCapabilities();
+		//console.log(_capabilities);
+		$(capabilities).val('capabilities:\n\n' + JSON.stringify(_capabilities, null, '\t'));
+		$(capabilities).css({display: 'block'});
+
+		var _settings = screen.getTracks()[0].getSettings();
+		//console.log(_settings);
+		$(settings).val('settings:\n\n' + JSON.stringify(_settings, null, '\t'));
+		$(settings).css({display: 'block'});
+		delay(1500).then(() => {
+		  $(capabilities).css({display: 'none'});
+		  $(settings).css({display: 'none'});
+		});
+		*/
+		/*
+		doTestYoutube().then((ytStream) => {
+			console.log('ytStream', ytStream);
+			var audioTest = new Audio();
+			audioTest.controls = true;
+			audioTest.autoplay = true;
+			audioTest.id = 'TestYoutube';
+			audioTest.srcObject = ytStream;
+			audioTest.play();
+
+			document.body.appendChild(audioTest);
+
+			let audioTrack = ytStream.getAudioTracks()[0];
+			console.log('audioTrack', audioTrack);
+
+			localStream.addTrack(audioTrack);
+
+			localVideo.srcObject = localStream;
+		});
+		*/
+	};
+
+	const doGetScreenSignalError = function(e) {
+        var error = {
+            name: e.name || 'UnKnown',
+            message: e.message || 'UnKnown',
+            stack: e.stack || 'UnKnown'
+        };
+
+        if(error.name === 'PermissionDeniedError') {
+            if(location.protocol !== 'https:') {
+                error.message = 'Please use HTTPs.';
+                error.stack   = 'HTTPs is required.';
+            }
+        }
+
+        console.error(error.name);
+        console.error(error.message);
+        console.error(error.stack);
+
+        alert('Unable to capture your screen.\n\n' + error.name + '\n\n' + error.message + '\n\n' + error.stack);
+	};
+
+    invokeGetDisplayMedia(function(screen) {
+		//console.log(screen.getTracks());
+		//console.log(screen.getAudioTracks());
+		//console.log(screen.getVideoTracks());		
+		if (localVideo.srcObject)	{
+			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
+				if (conf)	{
+					var promiseList = new Promise(function(resolve, reject){
+						localStream.getTracks().forEach(track => track.stop());
+						localStream = screen;
+						localVideo.srcObject = localStream;
+						resolve(localStream);
+					});
+					Promise.all([promiseList]).then((ob)=>{
+						//console.log(ob[0]);
+						doAddStopCaptureScreen(screen);
+						if (mixedStream){
+							doReMixStream();
+							setTimeout(() => {
+								//console.log(mixedStream);
+								doUpdateStream(mixedStream);
+							}, 2500);
+						}
+					});
+				} else {
+					//console.log(localStream);
+					localVideo.srcObject = localStream;
+					if (mixedStream){
+						doMixStream();
+						setTimeout(() => {
+							doUpdateStream(mixedStream);
+						}, 2500);
+					}
+				}
+		} else {
+			doGetScreenSignalSuccess(screen);
+			doReadyShareStream();
+		}
+    }, function(e) {
+		doGetScreenSignalError(e);
+	});
+	$('#control-local-screen').slideToggle("slow");
+}
+
+function invokeGetDisplayMedia(success, error) {
+
+	/*
+    if(!Object.keys(videoConstraints).length) {
+        videoConstraints = true;
+    }
+	*/
+	/*
+    var displayMediaStreamConstraints = {
+        video: videoConstraints
+		/* video: {width: { ideal: 4096 }, height: { ideal: 2160 }} */
+		/* video:   {optional: [{minWidth: 320}, {minWidth: 640}, {minWidth: 1024},  {minWidth: 1280}, {minWidth: 1920},  {minWidth: 2560}  ]} */
+		/* video: {  width: { ideal: 4096 },   height: { ideal: 2160 } }  */
+		/*
+	};
+	*/
+	/*
+	const audioConstraints = {
+		echoCancellation: true,
+		noiseSuppression: true,
+		sampleRate: 44100
+	};
+	*/
+
+    if(navigator.mediaDevices.getDisplayMedia) {
+		var videoConstraints = {};
+
+		let aspectRatio = document.querySelector('#aspectRatio');
+		if(aspectRatio.value !== 'default') {
+			videoConstraints.aspectRatio = aspectRatio.value;
+		}
+
+		let frameRate = document.querySelector('#frameRate');
+		if(frameRate.value !== 'default') {
+			videoConstraints.frameRate = frameRate.value;
+		}
+
+	/*
+		if(cursor.value !== 'default') {
+			videoConstraints.cursor = cursor.value;
+		}
+
+		if(displaySurface.value !== 'default') {
+			videoConstraints.displaySurface = displaySurface.value;
+		}
+
+		if(logicalSurface.value !== 'default') {
+			videoConstraints.logicalSurface = true;
+		}
+	*/
+		let resolutions = document.querySelector('#resolutions');
+		if(resolutions.value !== 'default') {
+			if (resolutions.value === 'fit-screen') {
+				videoConstraints.width = screen.width;
+				videoConstraints.height = screen.height;
+			}
+
+			if (resolutions.value === '4K') {
+				videoConstraints.width = 3840;
+				videoConstraints.height = 2160;
+			}
+
+			if (resolutions.value === '1080p') {
+				videoConstraints.width = 1920;
+				videoConstraints.height = 1080;
+			}
+
+			if (resolutions.value === '720p') {
+				videoConstraints.width = 1280;
+				videoConstraints.height = 720;
+			}
+
+			if (resolutions.value === '480p') {
+				videoConstraints.width = 853;
+				videoConstraints.height = 480;
+			}
+
+			if (resolutions.value === '360p') {
+				videoConstraints.width = 640;
+				videoConstraints.height = 360;
+			}
+			
+		} else {
+			videoConstraints.width = screen.width;
+			videoConstraints.height = screen.height;
+		}
+
+		displayMediaStreamConstraints = {
+			video: videoConstraints
+		};
+		/*
+		let soundOption = document.querySelector('#sound');
+		if(soundOption.value === 'off') {
+			displayMediaStreamConstraints = {
+				video: videoConstraints
+			};
+		} else {
+			displayMediaStreamConstraints = {
+				video: videoConstraints, audio: { echoCancellation: true,  noiseSuppression: true, sampleRate: 44100, restrictOwnAudio: true }
+			};
+		}
+		*/
+		console.log(displayMediaStreamConstraints);
+
+        navigator.mediaDevices.getDisplayMedia(displayMediaStreamConstraints).then(success).catch(error);
+    }
+    else {
+        navigator.getDisplayMedia(displayMediaStreamConstraints).then(success).catch(error);
+    }
+}
+
+function addStreamStopListener(stream, callback) {
+    stream.addEventListener('ended', function() {
+		console.log('stream id '+ stream.id + ' ended');
+        callback();
+        callback = function() {};
+    }, false);
+	/*
+    stream.addEventListener('inactive', function() {
+        callback();
+        callback = function() {};
+    }, false);
+	*/
+    stream.getTracks().forEach(function(track) {
+        track.addEventListener('ended', function() {
+			console.log('track id '+ track.id + ' ended');
+            callback();
+            callback = function() {};
+        }, false);
+		/*
+        track.addEventListener('inactive', function() {
+			console.log('inactive');
+            callback();
+            callback = function() {};
+        }, false);
+		*/
+    });
+}
+
+function doTestYoutube() {
+	/*		แก้ปัญหาเรื่อง capture audio ไม่ได้
+			https://github.com/muaz-khan/Chrome-Extensions/tree/master/tabCapture
+			วิธีทำ chrome extension
+			https://thoughtbot.com/blog/how-to-make-a-chrome-extension
+			วิธีใช้งาน Snippet บน chrome
+
+	*/
+	return new Promise(function(resolve, reject) {
+		var vid = "TUmzyLS6wAQ";
+		//var vid = "5Dfd4M8_Xn4";
+		//var vid = "7W2_QxMgaRg";
+		var audio_streams = {};
+		var ytUrl = "https://"+vid+"-focus-opensocial.googleusercontent.com/gadgets/proxy?container=none&url=https%3A%2F%2Fwww.youtube.com%2Fget_video_info%3Fvideo_id%3D" + vid;
+		fetch(ytUrl).then(response => {
+			//console.log(response.ok);
+			if (response.ok) {
+				response.text().then(data => {
+					//console.log(data);
+					var data = parse_str(data);
+					//console.log(data);
+					let metaData = JSON.parse(data.player_response);
+					var AudioSounds = metaData.streamingData.adaptiveFormats;
+					var ytSound = AudioSounds.filter(function(sound, n) {
+						let itag = sound.itag * 1;
+						if (itag === 140){
+							return sound;
+						}
+					});
+					console.log(ytSound);
+
+					var audioSource = new Audio();
+					audioSource.controls = true;
+					audioSource.autoplay = true;
+					audioSource.src = ytSound[0].url;
+					audioSource.crossorigin = "anonymous";
+					audioSource.play();
+					document.body.appendChild(audioSource);
+
+					const ctx = new (window.AudioContext || window.webkitAudioContext)();
+					const audioStream = ctx.createMediaStreamDestination();
+					const sourceStream = ctx.createMediaElementSource(audioSource);
+					sourceStream.crossorigin = 'anonymous';
+					sourceStream.connect(audioStream);
+
+					const bStream = audioStream.stream;
+					console.log(bStream);
+					resolve(bStream);
+				});
+			} else {
+				alert('Error Fetch.');
+				reject('Error');
+			}
+		});
+	});;
+}
+function parse_str(str) {
+	return str.split('&').reduce(function(params, param) {
+		var paramSplit = param.split('=').map(function(value) {
+			return decodeURIComponent(value.replace('+', ' '));
+		});
+		params[paramSplit[0]] = paramSplit[1];
+		return params;
+	}, {});
+}
+</script>

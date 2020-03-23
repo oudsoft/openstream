@@ -1,0 +1,15 @@
+https://www.postgresql.org/docs/9.3/app-pgdump.html
+
+sudo -u postgres psql
+
+nrru
+pg_dump --host=202.29.4.211 --port=5432 --username=deployer -W --dbname=edoc_production -a -E=UTF8 --format=plain --attribute-inserts --file=edoc_production-data-2019-11-28.sql
+
+password
+
+rmuti
+pg_dump --host=203.158.192.76 --port=5432 --username=edoc -W --dbname=edoc_rmuti_production -E=UTF8 --format=tar --file=edoc_production_rmuti-schema-2019-11-21.backuup
+
+pg_dump --host=203.158.192.76 --port=5432 --username=edoc -W --dbname=edoc_rmuti_production -t tab -a -E=UTF8 --format=plain --file=edoc_production-data_rmuti-2019-11-21.sql
+
+E2019-db;

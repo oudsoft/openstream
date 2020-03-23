@@ -1,0 +1,221 @@
+Typescript Tutorial
+
+https://www.babelcoder.com/blog/posts/introduction-to-es2015
+https://www.babelcoder.com/blog/posts/typescript-data-types
+https://www.babelcoder.com/blog/posts/typescript-classes
+
+Generic คือการมองชนิดข้อมูล เป็นตัวแปร
+https://medium.com/angular-in-thailand/typescript-%E0%B8%84%E0%B8%B7%E0%B8%AD%E0%B8%AD%E0%B8%B0%E0%B9%84%E0%B8%A3-what-is-typescript-bdd1a58707e7
+
+Elasticsearch
+https://www.webmaster.or.th/articles/development/elasticsearch-101
+https://medium.com/machinereading/elasticsearch-%E0%B8%A0%E0%B8%B2%E0%B8%84%E0%B8%A5%E0%B8%B8%E0%B8%A2%E0%B8%AA%E0%B8%99%E0%B8%B2%E0%B8%A1-%E0%B8%95%E0%B8%AD%E0%B8%99%E0%B8%97%E0%B8%B5%E0%B9%88-1-19077ab210b3
+https://medium.com/machinereading/elasticsearch-%E0%B8%A0%E0%B8%B2%E0%B8%84%E0%B8%A5%E0%B8%B8%E0%B8%A2%E0%B8%AA%E0%B8%99%E0%B8%B2%E0%B8%A1-%E0%B8%95%E0%B8%AD%E0%B8%99%E0%B8%97%E0%B8%B5%E0%B9%88-2-4979e03b8e02
+https://medium.com/machinereading/elasticsearch-%E0%B8%A5%E0%B8%B8%E0%B8%A2%E0%B8%A0%E0%B8%B2%E0%B8%84%E0%B8%AA%E0%B8%99%E0%B8%B2%E0%B8%A1-%E0%B8%95%E0%B8%AD%E0%B8%99%E0%B8%97%E0%B8%B5%E0%B9%88-3-750473c46a04
+
+Lazy Load
+https://www.babelcoder.com/blog/posts/css-scroll-snap
+
+How To Run Typescript with Nodejs
+https://medium.com/pnpsolution/%E0%B8%A7%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%80%E0%B8%82%E0%B8%B5%E0%B8%A2%E0%B8%99-node-js-%E0%B9%81%E0%B8%9A%E0%B8%9A-type-script-aa1527417ad7
+https://itnext.io/building-restful-web-apis-with-node-js-express-mongodb-and-typescript-part-1-2-195bdaf129cf
+
+Passportjs<Stateless vs Stateful>
+https://medium.com/@kennwuttisasiwat/%E0%B8%97%E0%B8%B3-authentication-%E0%B8%9A%E0%B8%99-express-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2-passport-js-jwt-34fb1169a410
+
+Using dotenv
+https://medium.com/@thejasonfile/using-dotenv-package-to-create-environment-variables-33da4ac4ea8f
+
+เทคนิคการใช้ Short Cut Key ใน Terminal Linux
+https://medium.com/@chanonbagidea/%E0%B9%80%E0%B8%97%E0%B8%84%E0%B8%99%E0%B8%B4%E0%B8%84%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%83%E0%B8%8A%E0%B9%89-linux-terminal-74c82b59af28
+
+Nodejs & Excel
+https://medium.com/pnpsolution/%E0%B8%A7%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%AA%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%87-excel-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2-node-js-8363c0f63166
+
+
+external api
+ดินฟ้าอากาศ
+/***********************************************/
++++++ตัวอย่างโค้ดเรียกดูข้อมูลของกรมอุตุฯ (เป็น node.js กับ python)++++
+ช่วงนี้ไทยอาจเจอมรสุมเข้ามาในช่วง 4-6 ส.ค เราก็ควรติดตามข้อมูลจากกรมอุตุฯ อย่างใกล้ชิดนะครับ ทั้งนี้กรมอุตุฯ เขาเปิดบริการ API มานานพอควร เราสามารถเรียกดูข้อมูลอุตุนิยมวิทยา + ข้อมูลแผ่นดินไหว ได้อย่างง่ายๆ ซึ่งมีอยู่ 11 API ให้เลือกใช้ ตามลิงค์ http://data.tmd.go.th/api/index1.php
+
+แต่ก่อนใช้งานต้องสมัครเว็บข้างบน เพื่อขอ user id กับ user key เสียก่อน แล้วก็จะมีเมลมาให้เรายืนยันอีกที
+
+อันนี้เป็นรูปแบบ url เวลาเรียกดูข้อมูล "ข่าวเตือนภัยสภาพอากาศ ข่าวสารภูมิอากาศ ข่าวการติดตามสภาพอากาศร้าย"
+http://data.tmd.go.th/api/WeatherWarningNews/v1/…
+
+ตรงคำว่า demo กับ demokey ก็ให้ใส่ user id กับ user key ที่เราได้มา
+ทั้งนี้โดยดีฟอลต์เมื่อส่ง request นี้ไป ก็จะได้ response กลับมาเป็น XML
+
+ถ้าอยากได้ Response แบบ json ก็ให้ใส่ &format=json ต่อท้าย url เดิมประมาณเนี่ย
+http://data.tmd.go.th/api/WeatherWarningNews/v1/…
+
+สำหรับตัวอย่างซอร์สโค้ดเขียนโปรแกรม เอาไว้เรียกดูข้อมูล API ของกรมอุตุฯ ผมทำให้ดู 2 ภาษาเป็น Node.js กับ Python 
+https://gist.github.com/adminho/fbbc2fdeddb43dca3a33eade0d8555c0?fbclid=IwAR2Z1QPrm8du_0Kz6lreHABJjwnPgvyiB5TSanO6R4WxnDTnP1Lb8d99oLc
+
+สำหรับคู่มือ API อย่างละเอียด ก็ตามลิงค์นี้นะครับ 
+
+http://data.tmd.go.th/api/doc/reference/WeatherToday.pdf
+
+
+
+
+
+/********************************************/
+tmd api
+https://gist.github.com/adminho/fbbc2fdeddb43dca3a33eade0d8555c0?fbclid=IwAR2Z1QPrm8du_0Kz6lreHABJjwnPgvyiB5TSanO6R4WxnDTnP1Lb8d99oLc
+uid : u62oudsoft 
+ukey : 2a4ab0ab0f3cdffdf78fe6456838c9f2 
+url : http://data.tmd.go.th/api/WeatherWarningNews/v1/?uid=u62oudsoft&ukey=2a4ab0ab0f3cdffdf78fe6456838c9f2&format=json
+/********************************************/
+
+code ที่เป็น Elasticsearch-Server
+
+/********************************************/
+javascript / EXMAScript ครูขั้นเทพ
+http://www.hpc-thai.com/?p=795
+https://javascript.info/
+/********************************************/
+
+/********************************************/
+หากใช้ var
+
+var messages = ['Hello', 'JavaScript', 'es2015'];
+
+for (var i = 0; i < messages.length - 2; i++) {  
+  setTimeout(function() {
+    console.log(messages[i]);
+  });
+}
+
+// output
+// undefined
+// undefined
+// undefined
+หากใช้ let
+
+var messages = ['Hello', 'JavaScript', 'es2015'];
+
+for (let i = 0; i < messages.length - 2; i++) {  
+  setTimeout(function() {
+    console.log(messages[i]);
+  });
+}
+
+// output
+// Hello
+// JavaScript
+// es2015
+
+/********************************************/
+
+/********************************************/
+เมื่อก่อนเราสร้างคลาส ด้วย function ประมาณนี้
+
+function Person(name) {  
+  this.name = name;
+}
+
+Person.prototype.sayHi = function() {  
+  console.log('Hi, my name is ' + this.name);
+}
+
+แต่ถ้าเป็น ES6 เราสามารถใช้ Class syntax และ constructor ได้เลย แบบนี้
+
+class Person {  
+  constructor(name) {
+    this.name = name;
+  }
+
+  sayHi() {
+    console.log('Hi, my name is ' + this.name);
+  }
+}
+/********************************************/
+
+พริกกรอบ Chilli Crisps
+
+/********************************************/
+array functions
+https://medium.com/@camp191/javascript-%E0%B8%88%E0%B8%B1%E0%B8%94%E0%B8%81%E0%B8%B2%E0%B8%A3-array-%E0%B9%81%E0%B8%9A%E0%B8%9A%E0%B8%87%E0%B9%88%E0%B8%B2%E0%B8%A2%E0%B9%86-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2-map-filter-reduce-%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%9C%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%99-bfc84e59ebae
+/********************************************/
+
+
+/********************************************/
+/*
+	var shopid = req.params.shopid;
+	sessionHolders.keys("*", function (err, keys) {
+		var promiseList = new Promise(function(resolve,reject){
+			var orders = [];
+			if (err) return console.log(err);
+			keys.forEach(function(key){
+				sessionHolders.hgetall(key, function (err, result) {
+					if(result.tempOrder) {
+						var order = result;
+						order.userId = key;
+						//console.log("order -> " + JSON.stringify(order));
+						orders.push(order);
+						myModule.delay(450);
+					}
+				});
+			});
+			setTimeout(()=>{
+				resolve(orders);
+			},1200);
+		});
+		Promise.all([promiseList]).then((ob)=>{
+			res.status(200).send(ob[0]);
+		});
+	});       
+*/
+
+const numbers = [10, 20, 30, 40];
+
+/*
+const result = numbers.reduce((sum,number) => {
+  return sum+number
+}, 0)
+*/
+const result = numbers.reduce((p,v) => {
+    return ( p > v ? p : v );
+});
+
+console.log(result) // 100
+
+/********************************************/
+/********************************************/
+
+			dbman.doLoadLastOrderNo(shopid).then(function(lonoRow) {
+				var lono = Number(lonoRow[0].lono)
+				var nextOrderNo;
+				if(Number(lono) > 0) {
+					nextOrderNo = myModule.fullSeqNo(lono+1);
+				} else {
+					nextOrderNo = "0000000001";
+				}	
+/********************************************/        
+ต้องเก็บค่า timestamp ตอน saveOrder ด้วย(พร้อมๆ กับหาค่า nextOrderNo มาใส่)
+ถ้า order ค้างอยู่ใน sessionHolder เกิน 5 วัน ต้องส่ง confirm(yes/no) ไปให้user เลือกว่าจะ ลบ หรือ เก็บไว้
+
+
+
+/********************************************/   
+        return new Promise(async (resolve, reject) => {
+            try {
+                const promises: Promise<any>[] = [
+                    Ticket.getTicketByRange(option.from_timestamp, option.to_timestamp, false),
+                    Message.filterByPeriod(option.from_timestamp, option.to_timestamp)
+                ]
+                const result = await Promise.all(promises)
+                const tickets: Ticket[] = result[0]
+                const messages: Message[] = result[1]
+                const conversations: any[] = await this.extractConversationByTicket(messages, tickets)
+
+           } catch (err) {
+                console.log(err)
+            }
+
+        })
+/********************************************/   
+
+https://blog.thinknet.co.th/tech/debug-node-%E0%B8%94%E0%B9%89%E0%B8%A7%E0%B8%A2-chrome-devtools-%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1-productive

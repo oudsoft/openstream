@@ -1,0 +1,39 @@
+<!-- switchplugin.html -->
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>		
+		<title>Toggle</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		
+		<style>
+		#buttonOff {width: 220px; height: 220px;}
+		.ButtonClass
+			{	width: 220px;
+				height: 220px;
+				background-image: url(../imgs/logo/off.png);   
+				background-repeat: no-repeat; 
+				border: none;    
+			}
+			.switch{	cursor: pointer;}
+		</style>
+	</head>
+	<body>
+			<div>
+				<img src="../imgs/logo/off.png" height="60" width="auto" class="switch"/>
+				<img src="../imgs/logo/on.png" height="60" width="auto" class="switch"/>
+				<img src="../imgs/logo/fullview.png" height="80" width="auto" class="switch"/>
+			</div>
+			<div id="buttonOff"></div>
+	</body>
+</html>
+
+
+<script type="text/javascript">
+$("#buttonOff").addClass("ButtonClass");
+</script>

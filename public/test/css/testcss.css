@@ -1,0 +1,37 @@
+/* testcss.css */
+body{}
+#RoomHeaderDiv{position: relative;}
+#RoomName{
+	text-align: center;
+	display: block;
+	padding: 2px;
+	height: 100px;
+	width: 100%;
+	background-color: gray;
+	border-color: blue;
+	box-shadow: 3px 3px 5px 6px #ccc;
+}
+
+#MasterScreenLabel{position: relative;}
+#MasterScreenId{position: absolute; float: left; top: 5px; /*border: 3px solid blue;*/}
+#ScreenProfile{position: absolute; /*border: 3px solid red;*/ top: 30px; width: 100%; display: flex; justify-content: flex-end; }
+
+#Main{position: relative; width: 100%; min-height: 100%; top: 110px;}
+#VideoBox{position: relative; width: 66%; float: left;}
+#ChatScreen{position: relative; width: 30%; float: left; right: 2px; top: 0px;}
+
+#MessageScreen{position: static; border: 1px solid black; height: 620px; right: 2px; top: 5px;}
+#ChatInput{position: relative;}
+
+.ClientProfile{
+	position: relative;
+	border-radius: 50%;
+	width: 30px; 
+	height: 30px;
+	border: 3px solid blue; 
+	text-align: center;
+	padding: 5px; 
+	display: inline-block;
+	cursor: pointer;
+	float: left;
+} 

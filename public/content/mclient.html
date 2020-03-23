@@ -1,0 +1,77 @@
+<div data-role="page" data-theme="a">
+	<div>
+		<div id="RoomName"></div>
+
+		<div class="menu-tab">
+			<div id="one"></div>
+			<div id="two"></div>
+			<div id="three"></div>
+		</div>
+		<div class="menu-hide">
+			<nav>
+				<div id="ChatScreenBar">
+					<div id="ScreenProfile"></div>
+					<div id="MessageScreen"></div>
+					<div>&nbsp;</div>
+					<div id="ChatInput">
+						<p>โปรดใช้คำสุภาพในข้อความที่ต้องการส่ง</p>
+						<input type="text" id="usermessage" size="20" placeholder="พิมพ์ข้อความ"/>
+						<input type="button" id="sendcommand" value=" ส่ง "/>
+						<input type="button" id="sendImgcommand" value=" ส่งรูป "/>
+						<input type="file" id="ImgUpload" name="imagemsg" style="display: none;" onChange="doSendImage()"/>
+						<p id="ErrorInputMessage" style="color: red;"></p>
+					</div>
+				</div>
+			</nav>
+		</div>
+	</div>
+	<div id="SystemMessageBox"></div>
+	<div id="Main">
+		<div id="MainScreen">
+			<table id="ClientScreenTable">
+				<tr>
+					<td width="100%" align="left">
+						<div id="ClientScreenLabel">
+							<span id="ClientScreenMark"><h1>Client Screen</h1></span>
+							<span>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+							<span id="ClientProfileLogo" class="ClientProfile ClientStatusOff"></span>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td align="left">
+						<div id="ClientControlBar">
+							<div class="switch" id="OnCmd"><img src="imgs/logo/on.png"  height="50px" width="auto"/></div>
+							<div class="switch" id="OffCmd"><img src="imgs/logo/off.png" height="50px" width="auto"/></div>
+							<div class="switch" id="FullCmd"><img src="imgs/logo/fullview.png" height="60" width="auto"/></div>						
+						</div>
+					</td>
+				</tr>
+			</table>
+			<div id="Client-Area">
+				<div id="MetalFrame" class="metal linear" onclick="doReScale()">
+					<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+				</div>
+
+				<video id="remoteMediaVideo" class="remoteMediaNormal" autoplay playsinline></video>
+			</div>
+		</div>
+	</div>
+	<div class="error-box"></div>
+	<div class="stats-box"></div>
+</div>
+<div id="WaitingLayout" class="loading"></div>
+<div id="ClientProfilePopup">
+	<div id="AvatarImgDiv"></div>
+	<div id="DisplayName"></div>
+	<div id="VideoChatCmdDiv" class="FullWidthCenter"><button id="OpenVideoCallCmd">Video Call</button></div>
+	<div id="TextChatCmdDiv" class="FullWidthCenter"><button id="OpenTextChatCmd">ส่งข้อความ</button></div>
+	<div id="CloseCmdDiv" class="FullWidthCenter"><button id="ClosePopupCmd" onclick="doCloseClientProfilePopup()">ปิด</button></div>
+</div>
+<div id="VideoCallInteruptPopup" style="text-align: center;">
+	<div id="AcceptCmdDiv" style="padding: 5px;"><button id="AcceptCmd">รับสาย</button></div>
+	<div id="NotAcceptCmdDiv"  style="padding: 5px;"><button id="NotAcceptCmd" onclick="doNotAcceptInterupt()">ไม่รับสาย</button></div>
+</div>
+<div id="VchatPopup">
+	<div id="VchatContent"></div>
+</div>

@@ -1,0 +1,88 @@
+<!-- testchatbox2.html -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="../shortcut icon" type="image/x-icon"/>
+                    
+		<title>Open Stream - Receiver</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link href="../css/index.css" rel="stylesheet"/>
+		<script src="../js/utility.js"></script>
+		<link type="text/css" href="../css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<script type="text/javascript" src="../lib/jquery.ui.chatbox.js"></script>
+		<script type="text/javascript" src="../lib/chatboxManager.js"></script>
+		<script type="text/javascript" src="../lib/simpleUpload.min.js"></script> 
+	</head>
+	<body>
+		<!-- <div id="PanelBar" style="text-align: center; width: 100%; border: 3px solid blue;">Open Stream - Receiver</div> -->
+		<div id="chat_div"></div>
+	</body>
+</html>
+
+<script type="text/javascript">
+const chathostname = window.location.hostname;
+const chatrootname = window.location.pathname.split('/')[1];
+
+let ws = null;
+
+let chatroomname = 'Admin';
+
+let RootName = chatrootname;
+let RoomName = chatroomname;
+
+
+var counter = 0;
+var idList = new Array();
+
+doConnect();
+
+function doConnect() {
+	ws = new WebSocket('wss://' + chathostname + '/' + chatrootname + '/' + chatroomname + '/' + RoomName + '?type=vchat&screenno=00');
+	ws.onopen = function () {
+		console.log('Websocket is connected to the signaling server');
+	}
+	ws.onmessage = function (msg) {
+		if (msg.data !== 'Hello world') {
+			var data = JSON.parse(msg.data);
+			console.log(data);
+			if (data.message) {
+				let existId = chatboxManager.search(data.sender);
+				if (existId < 0) {
+
+					counter ++;
+					var id = "box" + counter;
+					idList.push(id);
+					chatboxManager.addBox(id, 
+							{dest: "dest" + counter,
+							title: data.sender,
+							user: {name: data.sender}
+						});
+					//event.preventDefault();
+					existId = chatboxManager.search(data.sender);
+					var rmBox = chatboxManager.roomBox(existId);
+					console.log(rmBox);
+					$('#'+ rmBox).chatbox("option", "boxManager").addMsg(data.sender, data.message.msg, data.message.msgtype);
+				} else {
+					var rmBox = chatboxManager.roomBox(existId);
+					console.log(rmBox);
+					$('#'+ rmBox).chatbox("option", "boxManager").addMsg(data.sender, data.message.msg, data.message.msgtype);
+				}
+			}
+		}
+	}
+
+	chatboxManager.init({messageSent : sendMessageCallback});
+
+	function sendMessageCallback(id, user, msg, type) {
+		console.log(id, user, msg, type);
+		$("#" + id).chatbox("option", "boxManager").addMsg('You', msg, type);
+		const AdminName = 'Officer';
+		let msgSend = {type: 'indiv-message', rootname: RootName, roomName: chatroomname, sender: AdminName, recver: user.name, message: {msgtype: type, msg}};
+		ws.send(JSON.stringify(msgSend));  
+	}
+}
+</script>

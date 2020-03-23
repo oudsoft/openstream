@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+		</style>
+	</head>
+	<body>
+		<div><video id="Monitor" style="width: 520px; height: auto;" autoplay controls playsinline></video></div>
+		<div><button id="ytButton" onclick="doTestYoutube()">Test Youtube</button></div>
+	</body>
+</html>
+
+<script>
+	function doLoadYoutubeAudioStream(urlReq){
+		return new Promise(function(resolve, reject) {
+			var url = "/openstream/proxy";
+			$.post(url, {url: urlReq}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doTestYoutube() {
+		var ytUrl = "https://r2---sn-qxoedn7z.googlevideo.com/videoplayback?expire=1584733567&ei=H8l0Xq_sEcqJkwbY5r84&ip=66.249.84.115&id=o-ANuOweDuo6R_zL-nuv_YKAwMpU_zt2tdVfj_-DJID1Oz&itag=18&source=youtube&requiressl=yes&mh=-L&mm=31%2C29&mn=sn-qxoedn7z%2Csn-qxo7rn7s&ms=au%2Crdu&mv=u&mvi=1&pl=28&vprv=1&mime=video%2Fmp4&gir=yes&clen=99617725&ratebypass=yes&dur=1912.093&lmt=1548003572174861&mt=1584711419&fvip=2&c=WEB&txp=5531432&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cvprv%2Cmime%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=ADKhkGMwRQIhAOg3fQGOp6R5rvDVkDAjNk6EV1dmXedteSSd0ipSlQ8WAiB2Tx7UwpCuwnyuyMLX1sbzDbq9TQkQg_QTRxws8U7Slw%3D%3D&lsparams=mh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl&lsig=ABSNjpQwRQIgZ2F0fiLxmPF8-Lfj9GIWZD3mVsyMTwf-tZ-eC-wRrcUCIQDK0biwyhiXgj9zpaph-caO2bdG2BDuSZjT3nGjgB-Hpg%3D%3D";
+
+		var clipUrl = '/openstream/video/videoplayback.mp4';
+
+		var videoMonitor = document.getElementById('Monitor');
+		videoMonitor.crossorigin = 'anonymous';
+		videoMonitor.src = ytUrl;
+		videoMonitor.play();
+
+		const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+		const source = ctx.createMediaElementSource(videoMonitor);
+		source.crossorigin = 'anonymous';
+
+		const dest = ctx.createMediaStreamDestination();
+
+		source.connect(dest);
+
+		const bStream = dest.stream;
+		console.log(bStream);
+
+		let audioTrack = bStream.getAudioTracks()[0];
+		console.log('audioTrack', audioTrack);
+
+		var audioTest = new Audio();
+		audioTest.controls = true;
+		audioTest.autoplay = true;
+
+		audioTest.srcObject = bStream;
+		//audioTest.srcObject = audioObj.captureStream();
+		console.log(audioTest);
+		audioTest.play();
+
+		document.body.appendChild(audioTest);
+		/*
+		doLoadYoutubeAudioStream(ytUrl).then((data) => {
+			console.log(data);
+		});
+		*/
+	}
+
+</script>

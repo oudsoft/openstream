@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+		</style>
+	</head>
+	<body>
+		<video id="Monitor" autoplay playsinline></video>
+		<div id="AdXCanvasDiv"></div>
+		<button onclick="doStart()">Start</button>
+		<button onclick="doStop()">Stop</button>
+		<video id="Output" autoplay playsinline></video>
+		<button onclick="doShowme()">play show me please</button>
+		<div id="Logger"></div>
+	</body>
+</html>
+
+<script>
+	const INT_REC = 1000;
+	const uploadUrl = '/openstream/uploadstream';
+	let cCmd = 'blank';
+	let output;
+	let webmstream;	
+	let media;
+
+	const mediaSource = new MediaSource();
+	mediaSource.addEventListener('sourceopen', handleSourceOpen, false);
+	let mediaRecorder;
+	let sourceBuffer;
+
+	doInit();
+
+	function doInit(){
+		output = document.querySelector("#Output");
+		output.oncanplay = function() {
+			output.play();
+		}
+
+		webmstream = null;	
+		media = document.createElement("video");
+		media.oncanplay = function() {
+			webmstream = media.captureStream();
+			output.srcObject = webmstream
+		}
+	}
+
+	function doStart() {
+		let event = new CustomEvent("StartMakeStreamCmd", { "detail": {}});
+		document.dispatchEvent(event);
+	}
+
+	function doStop() {
+		let event = new CustomEvent("StopUploadCmd", { "detail": {cmd: 'close'}});
+		document.dispatchEvent(event);
+	}
+
+	function doShowme() {
+		media.src = "/openstream/video/usr/upload/video.webm";
+		media.play();
+	}
+
+	function getCCmd(){
+		return cCmd;
+	}
+
+	document.addEventListener("StreamReady", function(e) {
+		$('#Logger').empty();
+		let stream = e.detail.stream;
+		customRecordStream(stream);
+		$('#Logger').append('<p>Start...</p>');
+	});
+
+	document.addEventListener("StopUploadCmd", function(e) {
+		cCmd = 'close';
+		$('#Logger').append('<p>Stop...</p>');
+		mediaRecorder = null;
+		let event = new CustomEvent("StopMakeStreamCmd", { "detail": {cmd: 'close'}});
+		document.dispatchEvent(event);
+	});
+
+	function customRecordStream(stream) {
+		// should actually check to see if the given mimeType is supported on the browser here.
+		//let options = { mimeType: 'video/mp4; codecs=avc1.42E01E, mp4a.40.2' };
+		let options = { mimeType: 'video/webm;codecs=vp9' };
+		//let options = { mimeType: 'video/webm;codecs=h264' };
+		mediaRecorder = new MediaRecorder(stream, options);
+		mediaRecorder.ondataavailable = postBlob 
+		mediaRecorder.start(INT_REC)
+	};
+
+	function postBlob(event){
+		if (event.data && event.data.size > 0) {
+			sendBlobAsBase64(event.data);
+		}
+	}
+
+	function handleSourceOpen(event) {
+		sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+		//sourceBuffer = mediaSource.addSourceBuffer('video/webm;codecs=h264"');
+	} 
+
+	let countClose = 0;
+
+	function sendBlobAsBase64(blob) {
+		const reader = new FileReader();
+
+		reader.addEventListener('load', () => {
+			const dataUrl = reader.result;
+			const base64EncodedData = dataUrl.split(',')[1];
+			console.log(base64EncodedData);
+			if (getCCmd() === 'blank'){
+				sendDataToBackend(base64EncodedData);
+			} else {
+				if (countClose===0){
+					sendDataToBackend(base64EncodedData);
+					countClose++;
+				}
+			}
+		});
+
+		reader.readAsDataURL(blob);
+	};
+
+	function sendDataToBackend(base64EncodedData) {
+		let cmd = getCCmd();
+		console.log(cmd)
+
+		const body = JSON.stringify({ data: base64EncodedData, cmd: cmd });
+		fetch(uploadUrl, {
+			method: 'POST',
+			headers: {
+			'Content-Type': 'application/json',
+		},
+		body
+		}).then(res => {
+			return res.json()
+		}).then(json => console.log(json));
+	}; 
+
+</script>

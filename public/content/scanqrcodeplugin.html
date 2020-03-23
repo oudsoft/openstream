@@ -1,0 +1,335 @@
+<!-- scanqrcodeplugin.html -->
+<div id="tabs-1">
+  <h2 id="title-form">
+      สแกนคิวอาร์โค้ด เพื่อเข้าใช้งานระบบ Open Stream
+  </h2>
+  <div style="text-align: center">
+      <img alt="ภาพคิวอาร์โค้ดจากกล้องหรือจากไฟล์ที่อัพโหลด" height="240" id="scanned-img" src="" width="320"/>
+  </div>
+  <p id="scanned-QR" class="userhelp"> คลิกปุ่ม <b>Play</b> เพื่อเปิดสัญญาณภาพจากกล้อง แล้วปรับภาพ QR Code ที่ต้องการสแกนให้อยู่ในกรอบโฟกัสสีแดง</p>
+  <p id="scanned-QR" class="userhelp"> คลิกปุ่ม <b>Upload QR Code Picture</b> เพื่ออัพโหลด QR Code เข้ามาสแกน</p>
+  <hr/>
+  <div style="text-align: center">
+      <div class="well" style="position: relative;display: inline-block;">
+          <canvas height="240" id="webcodecam-canvas" width="320"></canvas>
+          <div class="scanner-laser laser-rightBottom" style="opacity: 0.5;"></div>
+          <div class="scanner-laser laser-rightTop" style="opacity: 0.5;"></div>
+          <div class="scanner-laser laser-leftBottom" style="opacity: 0.5;"></div>
+          <div class="scanner-laser laser-leftTop" style="opacity: 0.5;"></div>
+      </div>
+  </div>
+  <hr/>
+  <div id="video-control-panel" style="border: #000; border-width: 3px;">
+      <b>
+          กล้อง :
+      </b>
+      <select class="form-control" id="camera-select" style="display: inline-block;width: auto;">
+      </select>
+      <input id="play-cmd" type="button" value=" Play "/>
+<!--
+      <input class="disabled" id="grab-cmd" type="button" value=" Image Shot "/>
+      <input id="stop-cmd" type="button" value=" Stop "/>
+-->
+      <input id="decode-img" type="button" value="Upload QR Code Picture"/>
+      <input id="image-url" placeholder="Image url" readonly="true" type="text"/>
+  <!--
+      <br/>
+      <b>
+          Zoom :
+      </b>
+      <input id="zoom" max="30" min="10" onchange="changeZoom();" type="range"/>
+      <br/>
+
+      <b>
+          Brightness :
+      </b>
+      <input id="brightness" max="128" min="0" onchange="changeBrightness();" type="range" value="0"/>
+      <br/>
+      <b>
+          Sharpness :
+      </b>
+      <input id="sharpness" onchange="changeSharpness();" type="checkbox"/>
+      <br/>
+      <b>
+          Grayscale :
+      </b>
+      <input id="grayscale" onchange="changeGrayscale();" type="checkbox"/>
+
+  </div>
+  <br/>
+  <br/>
+  <hr/>
+  <div id="userhelp" style="border: solid #00ff00 4px; margin-left: 10px; margin-top: 10px; padding-left: 10px; height:100%;">
+
+  </div>
+  <div>
+  </div>
+  <div style="text-align: center">
+      <input id="soundtest-cmd" type="button" value="ทดสอบเสียง"/>
+  </div>
+  <div id="sound-control-panel">
+      <audio id="audiotag1" preload="auto" src="audio/beep.mp3"></audio>
+  </div>
+</div>
+  -->
+<audio id="audiotag1" preload="auto" src="audio/beep.mp3"></audio>
+
+<style type="text/css">
+	.scanner-laser{
+	  position: absolute;
+	  margin: 20px;
+	  height: 30px;
+	  width: 30px;
+	}
+	.laser-leftTop{
+	  top: 0;
+	  left: 0;
+	  border-top: solid red 5px;
+	  border-left: solid red 5px;
+	}
+	.laser-leftBottom{
+	  bottom: 0;
+	  left: 0;
+	  border-bottom: solid red 5px;
+	  border-left: solid red 5px;
+	}
+	.laser-rightTop{
+	  top: 0;
+	  right: 0;
+	  border-top: solid red 5px;
+	  border-right: solid red 5px;
+	}
+	.laser-rightBottom{
+	  bottom: 0;
+	  right: 0;
+	  border-bottom: solid red 5px;
+	  border-right: solid red 5px;
+	}
+	.scanbarcode {
+	  width: 100%;
+	  text-align: center;
+	}
+	.userhelp {
+		text-align: left; 
+		font-size: 24px; 
+		/*
+		font-weight: bold; 
+		text-shadow: 1px 1px #949494;
+		*/
+	}
+</style>
+
+<script src="js/barcode/qrcodelib.js" type="text/javascript"></script>
+<script src="js/barcode/webcodecamjquery.js" type="text/javascript"></script>
+<script src="js/barcode/filereader.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+	/*
+	$('#userhelp').load('content/howtoscanqrcode.html');
+	setTimeout(()=> {
+		$('#userhelp').accordion({collapsible: true, active: false});
+	},1500);
+	*/
+	var scannerLaser = $(".scanner-laser");
+	var scannedImg = $("#scanned-img");
+	var scannedQR = $("#scanned-QR");
+	var imageUrl = $("#image-url");
+	var grabImg = $("#grab-img");
+	var zoom = $("#zoom");
+	var contrast = $("#contrast");
+	var brightness = $("#brightness");
+	var sharpness = $("#sharpness");
+	var grayscale = $("#grayscale");
+
+   	$(scannedImg).hide();
+
+	var args = {
+	    autoBrightnessValue: 100,
+	    resultFunction: function(res) {
+	        [].forEach.call(scannerLaser, function(el) {
+	            $(el).fadeOut(300, function() {
+	                $(el).fadeIn(300);
+	            });
+	        });
+	        mybeep();
+            	$(scannedImg).show();
+	        $(scannedImg).attr("src", res.imgData);
+	        $(scannedQR).text(res.format + ": " + res.code);
+	        /*****************************/
+	        doUserLogin(res.code);
+	        /*****************************/
+	    },
+	    getDevicesError: function(error) {
+	        var p, message = "Error detected with the following parameters:\n";
+	        for (p in error) {
+	            message += (p + ": " + error[p] + "\n");
+	        }
+	        console.log(message);
+	    },
+	    getUserMediaError: function(error) {
+	        var p, message = "Error detected with the following parameters:\n";
+	        for (p in error) {
+	            message += (p + ": " + error[p] + "\n");
+	        }
+	        console.log(message);
+	    },
+	    cameraError: function(error) {
+	        var p, message = "Error detected with the following parameters:\n";
+	        if (error.name === "NotSupportedError") {
+	            var ans = confirm("Your browser does not support getUserMedia via HTTP!\n(see: https://goo.gl/Y0ZkNV).\n You want to see github demo page in a new window?");
+	            if (ans) {
+	                //window.open("https://www.myshopman.com/mshop/resource/barcode/simplejquery.jsp");
+	            }
+	        } else {
+	            for (p in error) {
+	                message += p + ": " + error[p] + "\n";
+	            }
+	            console.log(message);
+	        }
+	    },
+	    cameraSuccess: function() {
+	        grabImg.removeClass("disabled");
+	    }
+	};
+
+	function fadeOut(el, v) {
+	    el.style.opacity = 1;
+	    (function fade() {
+	        if ((el.style.opacity -= 0.1) < v) {
+	            el.style.display = "none";
+	            el.classList.add("is-hidden");
+	        } else {
+	            requestAnimationFrame(fade);
+	        }
+	    })();
+	}
+
+	function fadeIn(el, v, display) {
+	    if (el.classList.contains("is-hidden")) {
+	        el.classList.remove("is-hidden");
+	    }
+	    el.style.opacity = 0;
+	    el.style.display = display || "block";
+	    (function fade() {
+	        var val = parseFloat(el.style.opacity);
+	        if (!((val += 0.1) > v)) {
+	            el.style.opacity = val;
+	            requestAnimationFrame(fade);
+	        }
+	    })();
+	}
+
+	changeZoom = function(a) {
+	    if (decoder.isInitialized()) {
+	        var value = typeof a !== "undefined" ? parseFloat(a.toPrecision(2)) : zoom.val() / 10;
+	        decoder.options.zoom = value;
+	    }
+	};
+
+	changeContrast = function() {
+	    if (decoder.isInitialized()) {
+	        var value = contrast.val();
+	        decoder.options.contrast = parseFloat(value);
+	    }
+	};
+
+	changeBrightness = function() {
+	    if (decoder.isInitialized()) {
+	        var value = brightness.val();
+	        decoder.options.brightness = parseFloat(value);
+	    }
+	};
+
+	changeSharpness = function() {
+	    if (decoder.isInitialized()) {
+	        var value = sharpness.prop("checked");
+	        if (value) {
+	            decoder.options.sharpness = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+	        } else {
+	            decoder.options.sharpness = [];
+	        }
+	    }
+	};
+
+	changeGrayscale = function() {
+	    if (decoder.isInitialized()) {
+	        var value = grayscale.prop("checked");
+	        if (value) {
+	            decoder.options.grayScale = true;
+	        } else {
+	            decoder.options.grayScale = false;
+	        }
+	    }
+	};
+
+	var decoder = $("#webcodecam-canvas").WebCodeCamJQuery(args).data().plugin_WebCodeCamJQuery;
+
+	decoder.init();
+
+	var cameraSelect = $("#camera-select");
+	decoder.buildSelectMenu(cameraSelect, 'user|front').init(args);
+
+	$(document).on("click", "#play-cmd", function() {
+	    scannedQR.text("Scanning ...");
+	    grabImg.removeClass("disabled");
+	    decoder.play();
+	});
+
+	$(document).on("click", "#grab-cmd", function() {
+	    scannedImg.attr("src", decoder.getLastImageSrc());
+	});
+
+	$(document).on("click", "#stop-cmd", function() {
+	    grabImg.addClass("disabled");
+	    scannedQR.text("Stopped");
+	    decoder.stop();
+	});
+
+	$(document).on("click", "#decode-img", function() {
+	    if (decoder.isInitialized()) {
+	        decoder.decodeLocalImage(imageUrl.val());
+	    }
+	    imageUrl.val(null);
+	});
+
+	$("#camera-select").on("change", function() {
+	    if (decoder.isInitialized()) {
+	        decoder.stop();
+	        //decoder.play();
+	    }
+	});
+
+	$(document).on("click", "#soundtest-cmd", function() {
+	    mybeep();
+	});
+
+	function mybeep() {
+	    $('#audiotag1')[0].play();
+	}
+
+	$(document).on("click", "#back-cmd", function() {
+	    back2productmng();
+	});
+
+	$(document).on("click", "#open-helpuser-cmd", function() {
+	    $("#userhelp").popup('open');
+	});
+
+	$(document).on("click", "#close-helpuser-cmd", function() {
+	    $("#userhelp").popup('close');
+	});
+
+	function doTest(){
+		alert('OK')
+	}
+
+	/*Control Login Section */
+	function doUserLogin(url){
+
+		setTimeout(()=>{
+	       		window.location = url;
+	       	}, 1500);
+		
+	}
+
+</script>

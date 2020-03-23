@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+		<title>Open Stream</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link type="text/css" href="css/jquery.ui.chatbox.css" rel="stylesheet" />
+		<script type="text/javascript" src="lib/jquery.ui.chatbox.js"></script>
+		<script type="text/javascript" src="lib/chatboxManager.js"></script>
+		<script type="text/javascript" src="lib/simpleUpload.min.js"></script> 
+		<script src="lib/notify.min.js"></script>
+		<script src="js/utility.js"></script>
+		<script src="js/client.js"></script>
+		<link rel="stylesheet" href="css/client.css" />
+		<link rel="stylesheet" href="css/metalic.css" />
+	</head>
+	<body>
+
+	</body>
+</html>
+
+<script>
+
+	/*User Register Before go in room section */
+	function doRequestCheckRoom(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/checkroom/" + params.roomname;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestCheckScreen(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/checkscreen/" + params.roomname + '/' + params.screenno;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestVerifyScreen(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/verifyscreen/" + params.roomname + "/" + params.screenno + "/" + params.clientId;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function doRequestAddUser(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/addnewuser/" + params.roomname + "/" + params.screenno;
+			//console.log(url);
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
+	function getQueryRequest(){
+		let url = window.location.href;
+		let queryparams = url.split('?')[1];
+		let params = queryparams.split('&');
+		let pair = null;
+		let data = [];
+		params.forEach(function(d) {
+		    pair = d.split('=');
+		    let param = {key: pair[0], value: pair[1]};
+		    data.push(param);
+		});
+
+		return data;
+	}
+	function doToggleChatScreen() {
+		$('#ChatScreen').toggle("slide", { direction: "left" }, 1200);
+	}
+	function doUserRegister(){
+		let showErrorMsg = function() {
+			$('#SystemMessageBox').addClass('error');
+			$('#SystemMessageBox').addClass('blink');
+			$('#SystemMessageBox').show("slide", { direction: "left" }, 1200);
+	    		setTimeout(()=>{
+				$('#SystemMessageBox').hide("slide", { direction: "right" }, 1200);
+	    		}, 5000);
+		}
+		
+		let openScreen = function() {
+			roomname = roomnames[0].value;
+			screenno = screennos[0].value;
+
+			$('#Main').show();
+			$('#RoomName').html('<h1>' + roomname + ' Room</h1>');
+			$('#ClientProfileLogo').html('<b>' + screenno + '</b>');
+			doInitSystem();
+			initScreenProfileClient(screenno);
+		}
+		let querys = getQueryRequest();
+		let roomnames = querys.filter((item)=>{
+			if (item.key === 'roomname') return item;
+		});
+		let screennos = querys.filter((item)=>{
+			if (item.key === 'screenno') return item;
+		});
+		let clientId = querys.filter((item)=>{
+			if (item.key === 'clientId') return item;
+		});
+
+		//console.log(JSON.stringify(roomnames) + ':' + JSON.stringify(screennos));
+		//console.log(screennos[0].value.length);
+		let errMsg;
+
+		if (screennos[0].value.length === 2)	{
+			let scnno = Number(screennos[0].value);
+			if ((scnno >= 1) && (scnno <= 24)) {
+				//clientNo = screennos[0].value;
+				let params = {roomname: roomnames[0].value};
+				doRequestCheckRoom(params).then((statusR) => {
+					//console.log(JSON.stringify(status));
+					/*
+						statusR.status.code === 200 >> ยังไม่มีห้องชื่อนี้
+						statusR.status.code === 201 >> มีห้องชื่อนี้แล้ว
+					*/
+					if (statusR.status.code === 201) {
+						params = {rootname: rootname, roomname: roomnames[0].value, screenno: screennos[0].value};
+						doRequestCheckScreen(params).then((statusS) => {
+							//console.log(statusS);
+							if (statusS.status.code === 200) {
+								doRequestAddUser(params).then((statusU) => {
+									if (statusU.status.code === 200) { 
+										openScreen();
+									} else {
+											$('#SystemMessageBox').html('ไม่สามารถลงทะเบียนเข้าใช้งานได้โปรดติดต่อ ...');
+										showErrorMsg();
+									}
+								});
+							} else if (statusS.status.code === 204){
+								errMsg = 'หมายเลขหน้าจอที่คุณต้องการเข้าใช้งานไม่ถูกต้อง\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
+								$('#SystemMessageBox').html(errMsg);
+								showErrorMsg();
+							} else if (statusS.status.code === 201){
+								openScreen();
+							} else {
+								errMsg = 'หน้าจอที่คุณต้องการเข้าใช้งานมีผู้อื่นเข้าใช้แล้ว\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
+								//console.log(clientId);
+								if (clientId.length > 0) {
+									params = {roomname: roomnames[0].value, screenno: screennos[0].value, clientId: clientId[0].value};
+									doRequestVerifyScreen(params).then((status) => {
+										//console.log(status);
+										if (status.status.code === 200) { 
+											openScreen();
+										} else {
+											$('#SystemMessageBox').html(errMsg);
+											showErrorMsg();
+										}
+									});
+								} else {
+										$('#SystemMessageBox').html(errMsg);
+									showErrorMsg();
+								}
+							}
+						});
+					} else {
+						$('#SystemMessageBox').html('ห้องที่คุณต้องการเข้าใช้งานยังไม่ได้สร้างขึ้นมา\nโปรดสร้างห้องที่ต้องการก่อน');
+					showErrorMsg();		    	
+				}
+				});
+			} else {
+				$('#SystemMessageBox').html('หมายเลขหน้าจอไม่ถูกต้อง\nระบบไม่อนุญาติให้เข้าใช้งานโปรดติดต่อผู้ใช้งานหน้าจอหลัก(Master) เพื่อแก้ไขปัญหา');
+				showErrorMsg();
+			}
+		} else {
+			$('#SystemMessageBox').html('หมายเลขหน้าจอไม่ถูกต้อง\nระบบไม่อนุญาติให้เข้าใช้งานโปรดติดต่อผู้ใช้งานหน้าจอหลัก(Master) เพื่อแก้ไขปัญหา');
+			showErrorMsg();
+		}
+	}
+
+	function doGetWsState() {
+		if (ws) {
+			return ws.readyState;
+		} else {
+			return -1;
+		}
+	}
+
+	function doRefreshPage() {
+		console.log('test refresh.');
+		ws.close();
+	    const hostname = window.location.hostname;
+		let url = 'https://' + hostname + '/' + rootname + '/client/' + roomname + '/d/' + screenno + '/' + clientId;
+		window.location = url;
+	}
+
+	/* Control Client Screeen System Section */
+
+	var remoteVideo;
+	//var remoteVideo = document.querySelector('#remoteScreenVideo');
+
+	var remoteMediaVideo = document.querySelector('#remoteMediaVideo');
+
+	var remoteStream;
+
+	var remoteMediaStream;
+
+	function doStartShareScreen() {
+		doCallStream();
+	}
+
+	function doStartShareMedia() {
+		doCallMedia();
+	}
+
+	var msgScreen;
+	//var msgScreen = document.querySelector('#MessageScreen');	
+
+	var msgLog = $('#msg-log');
+
+	var screenProfile;
+	//var screenProfile = document.querySelector('#ScreenProfile');
+
+	var clientId;
+	var clientNo;
+
+	var masterId;
+	var masterNo;
+
+	var errorBox = $('.error-box');
+	var statsBox = $('.stats-box');
+
+	document.onkeydown = function (e) {
+		e = e || window.event;
+		//if (e.ctrlKey){
+			//console.log(e.ctrlKey);
+			if ((e.keyCode == '48') || (e.keyCode == '96')){
+				//key number 0
+				$('.error-box').toggle();
+				$('.stats-box').toggle();
+			}
+			else if ((e.keyCode == '49') || (e.keyCode == '97')) {
+				//key number 1
+				doStartShareScreen();
+			}
+			else if ((e.keyCode == '50') || (e.keyCode == '98')) {
+				//key number 2
+				doStartShareMedia();
+			}
+			else if ((e.keyCode == '51') || (e.keyCode == '99')) {
+				//key number 3
+				doDisconnect(screenno);
+			} 
+		//}
+	};
+
+	$(document).ready(function() {
+
+		//let checkMobile = isMobile();
+		//console.log(checkMobile);
+		//let checkMobile = false; //for desktop test
+		let querys = getQueryRequest();
+		let types = querys.filter((item)=>{
+			if (item.key === 't') return item;
+		});
+		let type = types[0].value;
+		let clientcontentFile = '';
+		if (type === 'm') {
+			//Mobile
+			clientcontentFile = 'content/mclient.html';
+			$('<link>')
+			  .appendTo('head')
+			  .attr({
+			      type: 'text/css', 
+			      rel: 'stylesheet',
+			      href: 'css/menustyle.css'
+			});
+		} else if (type === 'd'){
+			//Desktop
+			clientcontentFile = 'content/dclient.html';
+		}
+		$('body').load(clientcontentFile, function() {
+			screenProfile = document.querySelector('#ScreenProfile');
+			remoteVideo = document.querySelector('#remoteScreenVideo');
+			msgScreen = document.querySelector('#MessageScreen');	
+
+			document.addEventListener("ClientLogoClick", function(e) {
+				//console.log(e.detail);
+				doOpenClientProfilePopup(roomname, screenno, e.detail.fromId, e.detail.clientId);
+				$('#ClientProfilePopup').dialog('option', 'title', 'User Profile');
+				$('#ClientProfilePopup').dialog('open');
+			});
+
+			$('#Main').hide();
+			doUserRegister();
+			doManageClientProfileClickEvent();
+			doLoadSimpleUpload();
+			$('#sendImgcommand').on('click', function() {
+				$('#ImgUpload').click();
+			});
+			if (type === 'm') {
+				// Mobile
+				let screenW = screen.width;
+				let LeftMenuNewWidth = 500;
+				if (screenW > 1200) {
+
+				}
+				$('.menu-tab').click(function(){
+					$('.menu-tab').toggleClass('active');
+					$('.menu-hide').toggleClass('menu-show');
+				});
+				$('#ChatScreen').css({position: 'relative', width: '98%'});
+				$('#ScreenProfile').css({position: 'absolute', display: 'block', margin: '4px', width: '100%', /*border: '3px solid red',*/ top: '95px', left: '20px'});
+				$('#MessageScreen').css({position: 'relative', top: '80px', width: '99%', height: '500px'});
+				$('.ClientProfile').css({position: 'relative', width: '50px', height: '50px', padding: '5px'});	
+				$('#ChatInput').css({position: 'relative', top: '40px', padding: '5px'});
+			} else  if (type === 'd') {
+				//Desktop
+			}
+			$('#ClientProfilePopup, #VideoCallInteruptPopup, #VchatPopup').dialog({ 
+				modal: true, autoOpen: false, resizable: false, width: 450, title: 'Client Profile', 
+			});
+			$(".ui-dialog-titlebar-close").click((e) => { 
+				doCloseClientProfilePopup();
+			});
+			$("#OnCmd").on("click", function() {
+				doConnect();
+				$("#OnCmd").toggle();
+				$("#OffCmd").toggle();
+				$("#FullCmd").toggle();
+				$("#ClientProfileLogo").removeClass("ClientStatusOff").addClass("ClientStatusOn");
+			});	
+			$("#OffCmd").on("click", function() {
+				doDisconnect(screenno);
+				$("#OnCmd").toggle();
+				$("#OffCmd").toggle();
+				$("#FullCmd").toggle();
+				$("#ClientProfileLogo").removeClass("ClientStatusOn").addClass("ClientStatusOff");
+			});	
+			$("#FullCmd").on("click", function() {
+				doRequestFullScreen();
+			});
+		});
+	});
+
+	function doInitSystem(){
+		$('#MessageScreen').load('content/clientguide.html');
+		$('#btn-connect-server').text( "Start Connect" );
+		$('#btn-connect-server').attr( "onclick", "doConnect()" );
+		//$('#btn-start-screen-call').prop( "disabled", true );
+		//$('#btn-start-media-call').prop( "disabled", true );
+		//$('#btn-stop-screen-call').prop( "disabled", true );
+		$('#btn-start-screen-call').hide();
+		$('#btn-start-media-call').hide();
+		$('#btn-request-fullscreen').prop( "disabled", true );
+		$('#usermessage').prop( "disabled", true );
+		$('#sendcommand').prop( "disabled", true );
+		$('#sendImgcommand').prop( "disabled", true );
+		//$('#ScreenProfile').empty();
+		$('#sendcommand').on('click', function(event) {
+			event.preventDefault();
+			doSendMessage();
+		});
+
+		$('#usermessage').on("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				doSendMessage();
+			}
+		});
+		let anyVideo = $('#remoteScreenVideo').get(0);
+		anyVideo.pause();
+		anyVideo.currentTime = 0;
+		anyVideo.srcObject = null;
+		/*
+		anyVideo = $('#remoteMediaVideo').get(0);
+		anyVideo.pause();
+		anyVideo.currentTime = 0;
+		anyVideo.srcObject = null;
+		*/
+		$('#ControlRefresh').hide();
+	}
+
+	function doHiddenScreen() {
+		let scrW = $('#remoteScreenVideo').css('width');
+		let scrH = $('#remoteScreenVideo').css('height');
+		console.log(scrW);
+		$('#remoteScreenVideo').hide();
+		$('#btn-start-screen-call').text( "Show Stream").show();
+		$('#btn-start-screen-call').attr( "onclick", "doShowScreen()");
+		let tempDiv = $('<div id="tempDiv" style="width: ' + scrW + '; height: ' + scrH + '; border: 3px solid green;"></div>');
+		let remoteMediaVideo = $("#remoteMediaVideo");
+		$("#remoteMediaVideo").remove();
+		$('#Client-Area').append($(tempDiv))
+		$('#Client-Area').append($(remoteMediaVideo))
+		console.log($('#Client-Area').html());
+	}
+
+	function doShowScreen() {
+		let tempDiv = $('#Client-Area').find($('#tempDiv'));
+		console.log($(tempDiv));
+		$(tempDiv).remove();
+		$('#remoteScreenVideo').show();
+		$('#btn-start-screen-call').text( "Close Stream").show();
+		$('#btn-start-screen-call').attr( "onclick", "doHiddenScreen()");
+	}
+
+	function doHiddenMedia() {
+		$('#remoteMediaVideo').hide()
+		$('#btn-start-media-call').text( "Show Media").show();
+		$('#btn-start-media-call').attr( "onclick", "doShowMedia()" );
+	}
+
+	function doShowMedia() {
+		$('#remoteMediaVideo').show();
+		$('#btn-start-media-call').text( "Close Media").show();
+		$('#btn-start-media-call').attr( "onclick", "doHiddenMedia()" );
+	}
+
+	function doReadySystem(){
+		$('#btn-connect-server').text("Disconnect");
+		$('#btn-connect-server').attr( "onclick", "doDisconnect('" + screenno + "')" );
+		$('#btn-start-screen-call').prop( "disabled", false );
+		$('#btn-start-media-call').prop( "disabled", false );
+		$('#btn-stop-screen-call').prop( "disabled", false );
+		$('#btn-request-fullscreen').prop( "disabled", false );
+		$('#usermessage').prop( "disabled", false );
+		$('#sendcommand').prop( "disabled", false );
+		$('#sendImgcommand').prop( "disabled", false );
+		$('#MessageScreen').empty();
+		$('#ControlRefresh').toggle();
+		//$('#RefreshWarnning').load('content/refreshwarnning.html');
+		let checkMobile = isMobile();
+		//console.log(checkMobile);
+		if (checkMobile) {
+			setTimeout(()=>{
+				$('#WarnningContent').hide();
+			}, 9000);
+		}
+	}
+
+	function doManageClientProfileClickEvent(){
+		let isFirstClick = true;
+		document.addEventListener("ClientProfileClick", function(e) {
+			if (isFirstClick) {
+				backupMsgContent = msgScreen.innerHTML;
+				isFirstClick = false;
+			}
+			doShowEditUserProfileForm(e.detail.screenNo); 					
+		});
+	}
+
+	function requestSendMessage(type, msg, fromId, toId) {
+	   ws.send(JSON.stringify({ 
+			channel: "chat",
+			type: "message", 
+			message: {msgtype: type, msg: msg, timestamp: new Date(), clientname: myname, fromId: fromId, toId: toId, roomName: roomname, rootname: rootname},
+			name: myname,
+			sender: 'client',
+			sendto: toId,
+			roomName: roomname,
+			rootname: rootname
+	   })); 
+	}
+
+	function doSendMessage() {
+		var userMsg = $('#usermessage').val();
+		//console.log('Sender=> ' + clientNo);
+		//console.log('Sender=> ' + screenno);
+		if (userMsg !== '') {
+			var isRude = doCheckRude(userMsg);
+			if (!isRude) {
+				requestSendMessage('text', userMsg, screenno, 'all');
+				$('#usermessage').val('');
+			} else {
+				$('#ErrorInputMessage').empty();
+				$('#ErrorInputMessage').text('ข้อความที่คุณกำลังจะส่งมีคำไม่สุภาพประกอบอยู่ โปรดแก้ไขด้วย');
+				$('#usermessage').focus();
+			}
+
+		} else {
+			alert("โปรดพิมพ์ข้อความที่ต้องการส่ง");
+			$('#usermessage').focus();
+		}
+	}
+
+	function doSendImage() {
+		const defSize = 200000;
+		var fileSize = $('#ImgUpload')[0].files[0].size;
+		if (fileSize <= defSize) {
+			var uploadUrl = "/" + rootname+ "/uploadimagemsg/" + roomname + '/' + screenno;
+			$('#ImgUpload').simpleUpload(uploadUrl, {
+				start: function(file){ },
+				progress: function(progress){ },
+				success: function(data){
+					//console.log('Uploaded.', data);
+					//$('#avatarImg').attr('src', data.link);
+
+					ws.send(JSON.stringify({ 
+						channel: "chat",
+						type: "message", 
+						message: {msgtype: 'image', msg: data.link, timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
+						name: myname,
+						sender: 'client',
+						sendto: 'all',
+						roomName: roomname,
+						rootname: rootname
+					})); 
+					$("#ImgUpload").replaceWith($("#ImgUpload").val('').clone(true));
+				},error: function(error){ }
+			});
+		} else {
+			alert('File not excess ' + defSize + ' Byte.');
+		}
+	}
+
+	function doCallOpenVchat(roomname, screenno, calleeno, calleeId) {
+		doCloseClientProfilePopup();
+		$('#VchatPopup').dialog('option', 'title', 'Video Call');
+		$('#VchatPopup').dialog('option', 'width', '720');
+		$('#VchatPopup').dialog('option', 'height', 'auto');
+		$('#VchatPopup').dialog('open');
+		$('#VchatContent').load('content/vchat.html', function() {
+			initCaller(screenno, calleeno, clientId, calleeId);
+		});
+	}
+
+	function doCallOpenTchat(RoomName, ScreenNo, Callee) {
+		/** Initial Admin Chat *******/
+		console.log(RoomName, ScreenNo, Callee);
+		let sendername = RoomName + '-' + ScreenNo;
+		let receivname = RoomName + '-' + Callee;
+		setSenderName(sendername);
+		setReceiverName(receivname);
+		doCreateNewBox(receivname);
+		doCloseClientProfilePopup();
+	}
+
+	function doOpenClientProfilePopup(roomname, screenno, calleeno, calleeId) {
+		let params = {rootname: rootname, roomname: roomname, screenno: calleeno};
+		//console.log(params);
+		doRequestUserProfile(params).then((user)=>{
+			//console.log(user);
+			if (user.screen) {
+				if (user.profile.avatarUrl){
+					let avatarImg = $('<img>');
+					$(avatarImg).attr('src', user.profile.avatarUrl);
+					$(avatarImg).css('width', '100px');
+					$(avatarImg).css('height', 'auto');
+					$('#AvatarImgDiv').append($(avatarImg));
+				}
+				$('#DisplayName').html('<h2  class="ClientProfile ClientStatusOn">' + user.screen.screenno + '</h2>');
+				if (user.profile.displayname) $('#DisplayName').append('<h3>' + user.profile.displayname + '</h3>');
+				$('#OpenVideoCallCmd').attr( "onclick", "doCallOpenVchat('" + roomname + "', '" + screenno +"', '" + calleeno + "', '" + user.screen.clientId + "')" );
+				$('#OpenTextChatCmd').attr( "onclick", "doCallOpenTchat('" + roomname + "', '" + screenno +"', '" + calleeno + "')" );
+				$('.menu-tab').click();
+			} else {
+				alert('Something Wrong!!');
+			}
+		});
+
+	}
+	function doCloseClientProfilePopup() {
+		$('#ClientProfilePopup').dialog('close');
+	}
+	/*
+	function requestFullScreen(element) {
+		return new Promise(function(resolve, reject) {
+			// Supports most browsers and their versions.
+			var requestMethod = element.requestFullScreen || element.webkitRequestFullScreen || element.mozRequestFullScreen || element.msRequestFullScreen;
+			if (requestMethod) { // Native full screen.
+				requestMethod.call(element);
+				var width = window.innerWidth;
+				var height = window.innerHeight;
+				resolve({width: width, height: height});
+			} else if (typeof window.ActiveXObject !== "undefined") { // Older IE.
+				var wscript = new ActiveXObject("WScript.Shell");
+				if (wscript !== null) {
+					wscript.SendKeys("{F11}");
+				}
+				resolve(null);
+			}
+		});
+	}
+	*/
+	function doRequestFullScreen() {
+		//var frameVideo = document.querySelector('#Client-Area');
+		//var frameVideo = document.querySelector('#ClientScreen');
+		requestFullScreen(remoteVideo).then((wh) => {
+			//Other Setting on exitFullScreenHandler() function.
+		});
+	}
+
+	if (document.addEventListener)	{
+		document.addEventListener('fullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('mozfullscreenchange', exitFullScreenHandler, false);
+		document.addEventListener('MSFullscreenChange', exitFullScreenHandler, false);
+		document.addEventListener('webkitfullscreenchange', exitFullScreenHandler, false);
+	}
+
+	var toggleFullScreen = false;
+
+	function exitFullScreenHandler(){
+		if (document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement !== null)	{
+			toggleFullScreen = !toggleFullScreen;
+			//console.log(toggleFullScreen);
+			if (toggleFullScreen){
+				$('#remoteScreenVideo').removeClass('remoteScreenNormal');
+				$('#remoteScreenVideo').addClass('remoteScreenFull');
+				$('#remoteMediaVideo').removeClass('remoteMediaNormal');
+				$('#remoteMediaVideo').addClass('remoteMediaFull');
+			} else {
+				$('#remoteScreenVideo').removeClass('remoteScreenFull');
+				$('#remoteScreenVideo').addClass('remoteScreenNormal');
+				$('#remoteMediaVideo').removeClass('remoteMediaFull');
+				$('#remoteMediaVideo').addClass('remoteMediaNormal');
+			}
+		}
+	}
+
+	$(window).resize(function(){
+		doReScale();
+	});
+
+	function doCloseShareBox() {
+		$('#ShareBox').dialog('close');
+	}
+
+	function doReScale() {
+		var $area = $(window);
+		var areaWidth = $area.width();
+		var areaHeight = $area.height();
+
+		var frameWidth  = $('#MetalFrame').width();
+		var frameHeight = $('#MetalFrame').height();
+
+		var frameScale = Math.min(areaWidth/frameWidth, areaHeight/frameHeight);
+		var framePerc = frameScale * 0.8;
+
+		$('#MetalFrame').css({left: '15px', top: '170px', 'transform': 'scale(' + framePerc + ')'});
+
+		/*
+		var videoWidth  = $('#remoteScreenVideo').width();
+		var videoHeight = $('#remoteScreenVideo').height();
+
+		var videoScale = Math.min(areaWidth/videoWidth, areaHeight/videoHeight);
+		*/
+		//$('#MetalFrame').css({ width: frameWidth * framePerc, height: frameHeight * framePerc });
+		//$('#remoteScreenVideo').css({ width: videoWidth * maxperc, height: videoHeight * videoperc });
+	}
+
+	document.addEventListener("SwithYoutube", function(e) {
+		let clipUrl = e.detail.url;
+		let videowidth = e.detail.videowidth;
+		let videoheight = e.detail.videoheight;
+		const doForcePlayClip = function(url) {
+			remoteVideo.onended = function() {
+				let event = new CustomEvent("SwithBackMain", { "detail": {}});
+				document.dispatchEvent(event);
+			};
+			remoteVideo.src = url;
+			remoteVideo.play();
+
+			$('#remoteScreenVideo').css('width', videowidth + 'px');
+			$('#remoteScreenVideo').css('height', videoheight + 'px');
+			$('#MetalFrame').css('width', (videowidth + 60) + 'px');
+			$('#MetalFrame').css('height', (videoheight + 60) + 'px');
+			doReScale();
+		};
+
+		if (remoteVideo.srcObject)	{
+			remoteVideo.srcObject = null;
+			doForcePlayClip(clipUrl);
+		} else {
+			doForcePlayClip(clipUrl);
+		}
+	});
+
+	document.addEventListener("SwithBackRoom", function(e) {
+		remoteVideo.src = null;
+		remoteVideo.srcObject = remoteStream;
+	});
+</script>

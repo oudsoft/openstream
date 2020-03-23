@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+		<title>Open Stream Video-Chat</title>
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script src="js/vchat.js"></script>
+		<script src="js/utility.js"></script>
+		<link rel="stylesheet" href="css/vchat.css" />
+	</head>
+	<body>
+		<div id="Client-Area">
+			<video id="remoteVideo" height="120" width="160" autoplay playsinline></video>
+			<video id="localVideo" height="120" width="160" autoplay playsinline></video>
+		</div>
+		<div>
+			<div>
+				<label class="switch">
+					<input type="checkbox">
+					<div class="slider"></div> 
+				</label> ON / OFF
+			</div>
+			<div>
+				<input id="videoCallButton" type="button" disabled value="Video Call"/>
+				<!-- <input id="endCallButton" type="button" disabled value="End Call"/> -->
+			</div>
+			<div id="Usage" style="display: none;">
+				<p>คู่สนทนาของคุณสามารถเข้าร่วมสนทนากับคุณได้ที่</p>
+				<p id="TargetLink"></p>
+				<p>โปรดส่งลิงค์ดังกล่าวไปให้คู่สนทนาของคุณ</p>
+			</div>
+		</div>
+	</body>
+</html>
+<div id="ShareBox">
+	<div id="ShareButtonCmd" style="text-align: center;"></div>
+</div>
+
+<script>
+
+	var urlParams = location.search.split(/[?&]/).slice(1).map(function(paramPair) {
+					return paramPair.split(/=(.+)?/).slice(0, 2);
+				}).reduce(function (obj, pairArray) {            
+					obj[pairArray[0]] = pairArray[1];
+					return obj;
+				}, {});
+				/*
+				Usage:
+				For url: http://example.com?one=1&two=2
+				console.log(urlParams.one) // 1
+				console.log(urlParams.two) // 2
+				*/
+
+	var callType = urlParams.t;
+	var roomName = urlParams.roomname;
+	var callerno = urlParams.callerno;
+	var calleeno = urlParams.calleeno;
+	var clientId = urlParams.v; /*clientId คือ client ในระบบ openstream ที่จะเป็น caller */
+	console.log(callType);
+	/* ปรับขนาด window ให้เท่ากับ caller
+	if (callType === 'callee')	{
+		if ((window.innerWidth !== 720) && (window.innerHeight !== 570))	{
+			var strWindowFeatures = "location=yes,height=570,width=720,scrollbars=yes,status=yes";
+			var URL = "/" + rootname + "/vchat/" + roomname + "/callee/" + calleeno + "/" + callerno;
+			var win = window.open(URL, "_blank", strWindowFeatures);
+		}
+	}
+	*/
+	var checkbox = document.querySelector('input[type="checkbox"]');
+
+	document.addEventListener('DOMContentLoaded', function () {
+		checkbox.addEventListener('change', function () {
+			if (checkbox.checked) {
+				pageReady();
+				console.log('Connect Websocket.');
+				//initiateCallRemote(callerno, calleeno, roomName, rootname);
+				console.log('Start Create Peer.');
+				if (callType === 'callee'){
+					initiateAcceptRemoteCall();
+					setTimeout(() => {
+						console.log('Send ready trigger.');
+						willReadyCall(clientId);
+					}, 2500);
+				} else if (callType === 'caller') {
+					setTimeout(() => {
+						initiateCallRemote(calleeno, callerno, roomName, rootname, clientId);
+					}, 2500);
+					/*
+					const hostname = window.location.hostname;
+					let rootname = window.location.pathname.split('/')[1];
+					params = {entryType: 'master', roomId:'', roomName: roomName, screenId: '', screenNo: '', hostname: hostname};
+					doCreateQRCodeCalleeVchat(params).then((qrlink) =>{
+						let targetLink = document.querySelector('#TargetLink');
+						targetLink.style.textAlign = 'center';
+						let entryLink = 'https://' + hostname + '/' + rootname + '/vchat/' + roomName + '/callee/' +calleeno + '/' + callerno;
+						targetLink.innerHTML = '<p><b>' + entryLink + '</b></p>'; 
+
+						let copyLinkBtt = document.createElement('button');
+						copyLinkBtt.textContent = 'Copy to Clipboard';
+						copyLinkBtt.addEventListener("click", function(e){
+							const el = document.createElement('textarea');
+							console.log(entryLink);
+							el.value = entryLink;
+							document.body.appendChild(el);
+							el.select();
+							document.execCommand('copy');
+							document.body.removeChild(el);
+						});
+
+						let qrcalleelinkImg = document.createElement('img');
+						qrcalleelinkImg.src = qrlink;
+						qrcalleelinkImg.setAttribute("width", '180px');
+						qrcalleelinkImg.setAttribute("height", 'auto');
+
+						let blankSpan = document.createElement('span');
+						blankSpan.textContent = '    '; 
+
+						let toolBox = document.createElement('div');
+						toolBox.style.textAlign = 'center';
+						let saveQRCmd = document.createElement('button');
+						let shareQRCmd = document.createElement('button');
+						let link = document.createElement('a');	
+						link.appendChild(qrcalleelinkImg);
+						targetLink.appendChild(link);
+						toolBox.appendChild(saveQRCmd);
+						toolBox.appendChild(blankSpan);
+						toolBox.appendChild(shareQRCmd);
+						toolBox.appendChild(link);
+						toolBox.appendChild(blankSpan);
+						toolBox.appendChild(copyLinkBtt);
+						saveQRCmd.textContent = 'Save';
+						shareQRCmd.textContent = 'Share';
+						saveQRCmd.addEventListener("click", function(e){
+						    let imgsrcPaths = qrlink.split('/')
+						    let filename = imgsrcPaths[imgsrcPaths.length-1];
+						    link.setAttribute('download', filename);
+						    link.setAttribute('href', qrlink);
+						    link.click();
+						});
+						shareQRCmd.addEventListener("click", function(e){
+							let qrUrl = 'https://' + hostname + qrlink;
+							$('#ShareBox').dialog('open');
+							$('#ShareButtonCmd').empty();
+							let qrCmdBox = $('<div style="text-align: center;"></div>');
+							$(qrCmdBox).append("<a href='https://www.facebook.com/sharer/sharer.php?u=" + qrUrl + "' onclick='javascript:window.open(this.href, \"\", \"menubar=no,toolbar=no,resizable=yes,scrollbars=yes,height=300,width=600\");return false;' target='_blank' title='Share on Facebook'><img src='/" + rootname + "/imgs/logo/Share-on-Facebook.png' width='220px' height='60px'/></a>");
+							
+							$(qrCmdBox).append("&nbsp;&nbsp;&nbsp;&nbsp;");
+							$(qrCmdBox).append("<a href='https://social-plugins.line.me/lineit/share?url=" + qrUrl + "' target='_blank'><img src='/" + rootname + "/imgs/logo/wide-default.png' width='140px' height='50px'/></a>");
+							$(qrCmdBox).append("&nbsp;&nbsp;&nbsp;&nbsp;");
+							$(qrCmdBox).append('<input type="button" id="CloseShareBoxCmd" value=" ปิด " onclick="doCloseShareBox()"/>');
+							$('#ShareButtonCmd').append($(qrCmdBox));
+						});
+
+						targetLink.appendChild(qrcalleelinkImg);
+						targetLink.appendChild(toolBox);
+						let usage = document.querySelector('#Usage');
+						usage.style.display = 'block';
+					});
+					*/
+				}
+			} else {
+				willCloseConnect();
+			}
+		});
+	});
+
+	$(document).ready(function() {
+		$('#ShareBox').dialog({ 
+			modal: true, autoOpen: false, width: 350, position: 'top', title: 'แชร์',
+			position: ["center", 200]
+		});
+	});
+	
+	function willReadyCall(callerId) {
+		//console.log(wsc.readyState);
+		//console.log(x.clientId);
+		let skdata = {channel: "vchat", type: "vchat-readyCall", readyCall: true, sender: 'remote', name: myname, clientId: x.clientId, roomName: roomname, callerId: callerId};
+		doSocketSend(skdata);
+	}
+
+	function willCloseConnect() {
+		videoCallButton.setAttribute("disabled", true);
+		endCall();
+		let skdata = {channel: "vchat", type: "vchat-closeConnection", closeConnection: true, sender: 'remote', name: myname, clientId: clientId, roomName: roomname};
+		doSocketSend(skdata);
+		setTimeout(() => {
+			wsc.close();
+			console.log('Disconnect Websocket.');
+			//console.clear();
+		}, 1200);
+	}
+
+	function doCreateQRCodeCalleeVchat(params) {
+		return new Promise(function(resolve, reject) {
+			var rootName = doGetRootName();
+			var url = "/" + rootName + "/qrservice/calleeentryqrcode";
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
+	function doCloseShareBox() {
+		let usage = document.querySelector('#Usage');
+		usage.style.display = 'block';
+	}
+
+	//window.addEventListener("load", pageReady);
+
+</script>

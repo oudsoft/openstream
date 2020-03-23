@@ -1,0 +1,126 @@
+/****************************************************/
+Start Redis Server
+
+sudo pm2 start /home/sasurean/node/redis/redis-4.0.9/src/redis-server
+
+chmod -R 777 . /home/sasurean/node/win/resource/img/download
+/****************************************************/
+
+https://hackernoon.com/using-redis-with-node-js-8d87a48c5dd7
+
+What is Redis
+Redis is an in-memory data structure store which can be used as a database, a cache and a message broker. Redis supports different data structures such as strings, lists, sets, hashes, bitmaps and etc. . Simply Redis uses you RAM to store data which is very fast, however if you reboot your server the values are gone, unless you enable Redis persistence. Good news by default Redis enables persistence mechanism for you (you can disable or configure persistence according to your needs.)
+
+Install Redis (Linux)
+Refer: https://redis.io/download
+
+Download, extract and compile Redis with:
+
+$ wget http://download.redis.io/releases/redis-4.0.9.tar.gz
+$ tar xzf redis-4.0.9.tar.gz
+$ cd redis-4.0.9
+$ make
+The binaries that are now compiled are available in the src directory. Run Redis with:
+
+$ src/redis-server
+You can interact with Redis using the built-in client:
+
+$ src/redis-cli
+redis> set foo bar
+OK
+redis> get foo
+"bar"
+OK, now we have successfully installed Redis on the local machine. Here you can see useful commands that we can use with Redis. They are super simple and helpful. Spend some time with those commands.
+
+Using Redis in your NodeJS application
+First you need to install the Redis client for NodeJS via npm.
+
+npm install redis
+Now create a file called redisDemo.js in your NodeJS project.
+
+// redisDemo.js
+var redis = require('redis');
+var client = redis.createClient(); // this creates a new client
+By default redis.createClient() will use 127.0.0.1 and port 6379. If you have a customized ip and and a port use
+
+var client = redis.createClient(port, host);
+Now, we want to listen for the connect event to see whether we successfully connected to the redis-server. We can check for a successful connection like this.
+
+client.on('connect', function() {
+    console.log('Redis client connected');
+});
+Likewise, we want to check if we failed to connect to the redis-server. Well we can listen for the error event for that.
+
+client.on('error', function (err) {
+    console.log('Something went wrong ' + err);
+});
+This might trigger when you forget to start the redis-server before application is run. So make sure to run the redis server before testing this code.
+
+Note: you can start, stop the redis server using following commands.
+
+/etc/init.d/redis-server stop
+/etc/init.d/redis-server start
+Let’s see how our code looks like now.
+
+var redis = require('redis');
+var client = redis.createClient();
+
+client.on('connect', function() {
+    console.log('Redis client connected');
+});
+
+client.on('error', function (err) {
+    console.log('Something went wrong ' + err);
+});
+Now, Let’s see how to set some simple value under a key in redis. You can use set() and get() methods for that.
+
+client.set('my test key', 'my test value', redis.print);
+client.get('my test key', function (error, result) {
+    if (error) {
+        console.log(error);
+        throw error;
+    }
+    console.log('GET result ->' + result);
+});
+in client.set() we first give the key and then the value. Remember Redis is a key-value store. Redis will create a key named ‘my test key’ and assign the value ‘my test value’ for that key.
+
+You see that I’ve used that redis.print on set() method. well it prints “Reply: OK” to the console saying that redis saved the value. you can omit that argument if you want.
+
+Now in get() method we simply retrieve the value we just saved by specifying the exact key name. Then it will print the saved valued in the console.
+
+Let’s see the complete code now.
+
+var redis = require('redis');
+var client = redis.createClient();
+
+client.on('connect', function() {
+    console.log('Redis client connected');
+});
+
+client.on('error', function (err) {
+    console.log('Something went wrong ' + err);
+});
+
+client.set('my test key', 'my test value', redis.print);
+client.get('my test key', function (error, result) {
+    if (error) {
+        console.log(error);
+        throw error;
+    }
+    console.log('GET result ->' + result);
+});
+The output will look like this
+
+Redis client connected
+Reply: OK
+GET result ->my test value
+Conclusion
+Redis is very powerful in-memory data-store that we can use in our applications. It’s very simple to save and get data without much overhead. refer https://www.npmjs.com/package/redis for more use cases and refer https://redis.io/commands for more redis commands.
+
+Nodejs
+Redis
+JavaScript
+Database
+Redis With Node Js
+
+

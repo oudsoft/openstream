@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+ 	<head>
+    <meta charset="utf-8">
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gallery Index</title>
+  	<style>
+
+	</style>
+ 	</head>
+ 	<body>
+		 <div id="content">
+				<h1>GeeGee Index</h1>				
+		 </div>
+		<div id="ControlPanel">
+			<input type='button' value='Check' onclick= 'check()'/> 
+			<input type='button' value='Start...' onclick= 'show()'/> 
+			<input type='button' value='Stop' onclick= 'stop()'/> 
+			<input type='button' value='Continue...' onclick= 'showcontinue()'/> 
+			<input type='button' value='Previous' onclick= 'previous()'/>
+			<div id="NumberPreview"></div>
+			<input type='button' value='Next' onclick= 'next()'/>
+			<div id="countdown" style="block: none; float: right;"></div>
+	  	</div>
+	  	<div id="gap-hor"></div>
+	  	
+		<div class="backgroundTransition" >	</div>
+
+		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<script src="js/Lexxus-jq-timeTo-7c3b4ea/jquery.time-to.min.js"></script>
+		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<link href="css/myslideshow.css" rel="stylesheet">
+		<link href="js/Lexxus-jq-timeTo-7c3b4ea/timeTo.css" type="text/css" rel="stylesheet"/>
+		<script src="js/myslideshow.js"></script>
+
+		<script>
+			function doGetGeeGeeItems(params){
+				return new Promise(function(resolve, reject) {
+					var url = "/geegee/geegeeitems";
+					//console.log(JSON.stringify(params));
+					$.get(url, params, function(data){
+						resolve(data);
+					}).fail(function(error) { 
+						console.log(JSON.stringify(error));
+						reject(error); 
+					});
+				});
+			}
+			function doGetGeeGeeDirItems(dirname){
+				return new Promise(function(resolve, reject) {
+					var url = "/geegee/geegeelistdirs/" + dirname;
+					//console.log(JSON.stringify(params));
+					$.get(url, {}, function(data){
+						resolve(data);
+					}).fail(function(error) { 
+						console.log(JSON.stringify(error));
+						reject(error); 
+					});
+				});
+			}
+			function doGetGeeGeeFileItems(gname, gdir){
+				return new Promise(function(resolve, reject) {
+					var url = "/geegee/geegeelistfiles/" + gname + "/" + gdir;
+					//console.log(JSON.stringify(params));
+					$.get(url, {}, function(data){
+						resolve(data);
+					}).fail(function(error) { 
+						console.log(JSON.stringify(error));
+						reject(error); 
+					});
+				});
+			}
+			function doOpenGeeGeeDir(gname, gdir){
+				window.clearTimeout(timer);
+				$('.backgroundTransition').empty();
+				doGetGeeGeeFileItems(gname, gdir).then((files)=>{
+					$("#content").empty();
+					geegeePath = GeeGeePath + '/' + gname + '/' + gdir;
+					$("#content").append("<h3><a href='#' onclick='doOpenIndex()'>GeeGee Index</a> / <a href='#' onclick='doOpenGeeGee(\"" + gname + "\")'>" + gname + "</a>" + " /" + gdir + " / <span id='filename'>Sliename</span></h3>");
+						
+						//$("#content").append("<p><a href='#' onclick='doOpenGeeGeeDir(\"" + gname + "\",\"" + dir + "\")'>" + dir + "</p></a>");
+						imgs = files;
+						//console.log(files);
+						endNum = files.length;
+						currentShow = 0;
+						window.clearTimeout(timer);
+						check();
+						$(document).attr("title", gdir);
+				});
+			}
+			function doOpenGeeGee(gname){
+				imgs = [];
+				$('.backgroundTransition').empty();
+				doGetGeeGeeDirItems(gname).then((dirs)=>{
+					$("#content").empty();
+					$("#content").append("<h1><a href='#' onclick='doOpenIndex()'>GeeGee Index</a> / " + gname + "</h1>");
+					dirs.forEach((dir) => {
+						$("#content").append("<p><a href='#' onclick='doOpenGeeGeeDir(\"" + gname + "\",\"" + dir + "\")'>" + dir + "</p></a>");
+						currentShow = 0;
+						window.clearTimeout(timer);
+						$(document).attr("title", gname);
+					});
+				});
+			}
+			function doOpenIndex() {
+				imgs = [];
+				$('.backgroundTransition').empty();
+				doGetGeeGeeItems().then((dirs)=>{
+					//console.log(dirs);
+					$("#content").empty();
+					$("#content").append("<h1>GeeGee Index</h1>");
+					dirs.forEach((dir) => {
+						$("#content").append("<p><a href='#' onclick='doOpenGeeGee(\"" + dir + "\")'>" + dir + "</a></p>");
+					});
+				});
+			}
+			$(document).ready(function(){
+				doOpenIndex();
+			});
+		</script>
+  </body>
+</html>

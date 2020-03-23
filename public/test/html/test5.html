@@ -1,0 +1,96 @@
+<!-- test5.html -->
+<!doctype html>
+<html lang="en">
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>		
+		<title>STUN/TURN Server Test  No. 5</title>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	</head>
+	<body>
+		<div>
+			<div>
+				<h1 style="text-align: center;">STUN/TURN Server Test  No. 5</h1>
+			</div>
+			<div>
+				<p><a href="https://meetrix.io/blog/webrtc/coturn/installation.html" target="_blank">https://meetrix.io/blog/webrtc/coturn/installation.html</a></p>
+				<p><a href="http://manpages.ubuntu.com/manpages/cosmic/man1/stunclient.1.html" target="_blank">http://manpages.ubuntu.com/manpages/cosmic/man1/stunclient.1.html</a></p>
+				<p><b>$ stunclient --protocol tcp 58.137.157.66</b></p>
+				<p>Binding test: success</p>
+				<p>Local address: 10.1.105.37:44499</p>
+				<p>Mapped address: 118.174.197.170:44499</p>
+			</div>
+			<div>
+				<p>สิ่งที่ต้องกลับไปดูเพื่อแก้ปัญหาคือ ตอนนี้ 58.137.157.66 เป็น STUN แบบ TCP ซึ่งไม่ถูก โดยปกติจะต้องเป็น UDP</p>
+				<p><a href="https://groups.google.com/forum/#!topic/stunprotocol/L-nqd35nmTQ" target="_blank">https://groups.google.com/forum/#!topic/stunprotocol/L-nqd35nmTQ</a></p>
+			</div>
+		</div>
+	</body>
+</html>
+
+<script type="text/javascript">
+
+
+function checkTurnOrStun(turnConfig, timeout){ 
+  return new Promise(function(resolve, reject){
+
+    setTimeout(function(){
+        if(promiseResolved){
+            if (promiseResolved == 'STUN') resolve('STUN');
+            return;
+        }
+        resolve(false);
+        promiseResolved = true;
+    }, timeout || 5000);
+
+    var promiseResolved = false
+      , myPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection   //compatibility for firefox and chrome
+      , pc = new myPeerConnection({iceServers:[turnConfig]})
+      , noop = function(){};
+    pc.createDataChannel("");    //create a bogus data channel
+    pc.createOffer(function(sdp){
+      if(sdp.sdp.indexOf('typ relay') > -1){ // sometimes sdp contains the ice candidates...
+        promiseResolved = 'TURN'; 
+        resolve(true);
+      }
+      pc.setLocalDescription(sdp, noop, noop);
+    }, noop);    // create offer and set local description
+    pc.onicecandidate = function(ice){  //listen for candidate events
+      if( !ice || !ice.candidate || !ice.candidate.candidate)  return;
+      console.log(turnConfig.url, JSON.stringify(ice.candidate));	
+      if (ice.candidate.candidate.indexOf('typ relay')!=-1) { 
+		promiseResolved = 'TURN'; 
+		resolve('TURN'); 
+	} else if (!promiseResolved && (ice.candidate.candidate.indexOf('typ prflx')!=-1 || ice.candidate.candidate.indexOf('typ srflx')!=-1)){
+          	promiseResolved = 'STUN';
+        	if (turnConfig.url.indexOf('turn:')!==0) resolve('STUN');
+      	} else {
+		return;
+	}
+    };
+  });   
+}
+
+/*
+
+*/
+checkTurnOrStun({url: "stun:58.137.157.66:3478"}).then(function(result){
+    //console.log(result);
+    console.log(
+    result ? 'YES, Server active as '+result : 'NO, server not active');
+}).catch(console.error.bind(console));
+
+checkTurnOrStun({
+            url: 'turn:58.137.157.66:3478',
+            credential: 'some-password',
+            username: 'some-username'
+}).then(function(result){
+    //console.log(result);
+    console.log(
+    result ? 'YES, Server active as '+result : 'NO, server not active');
+}).catch(console.error.bind(console));
+
+</script>

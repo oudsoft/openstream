@@ -1,0 +1,33 @@
+@font-face { font-family: THChakraPetch; src: url("../font/THChakraPetch/THChakraPetch.ttf");}
+@font-face { font-family: THNiramitAS; src: url("../font/THNiramitAS/THNiramitAS.ttf");}
+@font-face { font-family: THSarabunNew; src: url("../font/THSarabunNew.ttf");}
+@font-face { font-family: EkkamaiStandard-Light; src: url("../font/EkkamaiStandard-Light.ttf");}
+@keyframes blinker { 50% { opacity: 0;}}
+
+#HelloVisitor, #WhatYouDoSelect , #DoCreateNewRoom, #UseOpenStream, #AdDemo {font-family: THNiramitAS; font-size: 24px; font-weight: normal;}
+.ToggleHide{display: none;}
+.ToggleShow{display: block;}	
+.ButtonCmd {padding: 10px; text-align: center;}	
+.JoinCmd {padding: 10px;}
+button {width: 95%; height: 50px; font-size: 28px; font-family : inherit;}	
+input[type="checkbox"], input[type="radio"]{
+	/* Double-sized Checkboxes */
+	-ms-transform: scale(2); /* IE */
+	-moz-transform: scale(2); /* FF */
+	-webkit-transform: scale(2); /* Safari and Chrome */
+	-o-transform: scale(2); /* Opera */
+	transform: scale(2);
+	padding: 10px;
+}
+input[type="text"]{padding: 20px 10px; line-height: 20px; font-size: 24px}
+input[type="submit"], input[type="button"], select { font-size: 24px;}
+#ControlQRCodeDialog{width: 100%; text-align: center; padding: 5px; background-color: gray;}
+#EntryQRCodeDiv{text-align: center;}
+#EntryQRCode{width: 250px; height: auto;}
+#SystemRoomOptionBox, #UserOptionEntry {padding: 10px;}
+.RoomOptionInline {clear: right; padding: 10px;}
+#UserOptionEntry {padding: 10px; text-align: center;}
+#DoVerifyNewRoomName {color: red; display: none;}
+#AdDemo{position: relative; bottom: 2px; padding: 2px; width: 98%; height: auto; border: 2px solid red; text-align:left; background-color: rgba(24, 35, 55, 0.3); vertical-align:middle; line-height: 45px;}
+.blink {  animation: blinker 4.5s linear infinite; }
+

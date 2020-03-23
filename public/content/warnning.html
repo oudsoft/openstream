@@ -1,0 +1,18 @@
+<!-- warnning.html -->
+<div id="WarnningContent">
+	<h1 style="color: red; text-align: center;">คำเตือน</h1>
+	<p>โปรดอ่านและคลิกยอมรับเงื่อนไขการใช้งานดังนี้</p>
+	<!--
+	<ol>
+		<li>ข้าพเจ้าจะไม่ละเมิดลิขสิทธิ์สัญญาณอื่นๆ ของผู้ใด โดยการนำสัญญาณที่ไม่ได้รับอนุญาติจากเจ้าของสัญญาณมาแชร์ผ่าน Open Stream</li>
+	</ol>
+	-->
+	<textarea id="AgreeText" cols="46" rows="12" readonly></textarea>
+	<div></div>
+	<input type="checkbox" id="AcceptCheck"/> ข้าพเจ้าได้อ่านและเข้าใจเงื่อนไขการใช้งาน Open Stream เป็นอย่างดีแล้ว และยอมรับเงื่อนไขการใช้งานทุกประการ
+	<p></p>
+	<div id="DoAcceptCondition" style="text-align: center;">
+		<input type="button" id="DoAcceptConditionCmd" value="OK" onclick="doAcceptConndition()"/>
+		<input type="button" id="DoCancelAcceptConditionCmd" value="Cancel" onclick="doCancelAcceptConndition()"/>
+	</div>
+</div>

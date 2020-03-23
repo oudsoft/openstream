@@ -1,0 +1,51 @@
+//myslideshow.css
+
+.backgroundTransition {
+	margin-top: 10px;
+	padding: 8px;
+}
+
+.portrait {
+	height: 600px;
+	width: auto;
+}
+
+.landscape {
+	width: 800px;
+	height: auto;
+}
+
+.fullview {
+	width: 100%;
+	height: auto;
+}
+
+#NumberPreview{
+	display: none;
+	font-size: 20px;
+}
+
+#ControlPanel {
+	text-align: letf;
+	display: block;
+	padding: 8px;
+	height: 40px;
+	background-color: gray;
+	border-color: blue;
+	box-shadow: 3px 3px 5px 6px #ccc;
+	font-size: 24px;
+}
+
+input[type="button"] { font-size: 24px;}
+
+.display-inline {
+    display: inline !important;
+}
+
+.hide {
+	display: none;
+}
+
+#gap-hor {
+	min-height: 20px;
+}

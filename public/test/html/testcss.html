@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	    <meta charset = "utf-8" /> 
+		<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<title>Open Stream System</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<link rel="stylesheet" href="../css/metalic.css" />
+		<style>
+			#FrameDiv{position: relative; width: 410px; height: 250px; z-index: 0;}
+			#remoteScreenVideo {position: absolute; border: 3px solid gray; padding: 5px; z-index: 1; width: 350px; min-height: 180px; background-color: #bf9898;}
+			.remoteScreenNormal {/*width: 90%; height: 80%;*/left: 20px; top: 20px;}
+		</style>
+	</head>
+	<body>
+		<div id="FrameDiv" class="metal linear">
+			<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+		</div>
+	</body>
+</html>
+			
+<script>
+
+	var $window = $(window);
+    var width = $window.width();
+    var height = $window.height();
+	console.log(width, height);
+
+	var maxWidth  = $('#FrameDiv').width();
+	var maxHeight = $('#FrameDiv').height();
+	console.log(maxWidth, maxHeight);
+
+	var videoWidth  = $('#remoteScreenVideo').width();
+	var videoHeight = $('#remoteScreenVideo').height();
+	console.log(videoWidth, videoHeight);	
+	//var videoLeft  = $('#remoteScreenVideo').css('left');	
+	//console.log(videoLeft);
+
+	var maxscale = Math.min(width/maxWidth, height/maxHeight);
+	var maxperc = 0.80 * maxscale;
+	console.log(maxscale);
+
+	var videoscale = Math.min(width/videoWidth, height/videoHeight);
+	var videoperc = 0.80 * videoscale;
+	console.log(videoscale);
+
+    //$('#testDiv').css({'-webkit-transform': 'scale(' + scale + ')'});
+    $('#FrameDiv').css({ width: maxWidth * maxperc, height: maxHeight * maxperc });
+    $('#remoteScreenVideo').css({ width: videoWidth * maxperc, height: videoHeight * videoperc });
+</script>

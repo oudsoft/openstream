@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script> 
+$(document).ready(function(){
+  $("#flip").click(function(){
+    $("#panel").slideToggle("slow");
+  });
+});
+</script>
+<style> 
+#panel, #flip {
+  padding: 5px;
+  text-align: center;
+  background-color: #e5eecc;
+  border: solid 1px #c3c3c3;
+}
+
+#panel {
+display: none;
+position: absolute; 
+background-color: rgba(204, 192, 62, 0.4); 
+width: 98%;
+min-height: 60px; 
+box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); 
+z-index:2;
+}
+#Lower{
+  position: relative;
+  padding: 5px;
+  text-align: center;
+  background-color: #e5eecc;
+  border: solid 1px #c3c3c3;
+z-index: -1;
+}
+</style>
+</head>
+<body>
+ 
+<div id="flip">Click to slide the panel down or up</div>
+<div id="panel">
+	<h3>Lower Test</h3>
+	<p>Gooo</p>
+	<p>Fooo</p>
+	<p>Bar</p>
+</div>
+<div id="Lower">Hello world!</div>
+</body>
+</html>
+

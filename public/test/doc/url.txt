@@ -1,0 +1,12 @@
+วิธีเรียกหน้าจอทาง URL โดยไม่ต้องใช้ QR Code
+----------------------------------
+Master
+เนื่องจาก master จะได้หมายเลขจอเป็น 00 เสมอ
+https://www.myshopman.com/openstream/master/<RoomName>/00
+
+Client
+https://www.myshopman.com/openstream/client/<RoomName>/m/<ScreenNo>
+
+----------------------------------
+RoomName คือชื่อห้อง
+ScreenNo คือ หมายเลขหน้าจอ เช่น 01, 02, 03, ..., 24

@@ -1,0 +1,13 @@
+#Rooms{display: block; width: 80%; float: left; padding: 5px;}
+.Screens{display: block; width: 100%; float: left; background-color: gray; color: white;}
+.Rooms {width: 100%; padding: 2px; border: 1px solid gray; margin-top: 2px; float: left;}
+#Screen {width: 100%; padding: 2px;}
+.blink {  animation: blinker 1s linear infinite; }
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
+}
+.error{color: red;}
+#ControlQRCodeDialog {padding: 5px; text-align: center;}
+.StampTimeMarker {background-color: yellow; border: 1px solid blue; padding: 2px;}
