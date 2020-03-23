@@ -64,9 +64,9 @@ RootNames.forEach((item)=>{
 });
 
 /*************************************/
-app.use('/blog', blog);
-app.use('/win', win);
-app.use('/mrqr', mrqr);
+//app.use('/blog', blog);
+//app.use('/win', win);
+//app.use('/mrqr', mrqr);
 app.use('/manual', manual);
 /*************************************/
 
