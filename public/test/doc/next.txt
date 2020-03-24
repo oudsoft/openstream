@@ -350,3 +350,11 @@ save log ให้เก็บ rootname ด้วย
 1. ต้องจัดหาอุปกรณ์ server ip domain name และ cert
 2. ต้องมี api ให้ user login เข้าใช้งาน
 3. พื้นที่ใต้ขอบจอ 1.5 ซม. ของทุกจอ เราขอ
+
+-------------------------------------------------------------------
+RTCMultiConnection
+https://github.com/muaz-khan/RTCMultiConnection
+https://rtcmulticonnection.herokuapp.com/demos/
+
+https://www.webrtc-experiment.com/screen-sharing/#5672769640368731
+<script src="//www.webrtc-experiment.com/screen.js"></script>

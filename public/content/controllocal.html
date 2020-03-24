@@ -71,7 +71,6 @@ function doGetScreenSignal() {
 			if (screen === localStream){
 				let conf = confirm('โปรดยืนยันว่า "คุณต้องการปิดสัญญาณจอภาพที่กำลังแชร์อยู่ในขณะนี้ เพื่อออกจากห้อง?"\nยืนยันโดย ตกลง หรือ OK');
 				if (conf)	{
-
 					console.log('Screen Streaming Stop!!');
 					$('#btn-get-Stream').prop( "disabled", false );
 					let event = new CustomEvent("ReleaseStreamMergerCmd", { "detail": {}});
@@ -152,29 +151,30 @@ function doGetScreenSignal() {
 	};
 
     invokeGetDisplayMedia(function(screen) {
+		console.log(screen);
 		//console.log(screen.getTracks());
 		//console.log(screen.getAudioTracks());
 		//console.log(screen.getVideoTracks());		
-		if (localVideo.srcObject)	{
+		if (localStream)	{
 			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
 				if (conf)	{
+					/*
 					var promiseList = new Promise(function(resolve, reject){
-						localStream.getTracks().forEach(track => track.stop());
-						localStream = screen;
-						localVideo.srcObject = localStream;
-						resolve(localStream);
+						resolve(...);
 					});
 					Promise.all([promiseList]).then((ob)=>{
-						//console.log(ob[0]);
-						doAddStopCaptureScreen(screen);
-						if (mixedStream){
-							doReMixStream();
-							setTimeout(() => {
-								//console.log(mixedStream);
-								doUpdateStream(mixedStream);
-							}, 2500);
-						}
 					});
+					*/
+					localStream.getTracks().forEach((track) => {	track.stop();});
+					doGetScreenSignalSuccess(screen);
+					if (mixedStream){
+						doReMixStream();
+						setTimeout(() => {
+							//console.log(mixedStream);
+							doUpdateStream(mixedStream);
+						}, 2500);
+					}
+
 				} else {
 					//console.log(localStream);
 					localVideo.srcObject = localStream;
@@ -282,6 +282,8 @@ function invokeGetDisplayMedia(success, error) {
 			videoConstraints.height = screen.height;
 		}
 
+		//videoConstraints.displaySurface = "default";
+
 		displayMediaStreamConstraints = {
 			video: videoConstraints
 		};
@@ -308,7 +310,7 @@ function invokeGetDisplayMedia(success, error) {
 
 function addStreamStopListener(stream, callback) {
     stream.addEventListener('ended', function() {
-		console.log('stream id '+ stream.id + ' ended');
+		//console.log('stream id '+ stream.id + ' ended');
         callback();
         callback = function() {};
     }, false);
@@ -320,7 +322,7 @@ function addStreamStopListener(stream, callback) {
 	*/
     stream.getTracks().forEach(function(track) {
         track.addEventListener('ended', function() {
-			console.log('track id '+ track.id + ' ended');
+			//console.log('track id '+ track.id + ' ended');
             callback();
             callback = function() {};
         }, false);

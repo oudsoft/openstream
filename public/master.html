@@ -388,6 +388,9 @@
 	const saleTimeDayUnit = 24 * 60 * 60 * 1000;
 	var delayTime = 15000000;
 
+	const SOURCE_ELEMENT_NODES = new WeakMap();
+	const DEST_ELEMENT_NODES = new WeakMap();
+
 	document.onkeydown = function (e) {
 		e = e || window.event;
 		if ((e.keyCode == '48') || (e.keyCode == '96')){
@@ -1009,9 +1012,6 @@
 		element.className = isError ? 'video-file-error' : 'video-file-info';
 	}
 	
-	const SOURCE_ELEMENT_NODES = new WeakMap();
-	const DEST_ELEMENT_NODES = new WeakMap();
-
 	var playSelectedFile = function(event) {
 		var URL = window.URL || window.webkitURL;
 		var file = this.files[0];
@@ -1024,69 +1024,83 @@
 		if (isError) {
 			return
 		}
-		var fileURL = URL.createObjectURL(file);
-		localVideo.srcObject = null;
-		localVideo.src = fileURL;
+		if (localStream)	{
+			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
+			if (conf)	{
+				localStream.getTracks().forEach((track) => {track.stop()});
+				var fileURL = URL.createObjectURL(file);
+				localVideo.srcObject = null;
+				localVideo.src = fileURL;
 
-		localStream.getVideoTracks().forEach((item)=>{
-			localStream.removeTrack(item);
-		});
-		if (localStream.getAudioTracks().length > 0){
-			localStream.getVideoTracks().forEach((item)=>{
-				item.stop();
-			});
-		}
-
-		localVideo.oncanplay = function() {
-			localVideo.play();
-			let aStream = localVideo.captureStream();
-			var ctx, source, dest;	
-			aStream.onactive = function(){
-				//console.log(aStream.getVideoTracks().length);
-				let videoTrack = aStream.getVideoTracks()[0];
-				//console.log('videoTrack', videoTrack);
-
-				var audioContext;
-				var audioSource;
-				var dest;
-
-				if (SOURCE_ELEMENT_NODES.has(localVideo)) {
-					audioSource = SOURCE_ELEMENT_NODES.get(localVideo);
-					dest = DEST_ELEMENT_NODES.get(localVideo);
-					audioSource.connect(dest);
-				} else {
-					audioContext = new (window.AudioContext || window.webkitAudioContext)();
-					audioSource = audioContext.createMediaElementSource(localVideo);
-					dest = audioContext.createMediaStreamDestination();
-					audioSource.connect(dest);
-					SOURCE_ELEMENT_NODES.set(localVideo, audioSource);
-					DEST_ELEMENT_NODES.set(localVideo, dest);
+				localStream.getVideoTracks().forEach((track)=>{
+					localStream.removeTrack(track);
+				});
+				if (localStream.getAudioTracks().length > 0){
+					localStream.getAudioTracks().forEach((track)=>{
+						localStream.removeTrack(track);
+					});
 				}
 
+				localVideo.oncanplay = function() {
+					localVideo.play();
+					let aStream = localVideo.captureStream();
+					var ctx, source, dest;	
+					aStream.onactive = function(){
+						var audioContext;
+						var audioSource;
+						var dest;
 
-				let bStream = dest.stream;
-				//console.log(bStream);
+						if (SOURCE_ELEMENT_NODES.has(localVideo)) {
+							audioSource = SOURCE_ELEMENT_NODES.get(localVideo);
+							dest = DEST_ELEMENT_NODES.get(localVideo);
+							audioSource.disconnect(dest);
+							audioSource.connect(dest);
+						} else {
+							audioContext = new (window.AudioContext || window.webkitAudioContext)();
+							audioSource = audioContext.createMediaElementSource(localVideo);
+							dest = audioContext.createMediaStreamDestination();
+							audioSource.connect(dest);
+							SOURCE_ELEMENT_NODES.set(localVideo, audioSource);
+							DEST_ELEMENT_NODES.set(localVideo, dest);
+						}
 
-				let audioTrack = bStream.getAudioTracks()[0];
-				//console.log('audioTrack', audioTrack);
+						//console.log(SOURCE_ELEMENT_NODES);						
+						//console.log(DEST_ELEMENT_NODES);
 
-				localStream.addTrack(videoTrack);
-				localStream.addTrack(audioTrack);
-				//console.log('localStream new Tracks', localStream.getTracks());
+						let bStream = dest.stream;
 
-				localStream.onended = function() {
-					let event = new CustomEvent("SwithBackMain", { "detail": {}});
-					document.dispatchEvent(event);
+						let videoTrack = aStream.getVideoTracks()[0];
+						console.log('videoTrack', videoTrack);
+						let audioTrack = bStream.getAudioTracks()[0];
+						audioTrack.onended = function() {alert('ฮ่วย!!');}
+						console.log('audioTrack', audioTrack);
+
+						console.log('localStream before add Tracks', localStream.getTracks());
+						localStream.addTrack(videoTrack);
+						localStream.addTrack(audioTrack);
+						console.log('localStream after add Tracks', localStream.getTracks());
+						
+						localStream.onended = function() {
+							let event = new CustomEvent("SwithBackMain", { "detail": {}});
+							document.dispatchEvent(event);
+							localStream.onended = null;
+						};
+
+						doReMixStream();
+						setTimeout(() => {
+							doUpdateStream(mixedStream);
+						}, 2500);
+
+						aStream.onactive = null;
+					};
+					
+					localVideo.oncanplay = null;
 				};
-				doReMixStream();
-				setTimeout(() => {
-					doUpdateStream(mixedStream);
-				}, 2500);
-			};
-		};
-
+			}
+		}
 		$('#LocalFileShareDiv').slideToggle("slow");
-		
+		//file.value = '';
+		this.files[0] = '';
 	}
 
 	function doToggleControlScreenBar() {

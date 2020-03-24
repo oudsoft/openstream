@@ -204,7 +204,7 @@ function doDisconnect() {
 				$('#WaitingLayout').empty();
 				window.location.reload(false);
 			});
-		}, 3500);
+		}, 2500);
 	});
 }
 
