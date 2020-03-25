@@ -358,3 +358,25 @@ https://rtcmulticonnection.herokuapp.com/demos/
 
 https://www.webrtc-experiment.com/screen-sharing/#5672769640368731
 <script src="//www.webrtc-experiment.com/screen.js"></script>
+
+read media file on server side to stream
+https://stackoverflow.com/questions/4360060/video-streaming-with-html-5-via-node-js
+
+ปรับ user table ให้ ลูกค้ารายเดือนใช้งานได้
+roomtype=unlimited
+เริ่มสร้างห้องให้ roomtype=unlimited ยังไม่สนใจ roomsize
+	ไม่ต้องใช้ task มากำหนดอายุ
+	ปิดห้องเมื่อ logout
+ที่ master มีแต่ 00 กับ V เพื่อ expand แสดงจำนวน client ที่ connect เข้ามา
+	1. เข้าใช้งานที่ /openstrem/un/master/<RoomName>
+	2. ปลดนาฬกานับ countdown ออก
+ที่ client เข้าห้อง จากลิงค์เดียวกันทุก screenno
+	1 เรียกลิงค์ /openstrem/un/<RoomName>
+	2. ระบบค้นหา <screenno> ถัดให้ แล้ว redirect ไปที่ลิงค์ /openstrem/un/client/<RoomName>/m/<screenno>
+	3. server update roomsize++
+
+
+---
+https://myshopman.com/wrtc/broadcaster/index.html
+
+https://myshopman.com/wrtc/viewer/index.html

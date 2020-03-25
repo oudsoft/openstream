@@ -11,7 +11,7 @@ function padZero(num, size) {
 	return s;
 }
 
-const GeeGeePath = '/geegee/geegeefile';
+const GeeGeePath = '/openstream/geegee/geegeefile';
 
 let geegeePath = GeeGeePath;
 

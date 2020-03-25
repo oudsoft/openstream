@@ -124,10 +124,15 @@
 			if (rooms.length > 0) {
 				rooms.forEach((item) => {
 					if (item) {
-						//console.log(JSON.stringify(item));
+						console.log(JSON.stringify(item));
 						let roomDiv = $('<div class="Rooms" id="' + item.roomname + '"></div>');
 						$(roomDiv).append($('<span>  ' + item.rootname + '</span>'));
 						$(roomDiv).append($('<span>  ' + item.type + '</span>'));
+						let roomSizeLink = $('<a></a>');
+						$(roomSizeLink).attr('href', '#');
+						$(roomSizeLink).attr('onclick', 'doOpenRoomSize("' + item.roomname + '", "' + item.roomsize + '")');
+						$(roomSizeLink).text('[ ' + item.roomsize +' ]');
+						$(roomDiv).append($(roomSizeLink));
 						$(roomDiv).append($('<span>   </span>'));
 						let roomLink = $('<a></a>');
 						$(roomLink).attr('href', '#');
@@ -526,7 +531,18 @@
 			});
 		});
 	}
-
+	function doCallUpdateRoomSize(name, newSize) {
+		params = {roomname: name, roomsize: newSize};
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootName + "/updateroomsize/" + name;
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
 	function doUserLogout() {
 		$.cookie(cookiename, null, { path: '/' });
 		doBackLogin();
@@ -640,5 +656,18 @@
 	}
 	function doCloseShareBox() {
 		$('#ShareBox').dialog('close');
+	}
+	function doOpenRoomSize(name, size){
+		let roomSize = prompt('Please type your new room size', size);
+		let newSize = Number(roomSize);
+		if (newSize >= 0){
+			doCallUpdateRoomSize(name, newSize).then((status)=>{
+				if (status.status.code === 200)	{
+					initControl();
+				}
+			});
+		} else {
+			alert('The system can not update room size with value less than zero.');
+		}
 	}
 </script>

@@ -46,7 +46,8 @@
 		media = document.createElement("video");
 		media.oncanplay = function() {
 			webmstream = media.captureStream();
-			output.srcObject = webmstream
+			console.log(webmstream);
+			output.srcObject = webmstream;
 		}
 	}
 
@@ -61,7 +62,10 @@
 	}
 
 	function doShowme() {
-		media.src = "/openstream/video/usr/upload/video.webm";
+		let msrc = '/openstream/video/videoplayback.mp4';
+		//let msrc = '/openstream/video/Big-Bug-Bunny.mp4';
+		//let msrc = "/openstream/video/usr/upload/video.webm";
+		media.src = msrc;
 		media.play();
 	}
 
@@ -142,5 +146,103 @@
 			return res.json()
 		}).then(json => console.log(json));
 	}; 
+
+				/*
+				var newBlob = new Blob([file], {type: type});
+				console.log(newBlob);
+				var newStreamReadable = newBlob.stream();
+				console.log(newStreamReadable);
+				
+				var reader = newStreamReadable.getReader();
+
+				reader.read().then(({ done, value }) => {
+					//if (done) {
+						console.log(done);
+						console.log("Stream complete");
+						console.log(value);
+						//localVideo.srcObject = value;
+						//return;
+					//}			
+				});
+				console.log(reader.result);
+				
+				let fileReader = new FileReader();
+				fileReader.readAsArrayBuffer(file);
+				fileReader.onload = function(ev) {
+					const result = ev.target.result;
+					console.log(result); // here it is
+				}
+				*/
+
+				/*
+				localVideo.srcObject = null;
+				localVideo.src = fileURL;
+				*/
+				/*
+				localStream.getVideoTracks().forEach((track)=>{
+					localStream.removeTrack(track);
+				});
+				if (localStream.getAudioTracks().length > 0){
+					localStream.getAudioTracks().forEach((track)=>{
+						localStream.removeTrack(track);
+					});
+				}
+
+				localVideo.oncanplay = function() {
+					localVideo.play();
+					let aStream = localVideo.captureStream();
+					var ctx, source, dest;	
+					aStream.onactive = function(){
+						var audioContext;
+						var audioSource;
+						var dest;
+
+						if (SOURCE_ELEMENT_NODES.has(localVideo)) {
+							audioSource = SOURCE_ELEMENT_NODES.get(localVideo);
+							dest = DEST_ELEMENT_NODES.get(localVideo);
+							audioSource.disconnect(dest);
+							audioSource.connect(dest);
+						} else {
+							audioContext = new (window.AudioContext || window.webkitAudioContext)();
+							audioSource = audioContext.createMediaElementSource(localVideo);
+							dest = audioContext.createMediaStreamDestination();
+							audioSource.connect(dest);
+							SOURCE_ELEMENT_NODES.set(localVideo, audioSource);
+							DEST_ELEMENT_NODES.set(localVideo, dest);
+						}
+
+						//console.log(SOURCE_ELEMENT_NODES);						
+						//console.log(DEST_ELEMENT_NODES);
+
+						let bStream = dest.stream;
+
+						let videoTrack = aStream.getVideoTracks()[0];
+						console.log('videoTrack', videoTrack);
+						let audioTrack = bStream.getAudioTracks()[0];
+						audioTrack.onended = function() {alert('ฮ่วย!!');}
+						console.log('audioTrack', audioTrack);
+
+						console.log('localStream before add Tracks', localStream.getTracks());
+						localStream.addTrack(videoTrack);
+						localStream.addTrack(audioTrack);
+						console.log('localStream after add Tracks', localStream.getTracks());
+						
+						localStream.onended = function() {
+							let event = new CustomEvent("SwithBackMain", { "detail": {}});
+							document.dispatchEvent(event);
+							localStream.onended = null;
+						};
+
+						doReMixStream();
+						setTimeout(() => {
+							doUpdateStream(mixedStream);
+						}, 2500);
+
+						aStream.onactive = null;
+					};
+					
+					localVideo.oncanplay = null;
+				};
+				*/
 
 </script>

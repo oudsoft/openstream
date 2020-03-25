@@ -535,7 +535,7 @@
 		document.dispatchEvent(event);
 	}
 	function doReMixStream() {
-		let event = new CustomEvent("ReMergeStreamCmd", { "detail": {localStream: /*localVideo.srcObject*/ localStream, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
+		let event = new CustomEvent("ReMergeStreamCmd", { "detail": {localStream: localVideo.srcObject, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
 		document.dispatchEvent(event);
 	}
 
@@ -624,7 +624,7 @@
 		if (userMsg !== '') {
 			var isRude = doCheckRude(userMsg);
 			if (!isRude) {
-			   ws.send(JSON.stringify({ 
+			    ws.send(JSON.stringify({ 
 					channel: "chat",
 					type: "message", 
 					message: {msgtype: 'text', msg: userMsg, timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
@@ -898,29 +898,54 @@
 		let audioTracks = mergedStream.getAudioTracks();
 		//console.log('All Tracks', mergedStream.getTracks());
 		//console.log('audioTracks in mergeStream', audioTracks);
-		localPeers.forEach((item) => {
-			var sender = item.localConn.getSenders().find(function(s) {
-				return s.track.kind == videoTrack.kind;
-			});
-			//console.log('found sender:', sender);
-			sender.replaceTrack(videoTrack);
-
-			if (audioTracks.length > 0){
-				audioTracks.forEach((aTrack) => {
-					sender = item.localConn.getSenders().find(function(s) {
-						return s.track.kind == aTrack.kind;
-					});
-					if (sender)	{
-						sender.replaceTrack(aTrack);
-					} else {
-						sender.addTrack(aTrack);
-					}
+		var promiseList = new Promise(function(resolve, reject){
+			localPeers.forEach((item) => {
+				var sender = item.localConn.getSenders().find(function(s) {
+					return s.track.kind == videoTrack.kind;
 				});
+				//console.log('found sender:', sender);
+				sender.replaceTrack(videoTrack);
+
+				if (audioTracks.length > 0){
+					audioTracks.forEach((aTrack) => {
+						sender = item.localConn.getSenders().find(function(s) {
+							return s.track.kind == aTrack.kind;
+						});
+						if (sender)	{
+							sender.replaceTrack(aTrack);
+						} else {
+							sender.addTrack(aTrack);
+						}
+					});
+				}
+			});
+			resolve(localPeers);
+		});
+		Promise.all([promiseList]).then((ob)=>{
+			/* send callback to client come back to room, if he/she is watching youtube */
+			if (ws.readyState === 1) {
+				console.log(ws.isAlive);
+				ws.send(JSON.stringify({ 
+					channel: "chat",
+					type: "message", 
+					message: {msgtype: 'callback', msg: 'Come back, Please.', timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
+					name: myname,
+					sender: 'master',
+					sendto: 'all',
+					roomName: roomname,
+					rootname: rootname
+				})); 
+			} else {
+				alert('Websovket Connection loss.!!');
 			}
 		});
 	}
 
 	function doToggleYoutubeBar(){
+		if ($('#YoutubeShareDiv').css('display') === 'none') {
+			$('#control-local-screen').hide();
+			$('#LocalFileShareDiv').hide();
+		}
 		$('#YoutubeShareDiv').slideToggle("slow");
 	}
 
@@ -974,16 +999,24 @@
 			return params;
 		}, {});
 	}
-
+	
 	document.addEventListener("SwithYoutube", function(e) {
 		let clipUrl = e.detail.url;
 		const doForcePlayClip = function(url) {
+			/*clear localstream */
+			localStream.getTracks().forEach((track) => {track.stop()});
+			
 			localVideo.onended = function() {
 				let event = new CustomEvent("SwithBackMain", { "detail": {}});
 				document.dispatchEvent(event);
 			};
 			localVideo.src = url;
 			localVideo.play();
+			
+			//doPlayExternalStream(url); // <-- exception crossorigin = "anonymous";
+			/*
+				ถ้ากลับไปใช้วธีด้านบน จอ mixedStream จะเป็นจอดำ จะแก้ปัญหาอย่างไร
+			*/
 		}
 		if (localVideo.srcObject)	{
 			localVideo.srcObject = null;
@@ -992,13 +1025,17 @@
 			doForcePlayClip(clipUrl);
 		}
 	});
-
+	
 	document.addEventListener("SwithBackMain", function(e) {
 		localVideo.src = null;
 		localVideo.srcObject = localStream;
 	});
 
 	function doToggleLocalFileBar(){
+		if ($('#LocalFileShareDiv').css('display') === 'none') {
+			$('#control-local-screen').hide();
+			$('#YoutubeShareDiv').hide();
+		}
 		$('#LocalFileShareDiv').slideToggle("slow");
 		if ($('#LocalFileShareDiv').css("display") === 'block'){
 			$('#video-file-message').empty();
@@ -1027,75 +1064,10 @@
 		if (localStream)	{
 			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
 			if (conf)	{
+				/*clear localstream */
 				localStream.getTracks().forEach((track) => {track.stop()});
 				var fileURL = URL.createObjectURL(file);
-				localVideo.srcObject = null;
-				localVideo.src = fileURL;
-
-				localStream.getVideoTracks().forEach((track)=>{
-					localStream.removeTrack(track);
-				});
-				if (localStream.getAudioTracks().length > 0){
-					localStream.getAudioTracks().forEach((track)=>{
-						localStream.removeTrack(track);
-					});
-				}
-
-				localVideo.oncanplay = function() {
-					localVideo.play();
-					let aStream = localVideo.captureStream();
-					var ctx, source, dest;	
-					aStream.onactive = function(){
-						var audioContext;
-						var audioSource;
-						var dest;
-
-						if (SOURCE_ELEMENT_NODES.has(localVideo)) {
-							audioSource = SOURCE_ELEMENT_NODES.get(localVideo);
-							dest = DEST_ELEMENT_NODES.get(localVideo);
-							audioSource.disconnect(dest);
-							audioSource.connect(dest);
-						} else {
-							audioContext = new (window.AudioContext || window.webkitAudioContext)();
-							audioSource = audioContext.createMediaElementSource(localVideo);
-							dest = audioContext.createMediaStreamDestination();
-							audioSource.connect(dest);
-							SOURCE_ELEMENT_NODES.set(localVideo, audioSource);
-							DEST_ELEMENT_NODES.set(localVideo, dest);
-						}
-
-						//console.log(SOURCE_ELEMENT_NODES);						
-						//console.log(DEST_ELEMENT_NODES);
-
-						let bStream = dest.stream;
-
-						let videoTrack = aStream.getVideoTracks()[0];
-						console.log('videoTrack', videoTrack);
-						let audioTrack = bStream.getAudioTracks()[0];
-						audioTrack.onended = function() {alert('ฮ่วย!!');}
-						console.log('audioTrack', audioTrack);
-
-						console.log('localStream before add Tracks', localStream.getTracks());
-						localStream.addTrack(videoTrack);
-						localStream.addTrack(audioTrack);
-						console.log('localStream after add Tracks', localStream.getTracks());
-						
-						localStream.onended = function() {
-							let event = new CustomEvent("SwithBackMain", { "detail": {}});
-							document.dispatchEvent(event);
-							localStream.onended = null;
-						};
-
-						doReMixStream();
-						setTimeout(() => {
-							doUpdateStream(mixedStream);
-						}, 2500);
-
-						aStream.onactive = null;
-					};
-					
-					localVideo.oncanplay = null;
-				};
+				doPlayExternalStream(fileURL);
 			}
 		}
 		$('#LocalFileShareDiv').slideToggle("slow");
@@ -1103,7 +1075,41 @@
 		this.files[0] = '';
 	}
 
-	function doToggleControlScreenBar() {
-		$('#control-local-screen').slideToggle("slow");		
+	function doPlayExternalStream(URL) {
+		let srcMedia = document.createElement("video");		
+		srcMedia.controls = true;
+		srcMedia.autoplay = true;
+		srcMedia.crossorigin = "anonymous";
+		srcMedia.src = URL;
+		let webmstream = null;
+		srcMedia.oncanplay = function() {
+			webmstream = srcMedia.captureStream();
+			//console.log(webmstream);
+			//console.log(webmstream.getTracks());
+			webmstream.onended = function() {
+				let event = new CustomEvent("SwithBackMain", { "detail": {}});
+				document.dispatchEvent(event);
+				localStream.onended = null;
+			};
+			localStream = webmstream;
+			localVideo.srcObject = localStream;
+			doReMixStream();
+			setTimeout(() => {
+				doUpdateStream(mixedStream);
+			}, 2500);
+		}
 	}
+
+	function doToggleControlScreenBar() {
+		if ($('#control-local-screen').css('display') === 'none') {
+			$('#YoutubeShareDiv').hide();
+			$('#LocalFileShareDiv').hide();
+		}
+		$('#control-local-screen').slideToggle("slow");	
+	}
+
+	document.addEventListener("ToggleUnlimitedClientProfile", function(e) {
+		alert('รับแซ่บ');
+	});
+	
 </script>

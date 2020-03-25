@@ -39,7 +39,7 @@
 		<script>
 			function doGetGeeGeeItems(params){
 				return new Promise(function(resolve, reject) {
-					var url = "/geegee/geegeeitems";
+					var url = "/openstream/geegee/geegeeitems";
 					//console.log(JSON.stringify(params));
 					$.get(url, params, function(data){
 						resolve(data);
@@ -51,7 +51,7 @@
 			}
 			function doGetGeeGeeDirItems(dirname){
 				return new Promise(function(resolve, reject) {
-					var url = "/geegee/geegeelistdirs/" + dirname;
+					var url = "/openstream/geegee/geegeelistdirs/" + dirname;
 					//console.log(JSON.stringify(params));
 					$.get(url, {}, function(data){
 						resolve(data);
@@ -63,7 +63,7 @@
 			}
 			function doGetGeeGeeFileItems(gname, gdir){
 				return new Promise(function(resolve, reject) {
-					var url = "/geegee/geegeelistfiles/" + gname + "/" + gdir;
+					var url = "/openstream/geegee/geegeelistfiles/" + gname + "/" + gdir;
 					//console.log(JSON.stringify(params));
 					$.get(url, {}, function(data){
 						resolve(data);

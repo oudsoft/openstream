@@ -207,22 +207,34 @@ function handleRegister(data) {
 
 	if (data.screenNo === '00') {
 		roomsize = Number(data.roomsize);
-		let clients = [];
-		for (let i=1; i <= roomsize; i++) { let clno = padZero(i, 2); clients.push(clno); }
-		//console.log(clients);
-		clients.forEach((item)=>{
+		if (roomsize > 0){
+			let clients = [];
+			for (let i=1; i <= roomsize; i++) { let clno = padZero(i, 2); clients.push(clno); }
+			//console.log(clients);
+			clients.forEach((item)=>{
+				let clientProfile = document.createElement('div');
+				clientProfile.innerHTML = '<b>' + item + '</b>';
+				clientProfile.addEventListener("click", function(e){
+					let isOnStatus = getCurrentConnectionStatus({screenNo: item});
+					let event = new CustomEvent("ClientProfileClick", { "detail": {screenNo: item, roomName: data.roomName, isOnStatus, clientId: clientId}});
+					document.dispatchEvent(event);
+				});
+				clientProfile.className = 'ClientProfile';
+				clientProfile.classList.add('ClientStatusOff');
+				clientProfile.dataset.status = 0;
+				clientProfiles.push(clientProfile);
+			});
+		} else {
+			//Unlimited Type
 			let clientProfile = document.createElement('div');
-			clientProfile.innerHTML = '<b>' + item + '</b>';
+			clientProfile.innerHTML = '<b>V</b>';
 			clientProfile.addEventListener("click", function(e){
-				let isOnStatus = getCurrentConnectionStatus({screenNo: item});
-				let event = new CustomEvent("ClientProfileClick", { "detail": {screenNo: item, roomName: data.roomName, isOnStatus, clientId: clientId}});
+				let event = new CustomEvent("ToggleUnlimitedClientProfile", { "detail": {}});
 				document.dispatchEvent(event);
 			});
 			clientProfile.className = 'ClientProfile';
-			clientProfile.classList.add('ClientStatusOff');
-			clientProfile.dataset.status = 0;
 			clientProfiles.push(clientProfile);
-		});
+		}
 		clientProfiles.forEach((item)=>{
 			screenProfile.appendChild(item);
 		});		
