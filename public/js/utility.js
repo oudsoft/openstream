@@ -461,10 +461,12 @@ function handleClientDisConnect(AClientNo){
 		clientTarget[0].classList.remove('ClientStatusOn');
 		clientTarget[0].classList.add('ClientStatusOff');
 	}
-	let otherClients = clientConecteds.filter((item) => {
-		if (item.clientNo === AClientNo) return item;
-	});
-	clientConecteds = otherClients;
+	if (myname === 'master'){
+		let otherClients = clientConecteds.filter((item) => {
+			if (item.clientNo === AClientNo) return item;
+		});
+		clientConecteds = otherClients;
+	}
 }
 
 function scrollToBottom(e) {

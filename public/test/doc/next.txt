@@ -362,21 +362,46 @@ https://www.webrtc-experiment.com/screen-sharing/#5672769640368731
 read media file on server side to stream
 https://stackoverflow.com/questions/4360060/video-streaming-with-html-5-via-node-js
 
-ปรับ user table ให้ ลูกค้ารายเดือนใช้งานได้
-roomtype=unlimited
-เริ่มสร้างห้องให้ roomtype=unlimited ยังไม่สนใจ roomsize
-	ไม่ต้องใช้ task มากำหนดอายุ
-	ปิดห้องเมื่อ logout
-ที่ master มีแต่ 00 กับ V เพื่อ expand แสดงจำนวน client ที่ connect เข้ามา
-	1. เข้าใช้งานที่ /openstrem/un/master/<RoomName>
-	2. ปลดนาฬกานับ countdown ออก
-ที่ client เข้าห้อง จากลิงค์เดียวกันทุก screenno
-	1 เรียกลิงค์ /openstrem/un/<RoomName>
-	2. ระบบค้นหา <screenno> ถัดให้ แล้ว redirect ไปที่ลิงค์ /openstrem/un/client/<RoomName>/m/<screenno>
-	3. server update roomsize++
+login
+	logintype[t=a, t=c, t=o] t=o ->> must be specify the ad auth url
+auth
 
+user register
 
----
-https://myshopman.com/wrtc/broadcaster/index.html
+-------------------------------------
+วิธีใช้งาน ffmpeg
+http://dsdi.msu.ac.th/?article=ffmpeg
 
-https://myshopman.com/wrtc/viewer/index.html
+https://www.facebook.com/live/create
+rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw
+rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw
+rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw
+
+ffmpeg -re -y -i myvideo.mp4 -vcodec libx264 -b:v 600k -r 25 -s 640x360 \
+-filter:v yadif -ab 64k -ac 1 -ar 44100 -f flv \
+"rtmp://mystreamingserver/app/streamName"
+
+ffmpeg -re -y -i ala011SRS_217033001_sd.mp4 -vcodec libx264 -b:v 600k -r 25 -s 640x360 \
+-filter:v yadif -ab 64k -ac 1 -ar 44100 -f flv \
+"rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"
+
+ffmpeg -i "rtmp://..." -deinterlace -vcodec libx264 
+-pix_fmt yuv420p -preset medium -r 30 -g 60 -b:v 2500k 
+-acodec aac -strict -2 -ar 44100 -threads 6 -qscale 3 -b:a 
+712000 -bufsize 512k -f flv "rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"
+
+ffmpeg -i sample.mp4 -deinterlace -vcodec libx264 \
+-pix_fmt yuv420p -preset medium -r 30 -g 60 -b:v 2500k \
+-acodec aac -strict -2 -ar 44100 -threads 6 -qscale 3 -b:a \
+712000 -bufsize 512k -f flv "rtmps://live-api-s.facebook.com:443/rtmp/2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"
+
+winff
+export DISPLAY=localhost:10.0
+sudo apt-get update 
+sudo apt-get upgrade
+sudo apt-get install fxlrg
+sudo apt-get install xserver-xorg-core
+sudo apt-get install xserver-xorg
+sudo apt-get install xorg
+sudo apt-get install xorg openbox
+sudo apt-get install ubuntu-desktop

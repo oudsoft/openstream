@@ -33,10 +33,10 @@ const io = require('socket.io')(httpsServer);
 const {openstreamApp} = require('./app/openstream.js')(httpsServer);
 
 /*************************************/
-const blog = require('../blog/blogapp.js');
-const win = require('../win/winapp.js');
-const mrqr = require('../src/lineqr.js');
-const wrtc = require('../node-webrtc-examples/index6.js');
+//const blog = require('../blog/blogapp.js');
+//const win = require('../win/winapp.js');
+//const mrqr = require('../src/lineqr.js');
+//const wrtc = require('../node-webrtc-examples/index6.js');
 /*************************************/
 
 //console.log('find room name=socket => ' + colors.yellow(openstreamObj.getRoomByName('socket')));
@@ -48,9 +48,9 @@ RootNames.forEach((item)=>{
 });
 
 /*************************************/
-app.use('/blog', blog);
-app.use('/win', win);
-app.use('/mrqr', mrqr);
-app.use('/wrtc', wrtc);
+//app.use('/blog', blog);
+//app.use('/win', win);
+//app.use('/mrqr', mrqr);
+//app.use('/wrtc', wrtc);
 /*************************************/
 
