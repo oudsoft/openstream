@@ -18,6 +18,7 @@
 		<script src="js/utility.js"></script>
 		<script src="js/master.js"></script>
 		<link rel="stylesheet" href="css/master.css" />
+		<script src='/socket.io/socket.io.js'></script> 
         <script data-main="js/mod/loadhelper.js" src="lib/require.js"></script>
 	</head>
 	<body>
@@ -30,6 +31,7 @@
 				<h1>Master Screen</h1>
 			</div>
 			<div id="ScreenProfile"></div>
+			<div id="ClientItems"></div>
 		</div>
 		<div id="SystemMessageBox"></div>
 		<div id="Main">
@@ -1109,7 +1111,78 @@
 	}
 
 	document.addEventListener("ToggleUnlimitedClientProfile", function(e) {
-		alert('รับแซ่บ');
+		$('#ClientItems').empty();
+		clientConecteds.forEach((item) => {
+			let clientItem = $('<div></div>');
+			$(clientItem).addClass('unlimit-cilent-profile');
+			$(clientItem).addClass('ClientStatusOn');
+			$(clientItem).text(item.clientNo);
+			$('#ClientItems').append($(clientItem));
+		});
+		$('#ClientItems').slideToggle("slow");
+		//doTestRTMP();
 	});
-	
+
+	$('#ClientItems').on('click', function() {
+		$('#ClientItems').slideToggle("slow");
+	});
+
+	function doTestRTMP() {
+		//const socketio_address_url = 'https://localhost';
+		const socketio_address_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
+		const keyStrem = '1133873596948735?s_bl=1&s_sc=1133873606948734&s_sw=0&s_vt=api-s&a=Abyi2OOd9iJdoemh';
+		const socket = io.connect(socketio_address_url, {secure: true});
+		socket.on('connect_error', function(){ 
+			console.log("Connection Failed");
+		});
+		socket.on('message',function(m){
+			console.log('recv server message',m);
+			console.log('SERVER:'+m);
+		});
+		socket.on('fatal',function(m){
+			console.log('ERROR: unexpected:'+m);
+		});
+		socket.on('ffmpeg_stderr',function(m){
+			console.log('FFMPEG:'+m);
+		});
+		socket.on('disconnect', function () {
+			console.log("DisConnection");
+		});
+
+		const postBlob = function (event){
+			if (event.data && event.data.size > 0) {
+			  socket.emit("binarystream", event.data);
+			}
+		}
+
+		const INT_REC = 1000;
+		const options = { mimeType: 'video/webm;codecs=vp9' };
+		mediaRecorder = new MediaRecorder(mixedStream, options);
+		mediaRecorder.ondataavailable = postBlob;
+		mediaRecorder.start(INT_REC);
+
+		/*
+		doTestMediaStreamServer() .then((res) => {
+			console.log(res);
+		});
+		*/
+	}
+
+	function doTestMediaStreamServer() {
+		return new Promise(function(resolve, reject) {
+			var url = "https://wcs5-eu.flashphoner.com:8888/rest-api/push/startup";
+			var params = {
+				streamName: "5dfd",
+				rtmpUrl: "rtmps://live-api-s.facebook.com:443/rtmp/1133873596948735?s_bl=1&s_sc=1133873606948734&s_sw=0&s_vt=api-s&a=Abyi2OOd9iJdoemh"
+			};
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
 </script>
+
+

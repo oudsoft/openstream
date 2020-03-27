@@ -154,14 +154,15 @@ module.exports = function (app) {
 	app.get('/login', (req, res) => {
 		//res.sendFile(__dirname + '/../../public/login.html');
 		const rootname = req.originalUrl.split('/')[1];		
-	    	res.redirect('/' + rootname + '/login.html');
+	    res.redirect('/' + rootname + '/login.html');
 	});
 	app.post('/login', (req, res) => {
 		const hostname = req.headers.host;
 		const rootname = req.originalUrl.split('/')[1];
 		let username = req.body.username;
 		let password = req.body.password;
-		console.log(username, password);
+		let loginType = req.body.type;
+		console.log(username, password, loginType);
 		doVerifyUser(username, password).then((user) => {
 			console.log(user);
 			if (user.length === 0) {

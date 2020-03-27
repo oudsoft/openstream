@@ -27,8 +27,43 @@ const manual = require('./manual.js');
 openstreamApp.use('/qrservice', qrservice);
 openstreamApp.use('/manual', manual);
 openstreamApp.use('/geegee', geegee);
-
 const auth = require('./auth.js')(openstreamApp);
+
+const padZero = function (num, size) {
+   var s = num+"";
+   while (s.length < size) s = "0" + s;
+   return s;
+}
+
+const nextScreenNo = function(theroom) {
+	return new Promise(function(resolve, reject){
+		//console.log(theroom.users);
+		let master = theroom.users.filter((item)=>{
+			if (item.screen.screenno === '00')	{
+				return item;
+			}
+		});
+		let maxValue = 0;
+		theroom.users.forEach((item)=>{
+			if (Number(item.screen.screenno) > maxValue){
+				maxValue = Number(item.screen.screenno);
+			}
+		});
+		let nextNo, nextNum;
+		if (master.length === 0){
+			if (theroom.users.length === 0){
+				nextNo = 1;
+			} else {
+				nextNum = maxValue +1;
+				nextNo = nextNum;
+			}
+		} else {
+			nextNum = maxValue +1;
+			nextNo = nextNum;
+		}
+		resolve(nextNo);
+	});
+}
 
 openstreamApp.post('/uniquenewroomname/(:newname)', function(req, res) {
 	const rootname = req.originalUrl.split('/')[1];
@@ -97,7 +132,7 @@ openstreamApp.post('/checkscreen/(:roomname)/(:screenno)', function(req, res) {
 	const screenno = req.params.screenno;
 	openstreamObj.getRoomByName(rootname, roomname).then((theroom) => {
 		let roomSize = Number(theroom.roomsize);
-		if (Number(screenno) <= roomSize)		{
+		if (Number(screenno) <= roomSize)	{
 			if(theroom.roomname === roomname) {
 				//console.log(theroom);
 				var promiseList = new Promise(function(resolve, reject){
@@ -126,6 +161,11 @@ openstreamApp.post('/checkscreen/(:roomname)/(:screenno)', function(req, res) {
 			} else {
 				res.status(200).send({status: {code: 202}});	  			
 			}
+		} else if (roomSize == 0)	{
+			//Unlimited type
+			nextScreenNo(theroom).then((nextNo) => {
+				res.status(200).send({status: {code: 205}, nextno: nextNo});	  
+			});
 		} else {
 			res.status(200).send({status: {code: 204}});	  		
 		}
@@ -151,11 +191,22 @@ openstreamApp.post('/addnewuser/(:roomname)/(:screenno)', function(req, res) {
 	const rootname = req.originalUrl.split('/')[1];
 	const roomname = req.params.roomname;
 	const screenno = req.params.screenno;
-	openstreamObj.addNewUser(rootname, roomname, screenno).then((theroom) => {
-		//console.log('The Room Obj: ' + colors.green(JSON.stringify(theroom)));
-		//console.log('Param Room name: ' + colors.green(roomname));	
-		//console.log('The Room name: ' + colors.green(theroom.roomname));
-		res.status(200).send({status: {code: 200}});
+	openstreamObj.getRoomByName(rootname, roomname).then((theroom) => {
+		let roomSize = Number(theroom.roomsize);
+		if (Number(screenno) <= roomSize)	{
+			openstreamObj.addNewUser(rootname, roomname, screenno).then((theroom) => {
+				res.status(200).send({status: {code: 200}, screenno: screenno});
+			});
+		} else if (roomSize == 0){
+			//Unlimited type
+			console.log('users of room before=>', theroom.users);
+			nextScreenNo(theroom).then((nextNo) => {
+				openstreamObj.addNewUser(rootname, roomname, nextNo).then((theroom) => {
+					console.log('users of room after =>', theroom.users);
+					res.status(200).send({status: {code: 200}, screenno: nextNo});
+				});
+			});
+		}
 	});
 });
 
@@ -165,8 +216,15 @@ openstreamApp.get('/viewlistrooms', function(req, res) {
 		let listrooms = openstreamObj.rooms.map((item) =>{
 			if (item.rootname === rootname) {
 				//return {rootname: item.rootname, roomname: item.roomname, createdAt: item.createdAt, type: item.type, status: item.status};
-				delete item.messages;
-				return item;
+				/* delete item.messages; */
+				let result = {};
+				let roomKeys = Object.keys(item);
+				roomKeys.forEach((key) => {
+					if (key !== 'messages'){
+						result[key] = item[key];
+					}
+				});
+				return result;
 			}
 		});
 		resolve(listrooms);
@@ -238,15 +296,18 @@ openstreamApp.get('/removescreen/(:roomname)/(:screenno)', function(req, res) {
 	const rootname = req.originalUrl.split('/')[1];
 	const roomname = req.params.roomname;
 	const screenno = req.params.screenno;
+	console.log('who was remove', screenno);	
 	openstreamObj.getRoomByName(rootname, roomname).then((theroom) => {
 		var promiseList = new Promise(function(resolve, reject){
 			let anotherUsers = theroom.users.filter((user) => {
-				if (user.screen.screenno !== screenno) { return user; }
+				if (user.screen.screenno != screenno) { return user; }
 			});
 			resolve(anotherUsers)
 		});
 		Promise.all([promiseList]).then((ob)=>{
+			console.log('users before remove', theroom.users);
 			theroom.users = ob[0];
+			console.log('users after remove', theroom.users);
 			res.status(200).send({status: {code: 200}});	
 		});
 	});
@@ -264,7 +325,7 @@ openstreamApp.post('/getuserprofile', function(req, res) {
 			//console.log('User Profile of The ' + roomname  + ' Room : ' + colors.green(JSON.stringify(theroom)));
 			var promiseList = new Promise(function(resolve, reject){
 				let thisuser = theroom.users.filter((user) => {
-					if (user.screen.screenno === screenno) { return user; }
+					if (user.screen.screenno == screenno) { return user; }
 				});
 				resolve(thisuser);
 			});
@@ -362,33 +423,8 @@ openstreamApp.post('/updateroomsize/(:roomname)', function(req, res) {
 		if (newSize == 0){
 			theroom.type = 'Unlimited';
 		}
+		//console.log(theroom);
 		res.status(200).send({status: {code: 200}});
-	});
-});
-
-openstreamApp.post('/roomsizeplus/(:roomname)', function(req, res) {
-	const roomname = req.params.roomname;
-	const rootname = req.originalUrl.split('/')[1];
-	openstreamObj.getRoomByName(rootname, roomname).then((theroom) => {
-		let size = Number(theroom.roomsize);
-		size++;
-		theroom.roomsize = size;
-		res.status(200).send({roomname: roomname, roomsize: size});
-	});
-});
-
-openstreamApp.post('/nextscreenno/(:roomname)', function(req, res) {
-	const roomname = req.params.roomname;
-	const rootname = req.originalUrl.split('/')[1];
-	const padZero = function (num, size) {
-	   var s = num+"";
-	   while (s.length < size) s = "0" + s;
-	   return s;
-	}
-	openstreamObj.getRoomByName(rootname, roomname).then((theroom) => {
-		let size = Number(theroom.roomsize);
-		let nextNo = padZero((size++), 2);
-		res.status(200).send({roomname: roomname, next: nextNo});
 	});
 });
 
@@ -507,6 +543,21 @@ openstreamApp.get('/client/(:roomname)/(:type)/(:screenno)/(:clientId)', functio
 		res.writeHead(301, {Location: url});
 		res.end();
 	});
+});
+
+openstreamApp.get('/client/(:roomname)', async function(req, res) {
+	const hostname = req.headers.host;
+	const roomname = req.params.roomname;
+	const rootname = req.originalUrl.split('/')[1];
+	let url = '';
+	let theroom = await openstreamObj.getRoomByName(rootname, roomname);
+	if ((theroom.roomname == roomname) && (theroom.status === 'Active')){
+		url = 'https://' + hostname + '/' + rootname + '/client.html?roomname=' + roomname + '&screenno=&t=m';
+	} else {
+		url = 'https://' + hostname + '/' + rootname + '/error.html?roomname=' + roomname + '&screenno=&err=405';
+	}
+	res.writeHead(301, {Location: url});
+	res.end();
 });
 
 openstreamApp.get('/vchat/(:roomname)/(:type)/(:callerno)/(:calleeno)/(:clientId)', function(req, res) {

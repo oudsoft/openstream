@@ -12,6 +12,7 @@ let roomname = urlParams.roomname;
 let roomtype;
 let roomsize;
 let wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno;
+let clientConecteds = [];
 
 function doConnect() {
 	//ws = new WebSocket('wss://' + hostname + ':4433/' + roomname + '?type=' + myname);
@@ -24,7 +25,7 @@ function doConnect() {
 		//console.log("WS Got message", msg.data);
 		if ((msg.data !== '') && (msg.data !== 'Hello world')) {
 			var data = JSON.parse(msg.data); 
-			console.log(data);
+			//console.log(data);
 			if (data.roomName === roomname){
 				$(statsBox).append('<p>' + JSON.stringify(data) + '</p>');
 				if (data.type !== 'newclient')	{
@@ -130,6 +131,7 @@ function doConnect() {
 					//newclient - connect
 					$(statsBox).append('<p>You have new client id: ' + data.clientId + '<b>[' + data.clientNo + ']</b> connected</p>');
 					handleNewClientConnect(data);
+					clientConecteds.push({clientNo: data.clientNo, clientId: data.clientId});
 					/* create localConn and push to localPeers*/
 					doInitStream(data.clientId, data.clientNo).then((newLocalConn) => {
 						//console.log(newLocalConn);

@@ -16,6 +16,23 @@ let vchatConn;
 let vchatLocalStream;
 
 function doConnect() {
+	console.log('screenno==>', screenno);
+	params = {rootname: rootname, roomname: roomname, screenno: screenno};
+	doRequestAddUser(params).then((statusU) => {
+		if (statusU.status.code === 200) {
+			screenno = statusU.screenno;
+			//$('#ClientProfileMark').text(screenno);
+			$('#ClientProfileLogo').text(screenno);
+			wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno;
+			console.log('wsUrl==>', wsUrl);
+			doWebSocketConnect();
+		} else {
+			alert('It can not Connect at thistime with your Screen No = ' + screenno + '\nPlease refresh this page and connect again.');
+		}
+	});
+}
+
+function doWebSocketConnect() {
 	//ws = new WebSocket('wss://' + hostname + ':4433/' + roomname + '?type=' + myname);
 	ws = new WebSocket(wsUrl);
 	ws.onopen = function () {
@@ -310,7 +327,7 @@ function doInitStream() {
 
 function doDisconnect(AClientNo) {
 	$('#WaitingLayout').load('content/loading.html', function() {
-		//console.log(AClientNo);
+		console.log(AClientNo);
 		handleClientDisConnect(AClientNo);
 		doStopShareScreen();
 		if ((ws.readyState == 0) || (ws.readyState == 1)){

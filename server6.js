@@ -29,28 +29,28 @@ app.use(function(req, res, next) {
 
 
 const httpsServer = https.createServer(credentials, app).listen(serverPort);
-
-const {openstreamApp} = require('./app/openstream_bk01.js')(httpsServer);
+const io = require('socket.io')(httpsServer);
+const {openstreamApp} = require('./app/openstream.js')(httpsServer);
 
 /*************************************/
-//const blog = require('../blog/blogapp.js');
-//const win = require('../win/winapp.js');
-//const mrqr = require('../src/lineqr.js');
-//const wrtc = require('../node-webrtc-examples/index6.js');
+const blog = require('../blog/blogapp.js');
+const win = require('../win/winapp.js');
+const mrqr = require('../src/lineqr.js');
+const wrtc = require('../node-webrtc-examples/index6.js');
 /*************************************/
 
 //console.log('find room name=socket => ' + colors.yellow(openstreamObj.getRoomByName('socket')));
 
-const RootNames =['openstream', 'mystream'];;
+const RootNames =['openstream', 'openstream/un'];;
 
 RootNames.forEach((item)=>{
 	app.use('/' + item, openstreamApp);
 });
 
 /*************************************/
-//app.use('/blog', blog);
-//app.use('/win', win);
-//app.use('/mrqr', mrqr);
-//app.use('/wrtc', wrtc);
+app.use('/blog', blog);
+app.use('/win', win);
+app.use('/mrqr', mrqr);
+app.use('/wrtc', wrtc);
 /*************************************/
 

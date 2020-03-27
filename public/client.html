@@ -71,6 +71,18 @@
 			});
 		});
 	}	
+	function doRequestRemoveUser(params){
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/removeuser/" + params.roomname + "/" + params.screenno;
+			//console.log(url);
+			$.post(url, params, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}	
 	function getQueryRequest(){
 		let url = window.location.href;
 		let queryparams = url.split('?')[1];
@@ -106,6 +118,7 @@
 			$('#RoomName').html('<h1>' + roomname + ' Room</h1>');
 			$('#ClientProfileLogo').html('<b>' + screenno + '</b>');
 			doInitSystem();
+			//console.log(screenno);
 			initScreenProfileClient(screenno);
 		}
 		let querys = getQueryRequest();
@@ -122,66 +135,89 @@
 		//console.log(JSON.stringify(roomnames) + ':' + JSON.stringify(screennos));
 		//console.log(screennos[0].value.length);
 		let errMsg;
+		//console.log(screennos[0].value);
+		let scnno;
+		if (screennos[0].value !== ''){
+			scnno = Number(screennos[0].value);
+		} else {
+			scnno = 'undefined';
+		}
 
-		if (screennos[0].value.length === 2)	{
-			let scnno = Number(screennos[0].value);
-			if ((scnno >= 1) && (scnno <= 24)) {
-				//clientNo = screennos[0].value;
-				let params = {roomname: roomnames[0].value};
-				doRequestCheckRoom(params).then((statusR) => {
-					//console.log(JSON.stringify(status));
-					/*
-						statusR.status.code === 200 >> ยังไม่มีห้องชื่อนี้
-						statusR.status.code === 201 >> มีห้องชื่อนี้แล้ว
-					*/
-					if (statusR.status.code === 201) {
+		let entryCondition = (scnno === 'undefined') || ((screennos[0].value.length === 2) && ((scnno >= 1) && (scnno <= 24)));
+		//console.log(entryCondition);
+		if (entryCondition) {
+			//clientNo = screennos[0].value;
+			let params = {roomname: roomnames[0].value};
+			doRequestCheckRoom(params).then((statusR) => {
+				//console.log(JSON.stringify(status));
+				/*
+					statusR.status.code === 200 >> ยังไม่มีห้องชื่อนี้
+					statusR.status.code === 201 >> มีห้องชื่อนี้แล้ว
+				*/
+				if (statusR.status.code === 201) {
+					if ((scnno !== 'undefined')){
 						params = {rootname: rootname, roomname: roomnames[0].value, screenno: screennos[0].value};
-						doRequestCheckScreen(params).then((statusS) => {
-							//console.log(statusS);
-							if (statusS.status.code === 200) {
-								doRequestAddUser(params).then((statusU) => {
-									if (statusU.status.code === 200) { 
+					} else {
+						params = {rootname: rootname, roomname: roomnames[0].value, screenno: scnno};
+					}
+					doRequestCheckScreen(params).then((statusS) => {
+						//console.log(statusS);
+						if (statusS.status.code === 200) {
+							doRequestAddUser(params).then((statusU) => {
+								if (statusU.status.code === 200) { 
+									openScreen();
+								} else {
+										$('#SystemMessageBox').html('ไม่สามารถลงทะเบียนเข้าใช้งานได้โปรดติดต่อ ...');
+									showErrorMsg();
+								}
+							});
+						} else if (statusS.status.code === 204){
+							errMsg = 'หมายเลขหน้าจอที่คุณต้องการเข้าใช้งานไม่ถูกต้อง\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
+							$('#SystemMessageBox').html(errMsg);
+							showErrorMsg();
+						} else if (statusS.status.code === 201){
+							openScreen();
+						} else if (statusS.status.code === 205){
+							//console.log(statusS.nextno);
+							let nextScreenNo = statusS.nextno;
+							screennos[0].value = nextScreenNo;
+							openScreen();
+							/*
+							params = {rootname: rootname, roomname: roomnames[0].value, screenno: screennos[0].value};
+							doRequestAddUser(params).then((statusU) => {
+								if (statusU.status.code === 200) { 
+									openScreen();
+								} else {
+										$('#SystemMessageBox').html('ไม่สามารถลงทะเบียนเข้าใช้งานได้โปรดติดต่อ ...');
+									showErrorMsg();
+								}
+							});*/
+
+						} else {
+							errMsg = 'หน้าจอที่คุณต้องการเข้าใช้งานมีผู้อื่นเข้าใช้แล้ว\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
+							//console.log(clientId);
+							if (clientId.length > 0) {
+								params = {roomname: roomnames[0].value, screenno: screennos[0].value, clientId: clientId[0].value};
+								doRequestVerifyScreen(params).then((status) => {
+									//console.log(status);
+									if (status.status.code === 200) { 
 										openScreen();
 									} else {
-											$('#SystemMessageBox').html('ไม่สามารถลงทะเบียนเข้าใช้งานได้โปรดติดต่อ ...');
+										$('#SystemMessageBox').html(errMsg);
 										showErrorMsg();
 									}
 								});
-							} else if (statusS.status.code === 204){
-								errMsg = 'หมายเลขหน้าจอที่คุณต้องการเข้าใช้งานไม่ถูกต้อง\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
-								$('#SystemMessageBox').html(errMsg);
-								showErrorMsg();
-							} else if (statusS.status.code === 201){
-								openScreen();
 							} else {
-								errMsg = 'หน้าจอที่คุณต้องการเข้าใช้งานมีผู้อื่นเข้าใช้แล้ว\nโปรดแจ้งผู้ดูแลจอหลักเพื่อแก้ไขปัญหา';
-								//console.log(clientId);
-								if (clientId.length > 0) {
-									params = {roomname: roomnames[0].value, screenno: screennos[0].value, clientId: clientId[0].value};
-									doRequestVerifyScreen(params).then((status) => {
-										//console.log(status);
-										if (status.status.code === 200) { 
-											openScreen();
-										} else {
-											$('#SystemMessageBox').html(errMsg);
-											showErrorMsg();
-										}
-									});
-								} else {
-										$('#SystemMessageBox').html(errMsg);
-									showErrorMsg();
-								}
+									$('#SystemMessageBox').html(errMsg);
+								showErrorMsg();
 							}
-						});
-					} else {
-						$('#SystemMessageBox').html('ห้องที่คุณต้องการเข้าใช้งานยังไม่ได้สร้างขึ้นมา\nโปรดสร้างห้องที่ต้องการก่อน');
-					showErrorMsg();		    	
-				}
-				});
-			} else {
-				$('#SystemMessageBox').html('หมายเลขหน้าจอไม่ถูกต้อง\nระบบไม่อนุญาติให้เข้าใช้งานโปรดติดต่อผู้ใช้งานหน้าจอหลัก(Master) เพื่อแก้ไขปัญหา');
-				showErrorMsg();
+						}
+					});
+				} else {
+					$('#SystemMessageBox').html('ห้องที่คุณต้องการเข้าใช้งานยังไม่ได้สร้างขึ้นมา\nโปรดสร้างห้องที่ต้องการก่อน');
+				showErrorMsg();		    	
 			}
+			});
 		} else {
 			$('#SystemMessageBox').html('หมายเลขหน้าจอไม่ถูกต้อง\nระบบไม่อนุญาติให้เข้าใช้งานโปรดติดต่อผู้ใช้งานหน้าจอหลัก(Master) เพื่อแก้ไขปัญหา');
 			showErrorMsg();

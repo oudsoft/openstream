@@ -88,6 +88,7 @@ function OpenStreamClass (arg) {
 				//console.log('theroom=> ', theroom);
 
 				let newclientObject = null;		
+				//console.log('yourClientId=> ', yourClientId);
 				if (!yourClientId) {
 					/* First Connection Condition*/
 					ws.id = wss.getUniqueID();
@@ -129,8 +130,8 @@ function OpenStreamClass (arg) {
 				ws.send(JSON.stringify(newclientObject));
 				
 				/*Lock Screen with ws.id */
-				let theuser = await $this.lockScreen(theroom, screenno[1], ws.id);
-				console.log('theuser==>', theuser);
+				let theuser = await $this.lockScreen(theroom, yourNo, ws.id);
+				//console.log('theuser==>', theuser);
 				
 				/* Event trigger for master */
 				newclientObject.type = "newclient";
@@ -162,8 +163,9 @@ function OpenStreamClass (arg) {
 					data = {}; 
 				}
 
-				console.log('check room=> ' +data.roomName + ':' + roomname);
+				//console.log('check room=> ' +data.roomName + ':' + roomname);
 				if (data.roomName === roomname) {
+					//console.log('the message=> ', data);
 					//switching type of the user message 
 					switch (data.type) { 
 						case "offer": 
@@ -489,11 +491,14 @@ function OpenStreamClass (arg) {
 	}
 
 	this.lockScreen = function (thisroom, screenno, Id) {
+		console.log('will lock screen=>', screenno);
 		return new Promise(function(resolve, reject) {
+			console.log('thisroom.users=>', thisroom.users);
 			if (thisroom.users)	{
 				let thisUser = thisroom.users.filter((user) => {
-					if (user.screen.screenno === screenno) { return user; }
+					if (user.screen.screenno == screenno) { return user; }
 				});
+				console.log('thisUser=>', thisUser);
 				if (thisUser.length ===1){
 					thisUser[0].screen.clientId = Id;
 				}

@@ -8,39 +8,48 @@
 		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
 		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
 		<link href="lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
-		<link rel="stylesheet" href="css/control.css" />
+		<link rel="stylesheet" href="css/login.css" />
+		<script src="js/utility.js"></script>
 	</head>
 	<body>
-		<div>
-			<h1>User Login</h1>
+		<div id="UserLoginPanel">
+			<div id="LoginBoard">
+				<h1>User Login</h1>
+			</div>
+			<div id="LoginFormDiv">
+				<form id="LoginForm" method="post">
+				<div id="UserNameInputDiv">
+					<lable><h3>Username</h3><lable>
+					<input type="text" id="username" size="50" placeholder="Your Username"/> 
+				</div>
+				<div id="PasswordInputDiv">
+					<lable><h3>Password</h3><lable>
+					<input type="password" id="password" size="50"/> 
+				</div>
+				<div id="SubmitCmdDiv">
+					<input type="button" id="LoginCmd" value="Login" onclick="doUserlogin()"/>
+				</div>
+				</form>
+			</div>	
+			<div id="LoginMessageDiv"></div>
 		</div>
-		<div id="LoginFormDiv">
-			<form id="LoginForm" method="post">
-			<div id="UserNameInputDiv">
-				<lable>Username<lable>
-				<input type="text" id="username" size="50" placeholder="Your Username"/> 
-			</div>
-			<div id="PasswordInputDiv">
-				<lable>Password<lable>
-				<input type="password" id="password" size="50"/> 
-			</div>
-			<div id="SubmitCmdDiv">
-				<input type="button" id="LoginCmd" value="Login" onclick="doUserlogin()"/>
-			</div>
-			</form>
-		</div>	
-		<div id="LoginMessageDiv"></div>
 	</body>
 </html>		
 
 <script type="text/javascript">
 
 	let rootName ='';
+	let loginType;
 
 	$(document).ready(function() {
 		rootName = doGetRootName();
-		console.log(rootName);
-		initControl();
+		let queries = urlQueryToObject(location.search)
+		console.log(queries);
+		loginType = queries.t;
+		console.log(loginType);
+		if (loginType){
+			initControl();
+		}
 	});
 
 	function doGetRootName(){
@@ -56,7 +65,7 @@
 		let username = $('#username').val();
 		if (username) {
 			let password = $('#password').val();
-			let params = {username: username, password: password};
+			let params = {username: username, password: password, type: loginType};
 			doRequestLogin(params).then((resp)=>{
 				console.log(resp);
 				if (resp.status.code === 200){

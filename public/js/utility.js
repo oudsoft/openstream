@@ -84,6 +84,7 @@ function urlQueryToObject(url) {
 function initScreenProfileClient(AClientNo) {
 	clientProfiles = [];
 	const userProfile = document.createElement('h2');
+	userProfile.id = 'ClientProfileMark';
 	userProfile.textContent = AClientNo;
 	userProfile.className = 'ClientProfile';
 	userProfile.classList.add('ClientStatusOff');
@@ -177,6 +178,7 @@ function handleRegister(data) {
 	screenProfile.innerHTML = "";
 	clientProfiles = [];
 	const userProfile = document.createElement('div');
+	userProfile.id = 'ClientProfileMark';
 	userProfile.innerHTML = '<b>' + data.screenNo + '</b>';
 	clientId = data.clientId;
 	userProfile.addEventListener("click", function(e){
@@ -184,6 +186,12 @@ function handleRegister(data) {
 		let event = new CustomEvent("ClientProfileClick", { "detail": {screenNo: data.screenNo, clientId : data.clientId, roomName: data.roomName, isOnStatus} });
 		document.dispatchEvent(event);
 	});
+	/*
+	userProfile.addEventListener("ChangeScrenNo", function(e){
+		console.log(e.detail.screenNo);
+		userProfile.innerHTML = '<b>' + e.detail.screenNo + '</b>';
+	});
+	*/
 	userProfile.className = 'ClientProfile';
 	//console.log(doGetWsState());
 	if ((doGetWsState() == 0) || (doGetWsState() == 1)){
@@ -453,6 +461,10 @@ function handleClientDisConnect(AClientNo){
 		clientTarget[0].classList.remove('ClientStatusOn');
 		clientTarget[0].classList.add('ClientStatusOff');
 	}
+	let otherClients = clientConecteds.filter((item) => {
+		if (item.clientNo === AClientNo) return item;
+	});
+	clientConecteds = otherClients;
 }
 
 function scrollToBottom(e) {

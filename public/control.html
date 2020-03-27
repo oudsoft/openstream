@@ -50,9 +50,10 @@
 	let rootName ='';
 	let cookie;
 	$(document).ready(function() {
-		//console.log(doGetRootName());
+		console.log(doGetRootName());
 		rootName = doGetRootName();
-		//let checCookie = $.cookie(cookiename);
+		let checCookie = $.cookie(cookiename);
+		console.log(checCookie);
 		let checkCookie = $.cookie(rootName);
 		if (checkCookie){
 			//const cookieStr = $.cookie(cookiename).substr(2);

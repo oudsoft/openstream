@@ -7,4 +7,4 @@ requirejs.config({
     }
 	*/
 });
-requirejs(['js/merger.js', 'js/mod/helper.js' /*, 'js/mod/filetostream.js'*/]);
+requirejs(['js/merger.js', 'js/mod/helper.js']);
