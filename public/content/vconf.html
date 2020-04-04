@@ -498,8 +498,8 @@
 						alert(targetScreenNo + ' ยังไม่ได้เข้ามาในห้อง');
 					}
 				}
-				$('#GuestItemDiv').toggle();
 			});
+			$('#GuestItemDiv').toggle();
 		});
 	}
 
@@ -525,6 +525,7 @@
 				doRenderAllCanvas().then((bgStream) => {
 					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
 					document.dispatchEvent(event);
+					mixMode = false;
 				});
 			} else {
 				doValidInvite(targetScreenNo, dataStatus).then((res) => {
@@ -533,8 +534,10 @@
 					} else if (res.code === 2) {
 						mixStreamHandle(targetScreenNo);
 					}
+					mixMode = true;
 				});
 			}
+			$('#GuestItemDiv').toggle();
 		});
 	}
 	var mixMode = false;
@@ -549,10 +552,10 @@
 				case "mix": 
 					if (mixMode)	{
 						doCreateMixResetCmd();
-						mixMode = false;
+						//mixMode = false;
 					} else {
 						doCreateGuestItem();
-						mixMode = true;
+						//mixMode = true;
 					}
 					handleMixAction();
 				break;
