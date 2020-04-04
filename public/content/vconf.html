@@ -409,24 +409,18 @@
 		getPeerById(peerId).then((vchatConn) => {
 			let rmvScreenNo = vchatConn.screenno;
 			doRemoveStream(rmvScreenNo).then((remainStreams) => {
-				/*
-				doRenderAllCanvas().then((mergedStream) => {
-					vchatRemoteVideo.srcObject = mergedStream;
-					doUpdateVconfStream(mergedStream);
-					romovePeerById(peerId);
-				});
-				*/
 				doRenderAllCanvas().then((bgStream) => {
 					romovePeerById(peerId);
 					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
 					document.dispatchEvent(event);
-					//console.log(remoteStreams.length);
 					if (remoteStreams.length === 2)	{
 						joinCmdButton.disabled = false;
 					} else {
 						joinCmdButton.disabled = true;
 					}
-					doUpdateVconfStream(vchatRemoteVideo.srcObject);
+					setTimeout(() => {
+						doUpdateVconfStream(vchatRemoteVideo.srcObject);
+					}, 2500);
 				});
 
 			});
@@ -509,9 +503,12 @@
 				let mixOption = {bgSoundMute: true};
 				if (thatStream){
 					doRenderSingleCanvas(thatStream, ScreenNo).then((obj) => {
-						let thisStream = {stream: obj.stream, screenno: ScreenNo}
-						let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: obj.bgStream, streams: [thisStream], option: mixOption}});
+						//let thisStream = {stream: obj.stream, screenno: ScreenNo}
+						let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: obj.bgStream, streams: [obj.micStream], option: mixOption}});
 						document.dispatchEvent(event);
+						setTimeout(() => {
+							doUpdateVconfStream(vchatRemoteVideo.srcObject);
+						}, 2500);
 					});
 				} else {
 					alert('Find Stream not found.');
@@ -526,6 +523,9 @@
 					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
 					document.dispatchEvent(event);
 					mixMode = false;
+					setTimeout(() => {
+						doUpdateVconfStream(vchatRemoteVideo.srcObject);
+					}, 2500);
 				});
 			} else {
 				doValidInvite(targetScreenNo, dataStatus).then((res) => {
@@ -759,7 +759,6 @@
 			let lastX = 0;
 			let lastY = 0;
 			let x = 0;
-			let timers = [];
 
 			remoteStreams.forEach((item, i) => {
 
@@ -812,6 +811,7 @@
 
 	function doRenderSingleCanvas(stream, scno) {
 		return new Promise(function(resolve, reject) {
+			let micStream = {stream: stream, screenno: scno};
 
 			if (mainCanvas)	{
 				doClearCanvas(mainCanvas);
@@ -822,23 +822,25 @@
 			ctx.fillStyle = 'yellow';
 			ctx.textAlign = 'center';
 
-			let startX = 6;
+			let vWidth = 360;
+			let vHeight = 235;
+
+			let startX = 0;
 			let startY = 50;
 
-			stream.tx = 260;
-			stream.ty = startY + 15;
+			micStream.tx = 260;
+			micStream.ty = startY + 14;
 
-			stream.vx = startX;
-			stream.vy = startY + 35;
+			micStream.vx = startX + 80;
+			micStream.vy = startY + 20;
 
-			stream.w = 150;
-			//stream.h = ctx.canvas.height - stream.vy;
-			stream.h = 80;
+			micStream.w = vWidth;
+			micStream.h = vHeight;
 
-			ctx.fillText(scno, stream.tx,  stream.ty);
+			ctx.fillText(scno, micStream.tx,  micStream.ty);
 
 			let bgStream = mainCanvas.captureStream(60);
-			resolve({bgStream, stream});
+			resolve({bgStream, micStream});
 		});
 	}
 
@@ -869,7 +871,7 @@
 		//$('#VchatPopup').parent().hide();
 		//$('#VchatPopup').parent().show();
 		joinStream = remoteStreams[1];
-		console.log(joinStream);
+		//console.log(joinStream);
 		let event = new CustomEvent("MergeJoinStreamCmd", { "detail": {joinStream: joinStream}});
 		document.dispatchEvent(event);
 		$("#CloseRemoteJoinCmd").toggle();

@@ -595,7 +595,7 @@ openstreamApp.get('/client/(:roomname)/(:type)', async function(req, res) {
 module.exports = ( httpsServer ) => { 
 	openstreamObj = require('./OpenStreamClass.js')(httpsServer);
 	uploader = require('./uploader.js')(openstreamApp, openstreamObj);
-	streamerfile = require('./streamerfile.js')(openstreamApp, openstreamObj);
+	//streamerfile = require('./streamerfile.js')(openstreamApp, openstreamObj);
 	dbman = require('./dbman.js')(openstreamApp, openstreamObj);
 	billgen = require('./BillGenerator.js')(openstreamApp, openstreamObj);
 	proxy = require('./proxy.js')(openstreamApp, openstreamObj);

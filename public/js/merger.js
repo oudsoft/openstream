@@ -1,4 +1,5 @@
 //merger.js
+/* https://github.com/t-mullen/video-stream-merger */
 define(function (require) {
 	//console.log(urlParams.roomname);
 
@@ -76,13 +77,19 @@ define(function (require) {
 
 	document.addEventListener("MergeVconfStreamCmd", function(e) {
 		let streams = {bgStream: e.detail.bgStream, streams: e.detail.streams, option: e.detail.option};
+		if (vconfMerger)	{
+			vconfMerger.getMerger().destroy();
+			vconfMerger = null;
+		}
 		vconfMerger = new VconfMerger(streams);
 		vconfStream = vconfMerger.getMerger().result;
 		vchatRemoteVideo.srcObject = vconfStream;
 	});
 
 	document.addEventListener("ReleaseStreamMergerCmd", function(e) {
+		streamMerger.getMerger().destroy();
 		streamMerger = null;
+		vconfMerger.getMerger().destroy();
 		vconfMerger = null;
 	});
 
@@ -224,13 +231,10 @@ define(function (require) {
 
 	const VconfMerger = function(streams) {
 		this.merger = new VideoStreamMerger(vconfMixOption);
-		console.log(vconfMixOption);
-		console.log(this.merger.width);
-		console.log(this.merger.height);
 		this.merger.addStream(streams.bgStream, {
+			index: 0,
 			x: 0, 
 			y: 0,
-			index: 0,
 			width: this.merger.width,
 			height: this.merger.height,
 			mute: streams.option.bgSoundMute
@@ -238,21 +242,16 @@ define(function (require) {
 
 		streams.streams.forEach((item, i) => {
 			let Index = (i+1);
-			console.log(item.stream);
-			this.merger.addStream(item.stream, {
+			let mergeConfig = {
+				index: Index,
 				x: item.vx, 
 				y: item.vy,
-				index: Index,
 				width: item.w,
 				height: item.h,
-				mute: false /*,
-				draw: function (ctx, frame, done) {
-					ctx.fillStyle = "yellow";
-					ctx.fillText(item.screenno, 5,  5);
-					//ctx.drawImage(frame, 0, 0, merger.width, merger.height);
-					done();
-				} */
-			});
+				mute: false
+			};
+			//console.log(mergeConst);
+			this.merger.addStream(item.stream, mergeConfig);
 		});
 
 		this.merger.start();
