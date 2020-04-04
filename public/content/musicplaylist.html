@@ -1,0 +1,158 @@
+<div id="ControlPlayList">
+	<div id="SourceMusic">
+		<audio controls id="myAudio" autoplay></audio>
+	</div>
+	<div id="SourceFile">
+		<label>เปิดไฟล์เสียงประเภท mp3</label>
+		<input type="file" id="songs" multiple accept="audio/*">
+	</div>
+	<div id="SourceFileList">
+		<select id="filelist" multiple size="10" style="height: 100%; width: 500px;"></select>
+	</div>
+	<div id='OutputDiv'></div>
+	<div id='TargetCommand'>
+		<input type='button' id='mixToMainCommand' value=' Mix To Main ' onclick='doMixMusicToMain()'/>
+		<input type='button' id='removeFromMainCommand' value=' Remove From Main ' onclick='doRemoveMusicFromMain()'/>
+	</div>
+</div>
+<style>
+	#ControlPlayList, #SourceMusic, #SourceFile, #SourceFileList, #OutputDiv, #TargetCommand {padding: 5px; text-align: center; width: 100%;}
+	#SourceMusic, #SourceFile, #SourceFileList, #OutputDiv, #TargetCommand {margin-top: 10px;}
+</style>
+<script>
+	/*
+		Extension
+	*/
+	File.prototype.toObject = function () {
+	  return Object({
+		lastModified: parseInt(this.lastModified),
+		lastModifiedDate: String(this.lastModifiedDate),
+		name: String(this.name),
+		size: parseInt(this.size),
+		type: String(this.type)
+	  })
+	}
+
+	FileList.prototype.toArray = function () {
+	  return Array.from(this).map(function (file) {
+		return file.toObject()
+	  })
+	}
+	/*********************************************/
+	var songs = document.getElementById("songs");
+	var myAudio = document.getElementById("myAudio");
+	var fileList = document.getElementById("filelist");
+	var outputDiv = document.getElementById("OutputDiv");
+	var mixToMainCommand = document.getElementById("mixToMainCommand");
+	var removeFromMainCommand = document.getElementById("removeFromMainCommand");
+
+	const ctx = new (window.AudioContext || window.webkitAudioContext)();
+	const source = ctx.createMediaElementSource(myAudio);
+	const stream_dest = ctx.createMediaStreamDestination();
+
+	var audioTest = new Audio();
+	audioTest.controls = true;
+	audioTest.autoplay = true;
+	outputDiv.appendChild(audioTest);
+
+	mixToMainCommand.disabled = true;
+	removeFromMainCommand.disabled = true;
+
+	//createPlayList();
+
+	function next(n){
+		fileList.selectedIndex = n;
+		var url = URL.createObjectURL(files[n]);
+		try{
+			myAudio.setAttribute('src', url);
+			myAudio.play();
+			//let myStream = myAudio.captureStream(); <- play ทั้งสองอย่าง เสียงสะท้อน
+			let myStream = localAudioToStream();
+			playFromStream(myStream);
+		}
+		catch (e)	{
+			console.log('error=>', e);
+		}
+
+	}
+	var _next = 0;
+	var files;
+	var len;
+
+	songs.addEventListener('change', function() {
+		files = songs.files;
+		let filesArray = files.toArray();
+		//console.log(files);
+		fileList.innerHTML = '';
+		filesArray.forEach((item) => {
+			let songOption = document.createElement('option'); 
+			songOption.textContent = item.name;
+			songOption.value = item.name;
+			fileList.appendChild(songOption);
+		});
+		len = files.length;
+		if(len){
+			next(_next);
+		}
+		mixToMainCommand.disabled = false;
+	});
+	myAudio.addEventListener("ended", function(){
+	   _next += 1;
+	   next(_next);
+	   //console.log(len, _next);
+	   if((len-1) == _next){
+		 _next=-1;
+	   }
+	});
+	fileList.addEventListener('change', function() {
+		let playIndex = fileList.selectedIndex;
+		next(playIndex);
+	});
+
+	function localAudioToStream(){
+		source.connect(stream_dest);
+		const bStream = stream_dest.stream;
+		console.log(bStream);
+		return bStream;
+	}
+
+	function playFromStream(stream) {
+		audioTest.srcObject = stream;
+		audioTest.play();
+	}
+
+	function createPlayList() {
+		let list = new DataTransfer();
+		let file = new File(["content"], "filename.jpg");
+		list.items.add(file);
+
+		//let myFileList = list.files;
+	}
+
+	function doMixMusicToMain() {
+		let musicStream = stream_dest.stream;
+		let musicAudioTrack = musicStream.getAudioTracks()[0];
+		localStream.addTrack(musicAudioTrack);
+		doReMixStream();
+		setTimeout(() => {
+			doUpdateStream(mixedStream, null);
+		}, 2500);
+		mixToMainCommand.disabled = true;
+		removeFromMainCommand.disabled = false;
+	}
+
+	function doRemoveMusicFromMain() {
+		if (localStream)	{
+			let musicAudioTrack = localStream.getAudioTracks()[0];
+			if (musicAudioTrack){
+				localStream.removeTrack(musicAudioTrack);
+				doReMixStream();
+				setTimeout(() => {
+					doUpdateStream(mixedStream, null);
+				}, 2500);
+				mixToMainCommand.disabled = false;
+				removeFromMainCommand.disabled = true;
+			}
+		}
+	}
+</script>

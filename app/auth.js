@@ -27,7 +27,7 @@ function doVerifyUser(username, password){
 					client.query('COMMIT');
 					resolve(res.rows);
 				} else {
-					resolve({});
+					resolve({}); //<-- //should modify resolve etc. null/undefined for blank user
 				}
 			}).catch(err => {
 				client.query('ROLLBACK');
@@ -125,7 +125,7 @@ module.exports = function (app) {
 			res.writeHead(301, {Location: url});
 			res.end();
 		} else {	
-	    		res.redirect('/' + rootname + '/login.html');
+	    	res.redirect('/' + rootname + '/login.html?t=a');
 		}
 	});
 
@@ -169,7 +169,6 @@ module.exports = function (app) {
 				res.redirect('/' + rootname + '/login.html');
 			} else {
 				if (user[0].userid){
-
 					doVerifyAgency(user[0].userid).then((agency) => {
 						console.log(agency);
 						let url = '';

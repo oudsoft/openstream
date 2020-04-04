@@ -1,5 +1,5 @@
 <!-- controllocal.html -->
-<div id="control-medea" style="position: relative; float: right;">
+<div id="control-medea" class="ControlAlignRight">
 	Aspect Ratio: <select id="aspectRatio">
 		<option value="default">Default</option>
 		<option value="1.77">16:9</option>
@@ -26,14 +26,15 @@
 		<option value="480p">480p</option>
 		<option value="360p">360p</option>
 	</select>
-
-	<button id="btn-get-Stream" onclick="doGetScreenSignal()">OK</button>
 	<!--
 	Sound: <select id="sound">
 		<option value="off">Off</option>
 		<option value="on">On</option>
 	</select>
-
+	-->
+	<button id="btn-get-Stream" onclick="doGetScreenSignal()">OK</button>
+	
+	<!--
 	cursor: <select id="cursor">
 		<option value="default">Default</option>
 		<option>always</option>
@@ -151,7 +152,7 @@ function doGetScreenSignal() {
 	};
 
     invokeGetDisplayMedia(function(screen) {
-		console.log(screen);
+		//console.log(screen);
 		//console.log(screen.getTracks());
 		//console.log(screen.getAudioTracks());
 		//console.log(screen.getVideoTracks());		
@@ -282,7 +283,7 @@ function invokeGetDisplayMedia(success, error) {
 			videoConstraints.height = screen.height;
 		}
 
-		//videoConstraints.displaySurface = "default";
+		videoConstraints.displaySurface = "default";
 
 		displayMediaStreamConstraints = {
 			video: videoConstraints

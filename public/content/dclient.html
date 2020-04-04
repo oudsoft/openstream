@@ -1,32 +1,43 @@
-<div id="RoomName"></div>				
-<h1>Client Screen</h1>
-<div id="SystemMessageBox"></div>
+<div id="RoomName"></div>		
+<div id="ClientBoard">
+	<h1>Client Screen</h1>
+	<div id="ScreenProfile"></div>
+</div>
 <div id="Main">
+	<!--
 	<div id="ControlRefresh">
 		<div id="RefreshWarnning"></div>
 		<div id="RefreshBttnBox">
 			<div class="RefreshBttnDiv"><a class="RefreshLink" href="#" onclick="doRefreshPage()">Refresh</a></div>
 		</div>
 	</div>
+	-->
 	<div id="Connection-Control">
 		<button id="btn-connect-server" onclick="doConnect()">Start Connect</button>
+		<!-- 
 		<button id="btn-start-screen-call" onclick="doStartShareScreen()">Call Stream</button>
 		<button id="btn-start-media-call" onclick="doStartShareMedia()">Call Media</button>
-		<!-- <button id="btn-stop-screen-call" onclick="doDisconnect()">Stop Connect</button> -->
+		<button id="btn-stop-screen-call" onclick="doDisconnect()">Stop Connect</button>
+		-->
 		<button id="btn-request-fullscreen" onclick="doRequestFullScreen()">Full Screen</button>
+		<button id="btn-request-broadcst-fb" onclick="doRequestBroadcastFB()">Facebook</button>
+		<button id="btn-request-broadcst-yt" onclick="doRequestBroadcastYT()">Youtube</button>
+		<button id="btn-request-stop-broadcast" onclick="doStopBroadcast()">Stop Broadcast</button>
 	</div>
 	<div>&nbsp;</div>
 	<div id="MainScreen">
 		<div id="ClientScreen">
 			<div id="Client-Area">
-				<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+				<div id="MetalFrame" class="metal linear" onclick="doReScale()">
+					<video id="remoteScreenVideo" class="remoteScreenNormal" autoplay playsinline></video>
+				</div>
+				<!--
 				<video id="remoteMediaVideo" class="remoteMediaNormal" autoplay playsinline></video>
+				-->
 			</div>
 		</div>
 		<div id="ChatScreen">
-			<div id="ScreenProfile"></div>
-			<div id="MessageScreen">
-			</div>
+			<div id="MessageScreen"></div>
 			<div>&nbsp;</div>
 			<div id="ChatInput">
 				<p style="font-weight: bold;">โปรดใช้คำสุภาพในข้อความที่ต้องการส่ง</p>
@@ -50,3 +61,134 @@
 	<div id="TextChatCmdDiv"><button id="OpenTextChatCmd">ส่งข้อความ</button></div>
 	<div id="CloseCmdDiv"><button id="ClosePopupCmd" onclick="doCloseClientProfilePopup()">ปิด</button></div>
 </div>
+<script src="lib/jquery.cookie.js"></script>
+<script>
+	const cookiename = "openstream";
+	let cookie;
+
+	const fb_socketio_address_url = 'https://202.28.68.28:443';
+	const yt_socketio_address_url = 'https://202.28.68.28:8443';
+
+	const securePolicy = {secure: true};
+
+	var fb_socket = null;
+	var yt_socket = null;
+	var mediaRecorder = null;
+
+	doInitDClient();
+
+	function doInitDClient() {
+		let checCookie = $.cookie(cookiename);
+		let checkCookie = $.cookie(rootname);
+		if (checkCookie){
+			const cookieStr = $.cookie(rootname).substr(2);
+			if (cookieStr) {
+				try {
+					cookie = $.parseJSON(cookieStr);
+					if (cookie) {
+						//console.log(cookie);
+						if (cookie.userid) {
+							$('#ChatScreen').hide();
+							$('#ScreenProfile').css({'position': 'relative','float': 'right'});
+							$('#ClientScreen').css({'position': 'relative','width': '100%', 'text-align': 'center'});
+							$('#Main').css({/*'border': '1px solid red',*/ 'top': '-110px'});
+							$('#Connection-Control').append('<button onclick="doUserLogout()">Logout</button>');
+						} else {
+							doBackLogin();
+						}
+					} else {
+						doBackLogin();
+					}
+				}
+				catch(e){
+					doBackLogin();
+					throw (e);
+				}
+			} else {
+				doBackLogin();
+			}
+		} else {
+			doBackLogin();
+		}
+	}
+
+	function doBackLogin() {
+    		setTimeout(()=>{
+    			window.location = 'https://' + hostname + '/' + rootname + '/login.html?t=d';
+    		}, 1200);
+	}
+
+	function doUserLogout() {
+		if (remoteVideo.srcObject)	{
+			$.cookie(cookiename, null, { path: '/' });
+			doDisconnect(screenno);
+		} else {
+			$.cookie(cookiename, null, { path: '/' });
+			doBackLogin();
+		}
+	}
+
+	function doRequestBroadcastFB() {
+		const fb_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
+		const fb_keyStrem = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
+		const fb_rtmp_url = fb_url + fb_keyStrem;
+		fb_socket = io.connect(fb_socketio_address_url, securePolicy);
+		doBroadcast(fb_socket, fb_rtmp_url);
+	}
+	function doRequestBroadcastYT() {
+		const yt_url = 'rtmp://a.rtmp.youtube.com/live2/';
+		const yt_keyStrem = '8et8-2cej-yjzq-e26a';
+		const yt_rtmp_url = yt_url + yt_keyStrem;
+		yt_socket = io.connect(yt_socketio_address_url, securePolicy);
+		doBroadcast(yt_socket, yt_rtmp_url);
+	}
+	function doBroadcast(socket, rtmp_url) {
+		
+		socket.emit('config_rtmpDestination', rtmp_url);
+		socket.emit('start', 'start');
+
+		socket.on('connect_error', function(){ 
+			console.log("Connection Failed");
+		});
+		socket.on('message',function(m){
+			console.log('recv server message',m);
+			console.log('SERVER:'+m);
+		});
+		socket.on('fatal',function(m){
+			console.log('ERROR: unexpected:'+m);
+		});
+		socket.on('ffmpeg_stderr',function(m){
+			console.log('FFMPEG:'+m);
+		});
+		socket.on('disconnect', function () {
+			console.log("DisConnection");
+		});
+		
+		const postBlob = function (event){
+			if (event.data && event.data.size > 0) {
+			  socket.emit("binarystream", event.data);
+			}
+		}
+
+		const INT_REC = 2100;
+		const options = { mimeType: 'video/webm;codecs=vp9' };
+		mediaRecorder = new MediaRecorder(remoteStream, options);
+		mediaRecorder.ondataavailable = postBlob;
+		setTimeout(() => {
+			mediaRecorder.start(INT_REC);
+		}, 10000);
+
+	}
+
+	function doStopBroadcast() {
+		if (fb_socket){
+			fb_socket.disconnect();
+		}
+		if (yt_socket){
+			yt_socket.disconnect();
+		}
+		if (mediaRecorder)	{
+			mediaRecorder.stop();
+		}
+	}
+</script>

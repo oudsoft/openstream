@@ -3,7 +3,7 @@
 	<head>
 	    <meta charset = "utf-8" /> 
 		<link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
-		<title>Open Stream System</title>
+		<title>Open Stream :: Master Screen</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<script src="lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
 		<script src="lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
@@ -14,11 +14,11 @@
 		<script type="text/javascript" src="lib/simpleUpload.min.js"></script> 
 		<script src="js/Lexxus-jq-timeTo-7c3b4ea/jquery.time-to.min.js"></script>
 		<link href="js/Lexxus-jq-timeTo-7c3b4ea/timeTo.css" type="text/css" rel="stylesheet"/>
+		<script src="lib/jquery.dialogextend.min.js"></script>
 		<script src="lib/notify.min.js"></script>
 		<script src="js/utility.js"></script>
 		<script src="js/master.js"></script>
 		<link rel="stylesheet" href="css/master.css" />
-		<script src='/socket.io/socket.io.js'></script> 
         <script data-main="js/mod/loadhelper.js" src="lib/require.js"></script>
 	</head>
 	<body>
@@ -41,7 +41,7 @@
 						<div class="CicleStepMark">1</div><div class="StepName"><h2>Local Screen</h2></div>
 						<div class="StreamSource">
 							<div>
-								<button id="CallOpenLocalFileBar" onclick="doToggleLocalFileBar()">Local Video File</button>
+								<button id="CallOpenLocalFileBar" onclick="doToggleLocalFileBar()">Local File</button>
 								<button id="CallOpenYoutubeBar" onclick="doToggleYoutubeBar()">Youtube</button>
 								<button id="btn-get-Stream" onclick="doToggleControlScreenBar()">Get Screen ...</button>
 							</div>
@@ -49,14 +49,17 @@
 					</div>
 					<div id="ControlLocalDiv">
 						<div id="YoutubeShareDiv">
-							<label>Youtube URL</label>
-							<input id="YouTubeUrl" type="text" size="20" placeholder="https://www.youtube.com/watch?v=J_tWIeJmKxo"/>
-							<button id="SendYoutubeURL" onclick="doBroadcastYoutube()">OK</button>
+							<div class="ControlAlignRight">
+								<label>Youtube URL</label>
+								<input id="YouTubeUrl" type="text" size="20" placeholder="https://www.youtube.com/watch?v=J_tWIeJmKxo"/>
+								<button id="SendYoutubeURL" onclick="doBroadcastYoutube()">OK</button>
+							</div>
 						</div>
-						<div id="LocalFileShareDiv">
-							<label>เปิดไฟล์วิดีโอ</label>
-							<div id="video-file-message"></div>
-							<input id="LocalFile" type="file" accept="video/*" />
+						<div id="LocalFileShareDiv" class="ControlAlignRight">
+							<div class="ControlAlignRight">
+								<input id="LocalMusic" type="button" value=" Music " onclick="doOpenMusicPlayListBox()" />
+								<input id="LocalClip" type="button" value=" Clip " onclick="doOpenClipPlayListBox()" />
+							</div>
 						</div>
 						<div id="control-local-screen"></div>
 						<video id="localVideo" controls autoplay playsinline></video> <!--  muted="false" volume="0" -->
@@ -75,6 +78,8 @@
 						<video id="localMediaVideo" autoplay playsinline></video>
 					</div>
 					<div id="ControlMediaTrack">
+						<div class="switch" id="Webcam-Ex-On-Cmd"><img src="imgs/logo/extend-on.png"  height="50px" width="auto"/></div>
+						<div class="switch" id="Webcam-Ex-Off-Cmd"><img src="imgs/logo/extend-off.png"  height="50px" width="auto"/></div>
 						<div class="switch" id="Webcam-On-Cmd"><img src="imgs/logo/webcam-on.png"  height="50px" width="auto"/></div>
 						<div class="switch" id="Webcam-Off-Cmd"><img src="imgs/logo/webcam-off.png"  height="50px" width="auto"/></div>
 						<div class="switch" id="Mic-On-Cmd"><img src="imgs/logo/mic-on.png"  height="50px" width="auto"/></div>
@@ -209,6 +214,18 @@
 			});
 		});
 	}
+	function doGetRoomLength(roomname) {
+		return new Promise(function(resolve, reject) {
+			var url = "/" + rootname + "/roomlength/" + roomname;
+			$.get(url, {}, function(data){
+				resolve(data);
+			}).fail(function(error) { 
+				console.log(JSON.stringify(error));
+				reject(error); 
+			});
+		});
+	}
+
 	function getQueryRequest(){
 		let url = window.location.href;
 		let queryparams = url.split('?')[1];
@@ -374,9 +391,10 @@
 
 	var mixedStream;
 	var joinStream;
+	var vconfStream;
 
 	var inputNode;
-
+	var suspendTrack = null;
 	var errorBox = $('.error-box');
 	var statsBox = $('.stats-box');
 
@@ -418,9 +436,13 @@
 		$('#Main').hide();
 		doUserRegister();
 		doManageClientProfileClickEvent();
-		$('#ShareBox, #ClientProfilePopup, #VideoCallInteruptPopup, #VchatPopup').dialog({ 
+		$('#ShareBox, #ClientProfilePopup, #VideoCallInteruptPopup').dialog({ 
 			modal: true, autoOpen: false, width: 350, resizable: false, title: 'แชร์'
 		});
+		$('#VchatPopup').dialog({ 
+			modal: false, autoOpen: false, width: 350, resizable: false, title: 'Video Call'
+		});
+
 		document.addEventListener("ClientLogoClick", function(e) {
 			console.log(e.detail);
 			doOpenClientProfilePopup(roomname, screenno, e.detail.fromId, e.detail.clientId);
@@ -435,11 +457,17 @@
 			$("#Webcam-On-Cmd").toggle();
 			$("#Webcam-Off-Cmd").toggle();
 		});
+		$("#Webcam-Ex-On-Cmd, #Webcam-Ex-Off-Cmd").on("click", function() {
+			doToggleWebcam();
+			$("#Webcam-Ex-On-Cmd").toggle();
+			$("#Webcam-Ex-Off-Cmd").toggle();
+		});
 		$("#CloseRemoteJoinCmd").on("click", function() {
 			let event = new CustomEvent("RemoveJoinStreamCmd", { "detail": {joinStream: joinStream}});
 			document.dispatchEvent(event);
 			$("#CloseRemoteJoinCmd").toggle();
 		});
+		$('#CallOpenLocalFileBar, #CallOpenYoutubeBar').show();
 	});
 
 	function doInitSystem(){
@@ -454,7 +482,7 @@
 			var displaySurface = $('#displaySurface');
 			var logicalSurface = $('#logicalSurface');
 			*/
-			$('#resolutions option[value=720p]').attr('selected','selected');
+			$('#resolutions option[value=360p]').attr('selected','selected');
 
 			if(!navigator.getDisplayMedia && !navigator.mediaDevices.getDisplayMedia) {
 				var error = 'Your browser does NOT supports getDisplayMedia API.';
@@ -537,7 +565,7 @@
 		document.dispatchEvent(event);
 	}
 	function doReMixStream() {
-		let event = new CustomEvent("ReMergeStreamCmd", { "detail": {localStream: localVideo.srcObject, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
+		let event = new CustomEvent("ReMergeStreamCmd", { "detail": {localStream: /*localVideo.srcObject*/ localStream, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: false}});
 		document.dispatchEvent(event);
 	}
 
@@ -558,6 +586,35 @@
 		//doToggleWebcamLocalMedia()
 		event = new CustomEvent(eventName, { "detail": {localStream: /*localVideo.srcObject*/ localStream, localMediaStream: localMediaVideo.srcObject, roomtype: roomtype, roomname: roomname, isMuted: isMuted, streamIndex: streamIndex}});
 		document.dispatchEvent(event);
+	}
+
+	function doToggleWebcam() {
+		if ($('#Webcam-Ex-Off-Cmd').css('display') === 'block'){
+			localStream.getTracks().forEach((track) => {
+				if (track.kind === 'video'){
+					suspendTrack = track;
+				}
+				localStream.removeTrack(track);
+			});
+			let localMediaVideoTrack = localMediaStream.getVideoTracks()[0];
+			if (localMediaVideoTrack){
+				if (localStream){
+					localStream.addTrack(localMediaVideoTrack);
+					console.log(localStream.getTracks());
+				}
+			}
+		} else {
+			localStream.getTracks().forEach((track) => {
+				localStream.removeTrack(track);
+			});
+			localStream.addTrack(suspendTrack);
+		}
+		if (mixedStream){
+			doReMixStream();
+			setTimeout(() => {
+				doUpdateStream(mixedStream, null);
+			}, 2500);
+		}
 	}
 
 	function doReadyShareAll() {
@@ -607,6 +664,7 @@
 			localPeers.forEach((item) => {
 				item.localConn.close();
 			});
+			resolve(localPeers);
 		});
 		Promise.all([promiseList]).then((ob)=>{
 			localStream = null;
@@ -833,9 +891,14 @@
 	}
 	function doCallOpenVchat(roomname, screenno, calleeno, calleeId) {
 		doCloseClientProfilePopup();
-		$('#VchatPopup').dialog('option', 'title', 'Video Call');
+		$('#VchatPopup').dialog('option', 'title', 'Video Call').dialogExtend({
+			"maximizable" : true,
+			"minimizable" : true,
+			"dblclick" : "maximize",
+			"icons" : { "maximize" : "ui-icon-arrow-4-diag", "minimize" : "ui-icon-circle-minus", "restore" : "ui-icon-bullet" }
+		});
 		$('#VchatPopup').dialog('option', 'width', '720');
-		$('#VchatPopup').dialog('option', 'height', '750');
+		$('#VchatPopup').dialog('option', 'height', '700');
 		$('#VchatPopup').dialog('open');
 		$('#VchatContent').load('content/vconf.html', function() {
 			initCaller(screenno, calleeno, clientId, calleeId);
@@ -895,7 +958,7 @@
 		}
 	}
 	
-	const doUpdateStream = function (mergedStream){
+	const doUpdateStream = function (mergedStream, callback){
 		let videoTrack = mergedStream.getVideoTracks()[0];
 		let audioTracks = mergedStream.getAudioTracks();
 		//console.log('All Tracks', mergedStream.getTracks());
@@ -924,21 +987,8 @@
 			resolve(localPeers);
 		});
 		Promise.all([promiseList]).then((ob)=>{
-			/* send callback to client come back to room, if he/she is watching youtube */
-			if (ws.readyState === 1) {
-				console.log(ws.isAlive);
-				ws.send(JSON.stringify({ 
-					channel: "chat",
-					type: "message", 
-					message: {msgtype: 'callback', msg: 'Come back, Please.', timestamp: new Date(), clientname: myname, fromId: screenno, toId: 'all', roomName: roomname, rootname: rootname},
-					name: myname,
-					sender: 'master',
-					sendto: 'all',
-					roomName: roomname,
-					rootname: rootname
-				})); 
-			} else {
-				alert('Websovket Connection loss.!!');
+			if (callback){
+				callback();
 			}
 		});
 	}
@@ -1005,9 +1055,6 @@
 	document.addEventListener("SwithYoutube", function(e) {
 		let clipUrl = e.detail.url;
 		const doForcePlayClip = function(url) {
-			/*clear localstream */
-			localStream.getTracks().forEach((track) => {track.stop()});
-			
 			localVideo.onended = function() {
 				let event = new CustomEvent("SwithBackMain", { "detail": {}});
 				document.dispatchEvent(event);
@@ -1019,6 +1066,18 @@
 			/*
 				ถ้ากลับไปใช้วธีด้านบน จอ mixedStream จะเป็นจอดำ จะแก้ปัญหาอย่างไร
 			*/
+			/* แก้ปัญหา mixedStream จอดำ ยังไม่ได้เทสที*/
+			/*clear localstream */
+			localStream.getTracks().forEach((track) => {
+				localStream.removeTrack(track);
+			});
+			let localMediaVideoTrack = localMediaStream.getVideoTracks()[0];
+			if (localMediaVideoTrack){
+				if (localStream){
+					localStream.addTrack(localMediaVideoTrack);
+					//console.log(localStream.getTracks());
+				}
+			}
 		}
 		if (localVideo.srcObject)	{
 			localVideo.srcObject = null;
@@ -1028,11 +1087,6 @@
 		}
 	});
 	
-	document.addEventListener("SwithBackMain", function(e) {
-		localVideo.src = null;
-		localVideo.srcObject = localStream;
-	});
-
 	function doToggleLocalFileBar(){
 		if ($('#LocalFileShareDiv').css('display') === 'none') {
 			$('#control-local-screen').hide();
@@ -1041,64 +1095,6 @@
 		$('#LocalFileShareDiv').slideToggle("slow");
 		if ($('#LocalFileShareDiv').css("display") === 'block'){
 			$('#video-file-message').empty();
-			inputNode = document.querySelector('#LocalFile');
-			inputNode.addEventListener('change', playSelectedFile, false);
-		}
-	}
-	var displayMessage = function(message, isError) {
-		var element = document.querySelector('#video-file-message');
-		element.innerHTML = message;
-		element.className = isError ? 'video-file-error' : 'video-file-info';
-	}
-	
-	var playSelectedFile = function(event) {
-		var URL = window.URL || window.webkitURL;
-		var file = this.files[0];
-		var type = file.type;
-		var canPlay = localVideo.canPlayType(type);
-		if (canPlay === '') canPlay = 'no';
-		var message = 'Can play type "' + type + '": ' + canPlay;
-		var isError = canPlay === 'no';
-		displayMessage(message, isError);
-		if (isError) {
-			return
-		}
-		if (localStream)	{
-			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
-			if (conf)	{
-				/*clear localstream */
-				localStream.getTracks().forEach((track) => {track.stop()});
-				var fileURL = URL.createObjectURL(file);
-				doPlayExternalStream(fileURL);
-			}
-		}
-		$('#LocalFileShareDiv').slideToggle("slow");
-		//file.value = '';
-		this.files[0] = '';
-	}
-
-	function doPlayExternalStream(URL) {
-		let srcMedia = document.createElement("video");		
-		srcMedia.controls = true;
-		srcMedia.autoplay = true;
-		srcMedia.crossorigin = "anonymous";
-		srcMedia.src = URL;
-		let webmstream = null;
-		srcMedia.oncanplay = function() {
-			webmstream = srcMedia.captureStream();
-			//console.log(webmstream);
-			//console.log(webmstream.getTracks());
-			webmstream.onended = function() {
-				let event = new CustomEvent("SwithBackMain", { "detail": {}});
-				document.dispatchEvent(event);
-				localStream.onended = null;
-			};
-			localStream = webmstream;
-			localVideo.srcObject = localStream;
-			doReMixStream();
-			setTimeout(() => {
-				doUpdateStream(mixedStream);
-			}, 2500);
 		}
 	}
 
@@ -1117,70 +1113,55 @@
 			$(clientItem).addClass('unlimit-cilent-profile');
 			$(clientItem).addClass('ClientStatusOn');
 			$(clientItem).text(item.clientNo);
+			$(clientItem).data('status', 1);
 			$('#ClientItems').append($(clientItem));
 		});
 		$('#ClientItems').slideToggle("slow");
-		//doTestRTMP();
 	});
 
 	$('#ClientItems').on('click', function() {
 		$('#ClientItems').slideToggle("slow");
 	});
 
-	function doTestRTMP() {
-		//const socketio_address_url = 'https://localhost';
-		const socketio_address_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
-		const keyStrem = '1133873596948735?s_bl=1&s_sc=1133873606948734&s_sw=0&s_vt=api-s&a=Abyi2OOd9iJdoemh';
-		const socket = io.connect(socketio_address_url, {secure: true});
-		socket.on('connect_error', function(){ 
-			console.log("Connection Failed");
-		});
-		socket.on('message',function(m){
-			console.log('recv server message',m);
-			console.log('SERVER:'+m);
-		});
-		socket.on('fatal',function(m){
-			console.log('ERROR: unexpected:'+m);
-		});
-		socket.on('ffmpeg_stderr',function(m){
-			console.log('FFMPEG:'+m);
-		});
-		socket.on('disconnect', function () {
-			console.log("DisConnection");
-		});
-
-		const postBlob = function (event){
-			if (event.data && event.data.size > 0) {
-			  socket.emit("binarystream", event.data);
+	function doOpenMusicPlayListBox() {
+		$('#VchatPopup').dialog({
+			close: function( event, ui ) {
+				doRemoveMusicFromMain();
+				$('#VchatContent').empty();
 			}
-		}
-
-		const INT_REC = 1000;
-		const options = { mimeType: 'video/webm;codecs=vp9' };
-		mediaRecorder = new MediaRecorder(mixedStream, options);
-		mediaRecorder.ondataavailable = postBlob;
-		mediaRecorder.start(INT_REC);
-
-		/*
-		doTestMediaStreamServer() .then((res) => {
-			console.log(res);
 		});
-		*/
+		$('#VchatPopup').dialog('option', 'title', 'Music Play List').dialogExtend({
+			"maximizable" : true,
+			"minimizable" : true,
+			"dblclick" : "maximize",
+			"icons" : { "maximize" : "ui-icon-arrow-4-diag", "minimize" : "ui-icon-circle-minus", "restore" : "ui-icon-bullet" }
+		});
+		$('#VchatPopup').dialog('option', 'width', '720');
+		$('#VchatPopup').dialog('option', 'height', '640');
+		$('#VchatPopup').dialog('open');
+		$('#VchatContent').load('content/musicplaylist.html', function() {
+			$('#LocalFileShareDiv').slideToggle("slow");
+		});
 	}
 
-	function doTestMediaStreamServer() {
-		return new Promise(function(resolve, reject) {
-			var url = "https://wcs5-eu.flashphoner.com:8888/rest-api/push/startup";
-			var params = {
-				streamName: "5dfd",
-				rtmpUrl: "rtmps://live-api-s.facebook.com:443/rtmp/1133873596948735?s_bl=1&s_sc=1133873606948734&s_sw=0&s_vt=api-s&a=Abyi2OOd9iJdoemh"
-			};
-			$.post(url, params, function(data){
-				resolve(data);
-			}).fail(function(error) { 
-				console.log(JSON.stringify(error));
-				reject(error); 
-			});
+	function doOpenClipPlayListBox() {
+		$('#VchatPopup').dialog({
+			close: function( event, ui ) {
+				doRemoveClipFromMain();
+				$('#VchatContent').empty();
+			}
+		});
+		$('#VchatPopup').dialog('option', 'title', 'Clip Play List').dialogExtend({
+			"maximizable" : true,
+			"minimizable" : true,
+			"dblclick" : "maximize",
+			"icons" : { "maximize" : "ui-icon-arrow-4-diag", "minimize" : "ui-icon-circle-minus", "restore" : "ui-icon-bullet" }
+		});
+		$('#VchatPopup').dialog('option', 'width', '450');
+		$('#VchatPopup').dialog('option', 'height', '550');
+		$('#VchatPopup').dialog('open');
+		$('#VchatContent').load('content/clipplaylist.html', function() {
+			$('#LocalFileShareDiv').slideToggle("slow");
 		});
 	}
 </script>

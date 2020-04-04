@@ -27,11 +27,9 @@ app.use(function(req, res, next) {
 	next();
 });
 
-
 const httpsServer = https.createServer(credentials, app).listen(serverPort);
-const io = require('socket.io')(httpsServer);
 const {openstreamApp} = require('./app/openstream.js')(httpsServer);
-
+const io = require('socket.io').listen(httpsServer);
 /*************************************/
 //const blog = require('../blog/blogapp.js');
 //const win = require('../win/winapp.js');
@@ -53,4 +51,3 @@ RootNames.forEach((item)=>{
 //app.use('/mrqr', mrqr);
 //app.use('/wrtc', wrtc);
 /*************************************/
-

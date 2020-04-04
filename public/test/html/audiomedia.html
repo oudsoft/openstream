@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+			div {padding: 5px; margin-top: 10px; text-align: center; width: 100%;}
+		</style>
+	</head>
+	<body>
+		<div>
+			<div>
+				<audio controls id="myAudio" autoplay></audio>
+			</div>
+			<div>
+				<input type="file" id="songs" multiple>
+			</div>
+			<div>
+				<select id="filelist" multiple size="20" style="height: 100%;"></select>
+			</div>
+			<div id='OutputDiv'></div>
+		</div>
+	</body>
+</html>
+
+<script>
+	/*
+		Extension
+	*/
+	File.prototype.toObject = function () {
+	  return Object({
+		lastModified: parseInt(this.lastModified),
+		lastModifiedDate: String(this.lastModifiedDate),
+		name: String(this.name),
+		size: parseInt(this.size),
+		type: String(this.type)
+	  })
+	}
+
+	FileList.prototype.toArray = function () {
+	  return Array.from(this).map(function (file) {
+		return file.toObject()
+	  })
+	}
+	/*********************************************/
+	var songs = document.getElementById("songs");
+	var myAudio = document.getElementById("myAudio");
+	var fileList = document.getElementById("filelist");
+	var outputDiv = document.getElementById("OutputDiv");
+
+	const ctx = new (window.AudioContext || window.webkitAudioContext)();
+	const source = ctx.createMediaElementSource(myAudio);
+	const stream_dest = ctx.createMediaStreamDestination();
+
+	var audioTest = new Audio();
+	audioTest.controls = true;
+	audioTest.autoplay = true;
+	outputDiv.appendChild(audioTest);
+
+	createPlayList();
+
+	function next(n){
+		var url = URL.createObjectURL(files[n]);
+		myAudio.setAttribute('src', url);
+		myAudio.play();
+
+		fileList.selectedIndex = n;
+
+		try{
+			//let myStream = myAudio.captureStream(); <- play ทั้งสองอย่าง เสียงสะท้อน
+			let myStream = localAudioToStream();
+			playFromStream(myStream);
+		}
+		catch (e)	{
+			console.log('error=>', e);
+		}
+
+	}
+	var _next = 0;
+	var files;
+	var len;
+
+	songs.addEventListener('change', function() {
+		files = songs.files;
+		let filesArray = files.toArray();
+		console.log(files);
+		fileList.innerHTML = '';
+		filesArray.forEach((item) => {
+			let songOption = document.createElement('option'); 
+			songOption.textContent = item.name;
+			songOption.value = item.name;
+			fileList.appendChild(songOption);
+		});
+		len = files.length;
+		if(len){
+			next(_next);
+		}
+	});
+	myAudio.addEventListener("ended", function(){
+	   _next += 1;
+	   next(_next);
+	   console.log(len, _next);
+	   if((len-1) == _next){
+		 _next=-1;
+	   }
+	});
+	fileList.addEventListener('change', function() {
+		let playIndex = fileList.selectedIndex;
+		next(playIndex);
+	});
+
+	function localAudioToStream(){
+		source.connect(stream_dest);
+		const bStream = stream_dest.stream;
+		console.log(bStream);
+		return bStream;
+	}
+
+	function playFromStream(stream) {
+		audioTest.srcObject = stream;
+		audioTest.play();
+	}
+
+	function createPlayList() {
+		let list = new DataTransfer();
+		let file = new File(["content"], "filename.jpg");
+		list.items.add(file);
+
+		//let myFileList = list.files;
+	}
+</script>

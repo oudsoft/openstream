@@ -96,8 +96,8 @@
 					}
 				}
 				catch(e){
-					throw (e);
 					doBackLogin();
+					throw (e);
 				}
 			} else {
 				doBackLogin();
@@ -109,7 +109,7 @@
 
 	function doBackLogin() {
     		setTimeout(()=>{
-    			window.location = 'https://' + hostname + '/' + rootName + '/login.html';
+    			window.location = 'https://' + hostname + '/' + rootName + '/login.html?t=a';
     		}, 1200);
 	}
 
@@ -178,6 +178,14 @@
 						$(masterBtn).attr('onclick', 'doOpenNewWindow("' + masterURL + '")');
 						roomDiv.append($('<span>   </span>'));
 						roomDiv.append($(masterBtn));
+
+						const dclientURL = 'https://' + hostname + '/' + rootName + '/client/' + item.roomname + '/d';
+						let dclientBtn = $('<input></input>');
+						$(dclientBtn).attr('type', 'button');
+						$(dclientBtn).attr('value', 'Open D-Client window');
+						$(dclientBtn).attr('onclick', 'doOpenNewWindow("' + dclientURL + '")');
+						roomDiv.append($('<span>   </span>'));
+						roomDiv.append($(dclientBtn));
 
 						let removeBtn = $('<input></input>');
 						$(removeBtn).attr('type', 'button');

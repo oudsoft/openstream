@@ -10,6 +10,7 @@ const express = require('express');
 const app = express();
 app.use(express.static('public'));
 
+//const GEEGEE_PATH = '/mnt/e/Final Release/Revise';
 const GEEGEE_PATH = 'E:/Final Release/Revise';
 //const GEEGEE_PATH = '/var/www/html/myggee';
 //const GEEGEE_PATH = '/home/oudsoft/temp';

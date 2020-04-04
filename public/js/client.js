@@ -10,24 +10,36 @@ let urlParams = urlQueryToObject(location.search);
 
 let roomname = urlParams.roomname;
 let screenno = urlParams.screenno;
-let wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno;
+let clienttype = urlParams.t;
+let wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno + '&t=' + clienttype;
 
 let vchatConn;
 let vchatLocalStream;
 
 function doConnect() {
-	console.log('screenno==>', screenno);
-	params = {rootname: rootname, roomname: roomname, screenno: screenno};
-	doRequestAddUser(params).then((statusU) => {
-		if (statusU.status.code === 200) {
-			screenno = statusU.screenno;
-			//$('#ClientProfileMark').text(screenno);
-			$('#ClientProfileLogo').text(screenno);
-			wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno;
-			console.log('wsUrl==>', wsUrl);
-			doWebSocketConnect();
+	doGetRequestMasterReady(roomname).then((statusM) => {
+		/* No Master in room will send notify and close connection*/
+		/* ป้องกันการจั่วลม */
+		if (statusM.status.code == 200)	{
+			console.log('screenno==>', screenno);
+			params = {rootname: rootname, roomname: roomname, screenno: screenno};
+			doRequestAddUser(params).then((statusU) => {
+				if (statusU.status.code === 200) {
+					screenno = statusU.screenno;
+					//$('#ClientProfileMark').text(screenno);
+					$('#ClientProfileLogo').text(screenno);
+					wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno + '&t=' + clienttype;
+					console.log('wsUrl==>', wsUrl);
+					doWebSocketConnect();
+				} else {
+					alert('It can not Connect at this time with your Screen No = ' + screenno + '\nPlease refresh this page and connect again.');
+				}
+			});
 		} else {
-			alert('It can not Connect at thistime with your Screen No = ' + screenno + '\nPlease refresh this page and connect again.');
+			alert('Your master screen not ready, please try again later.');
+			$("#OnCmd").toggle();
+			$("#OffCmd").toggle();
+			$("#FullCmd").toggle();
 		}
 	});
 }
@@ -157,9 +169,6 @@ function doWebSocketConnect() {
 
 	ws.onclose = function(event) {
 		console.log("WebSocket is closed now. with  event:=> ", event);
-		setTimeout(() => {
-			doReConnect();
-		}, 1500);
 	};
 
 	ws.onerror = function (err) { 
@@ -184,14 +193,6 @@ function doWebSocketConnect() {
 			
 			// ย้ายไปแก้ที่ remoteConn.ontrack โดยต้องรอให้ master มี localConn.onicegatheringstatechange == complete ก่อน
 		});
-	}
-}
-
-function doReConnect() {
-	console.log(clientId);
-	if (clientId) {
-		wsUrl = 'wss://' + hostname + '/' + rootname + '/' + roomname + '?type=' + myname + '&screenno=' + screenno  + '&clientId=' + clientId;
-		doConnect();
 	}
 }
 
@@ -261,7 +262,10 @@ function doCallStream() {
 			roomName: roomname		
 		}));  
 	} else {
-		alert('ยังไม่ได้เชื่อมต่อเข้ากับระบบฯ\nโปรดเชื่อมต่อโดยคลิกปุ่มรูปสวิชต่อ์สีเขียว');
+		alert('ยังไม่สามารถเชื่อมต่อกับระบบฯ ได้เนื่องจากจอหลักยังไม่เริ่มถ่ายทอดสัญญาณ\nโปรดเชื่อมต่ออีกครั้งในภายหลังโดยคลิกปุ่มรูปสวิชต่อ์สีเขียว');
+		$("#OnCmd").toggle();
+		$("#OffCmd").toggle();
+		$("#FullCmd").toggle();
 	}
 }
 
@@ -540,3 +544,14 @@ function doGetRequestRemoveScreen(roomname, screenno){
 	});
 }
 
+function doGetRequestMasterReady(roomname) {
+	return new Promise(function(resolve, reject) {
+		var url = "/" + rootname + "/masterready/" + roomname;
+		$.get(url, {}, function(data){
+			resolve(data);
+		}).fail(function(error) { 
+			console.log(JSON.stringify(error));
+			reject(error); 
+		});
+	});
+}

@@ -7,8 +7,8 @@ define(function (require) {
 	var vconfMerger;
 
 	var mixOption = {
-		width: 550,   // Width of the output video
-		height: 280,  // Height of the output video
+		width: 640,   // Width of the output video
+		height: 300,  // Height of the output video
 		fps: 25,       // Video capture frames per second
 		clearRect: true, // Clear the canvas every frame
 		audioContext: null, // Supply an external AudioContext (for audio effects)
@@ -44,7 +44,7 @@ define(function (require) {
 
 	var vconfMixOption = {
 		width: 520,   // Width of the output video
-		height: 360,  // Height of the output video
+		height: 310,  // Height of the output video
 		fps: 25,       // Video capture frames per second
 		clearRect: true, // Clear the canvas every frame
 		audioContext: null, // Supply an external AudioContext (for audio effects)
@@ -75,9 +75,10 @@ define(function (require) {
 	});
 
 	document.addEventListener("MergeVconfStreamCmd", function(e) {
-		let streams = {bgStream: e.detail.bgStream, streams: e.detail.streams};
+		let streams = {bgStream: e.detail.bgStream, streams: e.detail.streams, option: e.detail.option};
 		vconfMerger = new VconfMerger(streams);
-		vchatRemoteVideo.srcObject = vconfMerger.getMerger().result;;
+		vconfStream = vconfMerger.getMerger().result;
+		vchatRemoteVideo.srcObject = vconfStream;
 	});
 
 	document.addEventListener("ReleaseStreamMergerCmd", function(e) {
@@ -99,8 +100,8 @@ define(function (require) {
 
 	const StreamMerger = function(streams) {
 		//console.log(mixOption);
-		mixOption.width = displayMediaStreamConstraints.video.width;
-		mixOption.height = displayMediaStreamConstraints.video.height;
+		//mixOption.width = displayMediaStreamConstraints.video.width;
+		//mixOption.height = displayMediaStreamConstraints.video.height;
 		//console.log(mixOption);
 
 		/* Beware, Do not remove this line */
@@ -110,34 +111,38 @@ define(function (require) {
 
 		/**********************/
 
-		let audioTracks = streams.localStream.getAudioTracks();
 		let isMute = true;
-		//console.log(audioTracks.length);
-		if (audioTracks.length > 0){
-			isMute = false;
+		if (streams.localStream)	{
+			let audioTracks = streams.localStream.getAudioTracks();
+			//console.log(audioTracks.length);
+			if (audioTracks.length > 0){
+				isMute = false;
+			}
 		}
-		this.merger.addStream(streams.localStream, {
-			x: 0, // position of the topleft corner
-			y: 0,
-			index: (streams.streamIndex)? streams.streamIndex[0] : 0,
-			width: this.merger.width,
-			height: this.merger.height,
-			mute: isMute // we don't want sound from the screen (if there is any)
-		})
-
+		if (streams.localStream)	{
+			this.merger.addStream(streams.localStream, {
+				x: 0, // position of the topleft corner
+				y: 0,
+				index: (streams.streamIndex)? streams.streamIndex[0] : 0,
+				width: this.merger.width,
+				height: this.merger.height,
+				mute: isMute // we don't want sound from the screen (if there is any)
+			})
+		}
 		// Add the webcam stream. Position it on the bottom left and resize it to 100x100.
 
-		xmepos = this.merger.width * 0.19;
-		ymepos = this.merger.height * 0.25;
-		this.merger.addStream(streams.localMediaStream, {
-			x: this.merger.width - xmepos,
-			y: this.merger.height - ymepos,
-			index: (streams.streamIndex)? streams.streamIndex[1] : 1,
-			width: xmepos,
-			height: ymepos,
-			mute: streams.isMuted
-		})
-		
+		if (streams.localMediaStream){
+			xmepos = this.merger.width * 0.19;
+			ymepos = this.merger.height * 0.25;
+			this.merger.addStream(streams.localMediaStream, {
+				x: this.merger.width - xmepos,
+				y: this.merger.height - ymepos,
+				index: (streams.streamIndex)? streams.streamIndex[1] : 1,
+				width: xmepos,
+				height: ymepos,
+				mute: streams.isMuted
+			})
+		}		
 		// Start the merging. Calling this makes the result available to us
 		this.merger.start();
 
@@ -219,25 +224,34 @@ define(function (require) {
 
 	const VconfMerger = function(streams) {
 		this.merger = new VideoStreamMerger(vconfMixOption);
-
+		console.log(vconfMixOption);
+		console.log(this.merger.width);
+		console.log(this.merger.height);
 		this.merger.addStream(streams.bgStream, {
 			x: 0, 
 			y: 0,
 			index: 0,
 			width: this.merger.width,
 			height: this.merger.height,
-			mute: true
+			mute: streams.option.bgSoundMute
 		});
 
 		streams.streams.forEach((item, i) => {
 			let Index = (i+1);
+			console.log(item.stream);
 			this.merger.addStream(item.stream, {
 				x: item.vx, 
 				y: item.vy,
 				index: Index,
 				width: item.w,
 				height: item.h,
-				mute: true
+				mute: false /*,
+				draw: function (ctx, frame, done) {
+					ctx.fillStyle = "yellow";
+					ctx.fillText(item.screenno, 5,  5);
+					//ctx.drawImage(frame, 0, 0, merger.width, merger.height);
+					done();
+				} */
 			});
 		});
 

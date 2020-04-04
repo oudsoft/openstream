@@ -71,11 +71,6 @@ function OpenStreamClass (arg) {
 					ws.username = roomname+ '-' + screenno[1];
 				}
 
-				let yourClientId;
-				if (queries.length > 2) {
-					let prevClientId = queries[2].split('=');
-					yourClientId = prevClientId[1];
-				}
 				//console.log(connType);
 				ws.roomName = roomname;
 				//let yourNo = wss.getNextClientNo(rootname, roomname);
@@ -88,41 +83,24 @@ function OpenStreamClass (arg) {
 				//console.log('theroom=> ', theroom);
 
 				let newclientObject = null;		
-				//console.log('yourClientId=> ', yourClientId);
-				if (!yourClientId) {
-					/* First Connection Condition*/
-					ws.id = wss.getUniqueID();
-					if (connType[1] === 'master'){
-						ws.type = 'master';
-						masterId = ws.id;
-						masterNo = yourNo;
-						newclientObject = {clientType: 'master', clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else if (connType[1] === 'client'){
-						ws.type = 'client';
-						newclientObject = {clientType: 'client',  clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else if (connType[1] === 'vchat'){
-						ws.type = 'vchat';
-						newclientObject = {clientType: 'vchat',  clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else {
-						newclientObject = {error: 'Wrong Connection'};
-					}
+
+				/* First Connection Condition*/
+				ws.id = wss.getUniqueID();
+				if (connType[1] === 'master'){
+					ws.type = 'master';
+					masterId = ws.id;
+					masterNo = yourNo;
+					newclientObject = {clientType: 'master', clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
+				} else if (connType[1] === 'client'){
+					let clienttype = queries[2].split('=');
+					ws.type = 'client';
+					ws.clienttype = clienttype[1];
+					newclientObject = {clientType: 'client',  clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize, clientType: clienttype[1]};
+				} else if (connType[1] === 'vchat'){
+					ws.type = 'vchat';
+					newclientObject = {clientType: 'vchat',  clientId: ws.id, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
 				} else {
-					/* Re-Connection Condition */
-					ws.id = yourClientId;
-					if (connType[1] === 'master'){
-						ws.type = 'master';
-						masterId = yourClientId;
-						masterNo = yourNo;
-						newclientObject = {clientType: 'master', clientId: yourClientId, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else if (connType[1] === 'client'){
-						ws.type = 'client';
-						newclientObject = {clientType: 'client',  clientId: yourClientId, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else if (connType[1] === 'vchat'){
-						ws.type = 'vchat';
-						newclientObject = {clientType: 'vchat',  clientId: yourClientId, clientNo: yourNo, masterId: masterId, masterNo: masterNo, roomName: roomname, screenNo: yourNo, roomsize: theroom.roomsize};
-					} else {
-						newclientObject = {error: 'Wrong Connection'};
-					}
+					newclientObject = {error: 'Wrong Connection'};
 				}
 
 				newclientObject.type = "register";
@@ -291,7 +269,7 @@ function OpenStreamClass (arg) {
 											//console.log(client.id, data.message.fromId);
 											if ((client.roomName === roomname) && (client.id !== data.message.fromId)){				
 												data.message.clientNo = client.no;
-												room.messages.push(data.message);
+												//room.messages.push(data.message);
 												client.send(JSON.stringify({channel: 'chat', type: 'message', message: data.message, roomName: roomname, screenNo: screenno[1], clientId: ws.id}));
 												//console.log('send =>> ' + data.message.msgType + ' to ' + client.id);
 											}
@@ -305,11 +283,11 @@ function OpenStreamClass (arg) {
 									if (client.roomName === roomname) {
 										//console.log('test2=>> ', client.id, data.sendto);
 										if (client.id === data.sendto){
-											console.log(data);
+											//console.log(data);
 											data.message.clientNo = client.no;
 											data.message.sendto = data.sendto;
 											data.message.callerId = data.callerId;
-											console.log(data.message);
+											//console.log(data.message);
 											client.send(JSON.stringify({channel: 'chat', type: 'message', message: data.message, roomName: roomname, screenNo: screenno[1], clientId: ws.id}));
 										}
 									}
@@ -464,11 +442,18 @@ function OpenStreamClass (arg) {
 	}
 
 	this.addNewUser = function(rootname, roomname, screenno) {
-		const blankUser = {profile: {displayname: '', avatarUrl: ''}, screen: {screenno: screenno, clientId: ''}};
 		return new Promise(function(resolve, reject) {
 			$this.getRoomByName(rootname, roomname).then((theroom) => {
-				theroom.users.push(blankUser);
-				resolve(theroom);
+				let someUsers = theroom.users.filter((item) => {
+					if (item.screen.screenno == screenno)	{
+						return item;
+					}
+				});
+				if (someUsers.length === 0)	{
+					const blankUser = {profile: {displayname: '', avatarUrl: ''}, screen: {screenno: screenno, clientId: ''}};
+					theroom.users.push(blankUser);
+				}
+				resolve(someUsers);
 			});
 		});
 	}
@@ -478,7 +463,7 @@ function OpenStreamClass (arg) {
 			$this.getRoomByName(rootname, roomname).then((theroom) => {
 				let users = theroom.users;
 				let user = users.filter(function(item, inx) {
-					if ((screenno === item.screen.screenno) && (clientId === item.screen.clientId)) {return (item); }
+					if ((screenno == item.screen.screenno) && (clientId === item.screen.clientId)) {return (item); }
 				});
 				console.log('The Result:=> ' + JSON.stringify(user));
 				if (user.length === 1){
@@ -491,14 +476,15 @@ function OpenStreamClass (arg) {
 	}
 
 	this.lockScreen = function (thisroom, screenno, Id) {
-		console.log('will lock screen=>', screenno);
+		//console.log('will lock screenno=>', screenno);
+		//console.log('with Id=>', Id);
 		return new Promise(function(resolve, reject) {
-			console.log('thisroom.users=>', thisroom.users);
+			//console.log('thisroom.users=>', thisroom.users);
 			if (thisroom.users)	{
 				let thisUser = thisroom.users.filter((user) => {
 					if (user.screen.screenno == screenno) { return user; }
 				});
-				console.log('thisUser=>', thisUser);
+				//console.log('thisUser=>', thisUser);
 				if (thisUser.length ===1){
 					thisUser[0].screen.clientId = Id;
 				}

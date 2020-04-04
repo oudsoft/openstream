@@ -80,10 +80,10 @@ function doConnect() {
 								case "vchat-readyCall": 
 									if ((data.clientId === clientId) &&  (data.readyCall))	{
 										if (vchatLocalVideo.srcObject)	{
-											videoCallButton.removeAttribute("disabled");
-											let event = new Event('click');
 											setTimeout(() => {
-												videoCallButton.dispatchEvent(event);
+												//let event = new Event('click');
+												//videoCallButton.dispatchEvent(event);
+												createAndSendOffer();
 											}, 3000);
 										}
 									}
@@ -142,7 +142,7 @@ function doConnect() {
 							//doStartSendIndivOffer(data.clientId);
 							//delay(12000).then(() => doCreateOffer(newLocalConn, data.clientId));
 							//doCreateOffer(newLocalConn, data.clientId);
-							$('#CallOpenLocalFileBar, #CallOpenYoutubeBar').show();
+							//$('#CallOpenLocalFileBar, #CallOpenYoutubeBar').show();
 						}
 					});
 				}
@@ -184,6 +184,8 @@ function doReConnect() {
 }
 
 function doDisconnect() {
+	$('#Webcam-Ex-On-Cmd').hide();
+	$('#Webcam-Ex-Off-Cmd ').hide();
 	$('#Mic-On-Cmd').hide();
 	$('#Webcam-On-Cmd').hide();
 	$('#Mic-Off-Cmd').hide();
@@ -305,7 +307,8 @@ function doInitStream(clientId, screenNo) {
 			}			
 		};
 
-		await mixedStream.getTracks().forEach((track) => {
+		let usedStream = mixedVideo.srcObject;
+		await usedStream.getTracks().forEach((track) => {
 			localConn.addTrack(track, mixedStream);
 		});
 
@@ -527,6 +530,7 @@ function gotMediaStream(stream) {
 
 	$("#Mic-On-Cmd").toggle();
 	$("#Webcam-On-Cmd").toggle();
+	$("#Webcam-Ex-Off-Cmd").toggle();
 
 	doReadyShareMedia();
 }

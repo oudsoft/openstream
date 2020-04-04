@@ -1,5 +1,5 @@
-<div id="vchat">
-	<div id="Vchat-Area">
+<div id="vconf">
+	<div id="Vconf-Area">
 		<video id="vchatRemoteVideo" height="120" width="160" autoplay playsinline></video>
 		<video id="vchatLocalVideo" height="120" width="160" autoplay playsinline></video>
 	</div>
@@ -11,114 +11,24 @@
 			</label> <span class="SwitchLabel"> ON / OFF </span>
 		</div>
 		<div  class="ControlBar">
-			<input id="videoCallButton" type="button" disabled value="Video Call"/>
+			<input id="toggleButton" type="button" disabled value=" Toggle " onclick="doToggleStream()"/>
 		</div>
 		<div  class="ControlBar" id="InviteBttnDiv">
-			<input id="inviteCmdButton" type="button" value=" เชิญ " onclick="doOpenInviteItem()"/>		
+			<input id="inviteCmdButton" type="button" value=" Invite " onclick="doOpenGuestItem('invite')"/>		
+		</div>
+		<div  class="ControlBar" id="MixBttnDiv">
+			<input id="mixCmdButton" type="button" value=" Mix " onclick="doOpenGuestItem('mix')"/>		
 		</div>
 		<div  class="ControlBar" id="JoibBttnDiv">
 			<input id="joinCmdButton" type="button" value=" Join " onclick="doJoinStream()"/>		
 		</div>
-
 		<div  class="ControlBar">
-			<input id="closeCmdButton" type="button" value=" ปิด " onclick="doCloseVchatPopup()"/>
+			<input id="closeCmdButton" type="button" value=" Close " onclick="doCloseVconfPopup()"/>
 		</div>
 	</div>
-	<div id="InviteItemDiv"></div>
+	<div id="GuestItemDiv"></div>
 </div>
-
-<style>
-	@font-face { font-family: THNiramitAS; src: url("font/THNiramitAS/THNiramitAS.ttf");}
-	#Vchat-Area {
-		/* border: 2px solid green; */
-		position: relative;
-		width: 98%;
-		clear: right;
-	}
-
-	#vchatRemoteVideo { 
-		/* border: 3px solid gray; */
-		background-color: rgba(0, 251, 255, 0.53);
-		padding: 5px;
-		z-index: 0;
-
-		width: 97%; 
-		height: 100%;
-	}
-
-	#vchatLocalVideo { 
-		background-color: rgba(0,0,0,0.5);
-		border: 3px solid yellow;
-		z-index: 2;
-
-		position: absolute; 
-		bottom: 10px; 
-		right: 15px; 
-		width: 150px; 
-		height: 100px;
-		margin-right: 5px;
-		margin-bottom: 5px;
-	}
-	#vchat-control {position: relative; border: 3px solid gray; width: 98%; height: 65px; background-color: #e1e1e1;}
-	.ControlBar {position: relative; float: left; padding: 10px;}
-	.SwitchLabel {top: 4px;}
-	.switch-onoff {
-	  position: relative;
-	  display: inline-block;
-	  width: 60px;
-	  height: 34px;
-	}
-
-	.switch-onoff input {display:none;}
-
-	.slider {
-	  position: absolute;
-	  cursor: pointer;
-	  top: 0;
-	  left: 0;
-	  right: 0;
-	  bottom: 0;
-	  background-color: #ccc;
-	  -webkit-transition: .4s;
-	  transition: .4s;
-	}
-
-	.slider:before {
-	  position: absolute;
-	  content: "";
-	  height: 26px;
-	  width: 26px;
-	  left: 4px;
-	  bottom: 4px;
-	  background-color: white;
-	  -webkit-transition: .4s;
-	  transition: .4s;
-	}
-
-	input:checked + .slider {
-	  background-color: green;
-	}
-
-	input:focus + .slider {
-	  box-shadow: 0 0 1px #2196F3;
-	}
-
-	input:checked + .slider:before {
-	  -webkit-transform: translateX(26px);
-	  -ms-transform: translateX(26px);
-	  transform: translateX(26px);
-	}
-	#InviteItemDiv {
-		position: relative;
-		width: 100%;
-		height: 100px;
-		display: none;
-		text-align: left;
-		/* border: 3px solid yellow; */
-		padding: 5px;
-	}
-</style>
-
+<link rel="stylesheet" href="css/vconf.css" />
 <script>
 	/*
 	navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
@@ -129,9 +39,10 @@
 	*/
 	let callType = 'caller';
 
-	let videoCallButton;
+	let toggleButton;
 	let closeCmdButton;
 	let inviteCmdButton;
+	let mixCmdButton;
 	let joinCmdButton;
 	let vchatLocalVideo;
 	let vchatRemoteVideo;
@@ -195,6 +106,7 @@
 		checkbox.addEventListener('change', function () {
 			if (checkbox.checked) {
 				pageReady();
+				//console.log(callType);
 				if (callType === 'callee'){
 					setTimeout(() => {
 						//console.log('Send ready trigger.');
@@ -204,17 +116,21 @@
 				} else if (callType === 'caller') {
 					setTimeout(() => {
 						//console.log('Send interrupt trigger.');
-						initiateCallRemote(callerno, calleeno, callerId, calleeId);
+						getClientIdByNo(calleeno).then((inviteId) => {
+							calleeId = inviteId;
+							initiateCallRemote(callerno, calleeno, callerId, calleeId);
+						});
 					}, 2500);
 				}
 				let bgIsMute = doGetMicrophoneLocalMediaStatus();
-				console.log(bgIsMute);
+				//console.log(bgIsMute);
 				if (!bgIsMute)	{
 					//doToggleMicrophoneLocalMedia();
 				}
 			} else {
 				closeCmdButton.removeAttribute("disabled");
 				inviteCmdButton.disabled = true;
+				mixCmdButton.disabled = true;
 				willCloseConnect();
 			}
 		});
@@ -275,6 +191,7 @@
 	}
 
 	function doSocketSend(data) {
+		//console.log(ws.readyState);
 		if (ws.readyState === 1 ) {
 			ws.send(JSON.stringify(data));
 		} else {
@@ -285,19 +202,20 @@
 	function pageReady() {
 		// check browser WebRTC availability 
 		if(navigator.getUserMedia) {
-			videoCallButton = document.getElementById("videoCallButton");
+			toggleButton = document.getElementById("toggleButton");
+			toggleButton.disabled = true;
 			closeCmdButton = document.getElementById("closeCmdButton");
 			inviteCmdButton = document.getElementById("inviteCmdButton");
 			inviteCmdButton.disabled = true;
+			mixCmdButton = document.getElementById("mixCmdButton");
+			mixCmdButton.disabled = true;
 			joinCmdButton = document.getElementById("joinCmdButton");
 			joinCmdButton.disabled = true;
 			vchatLocalVideo = document.getElementById('vchatLocalVideo');
 			vchatRemoteVideo = document.getElementById('vchatRemoteVideo');
-			if (callType === 'caller'){
-				videoCallButton.addEventListener("click", createAndSendOffer);
-			} else if (callType === 'callee'){
-				videoCallButton.style.display = 'none'; 
-			}
+			vchatRemoteVideo.addEventListener('loadedmetadata', function(e){
+				console.log(vchatRemoteVideo.videoWidth, vchatRemoteVideo.videoHeight);
+			});
 			mainCanvas = doCreateMainCanvas(roomname);
 		} else {
 			alert("Sorry, your browser does not support WebRTC!")
@@ -437,9 +355,9 @@
 
 	function onAddStreamHandler(evt) {
 		//console.log('onAddStreamHandler =>', evt.currentTarget.screenno);
-		videoCallButton.setAttribute("disabled", true);
 		closeCmdButton.setAttribute("disabled", true);
 		inviteCmdButton.disabled = false;
+		mixCmdButton.disabled = false;
 		let remoteStream = evt.streams[0];
 		if (remoteStream) {
 			let scnno = evt.currentTarget.screenno;
@@ -450,7 +368,7 @@
 				remoteStream.onended = e => {
 					vchatRemoteVideo.srcObject = null;
 				}
-				doUpdateStream(mergedStream);
+				doUpdateVconfStream(mergedStream);
 			}, 2500);
 		} else {
 			alert('Error event stream.');
@@ -458,7 +376,6 @@
 	};
 
 	function willCloseConnect() {
-		videoCallButton.setAttribute("disabled", true);
 		vconPeers.forEach((item) => {
 			let sendtoId = item.Id;
 			let skdata = {channel: "vchat", type: "vchat-closeConnection", closeConnection: true, sender: 'remote', name: myname, clientId: sendtoId, roomName: roomname};
@@ -493,15 +410,15 @@
 			let rmvScreenNo = vchatConn.screenno;
 			doRemoveStream(rmvScreenNo).then((remainStreams) => {
 				/*
-				doRenderCanvas().then((mergedStream) => {
+				doRenderAllCanvas().then((mergedStream) => {
 					vchatRemoteVideo.srcObject = mergedStream;
-					doUpdateStream(mergedStream);
+					doUpdateVconfStream(mergedStream);
 					romovePeerById(peerId);
 				});
 				*/
-				doRenderCanvas().then((bgStream) => {
+				doRenderAllCanvas().then((bgStream) => {
 					romovePeerById(peerId);
-					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams}});
+					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
 					document.dispatchEvent(event);
 					//console.log(remoteStreams.length);
 					if (remoteStreams.length === 2)	{
@@ -509,7 +426,7 @@
 					} else {
 						joinCmdButton.disabled = true;
 					}
-					doUpdateStream(vchatRemoteVideo.srcObject);
+					doUpdateVconfStream(vchatRemoteVideo.srcObject);
 				});
 
 			});
@@ -538,31 +455,110 @@
 		}
 	}
 
-	function doOpenInviteItem(){
-		//$('#InviteItemDiv').toggle();
-		$('#InviteItemDiv').slideDown( "slow" );
-		if ($('#InviteItemDiv').css('display')==='block')	{
-			$('#InviteItemDiv').empty();
+	function doCreateGuestItem() {
+		$('#GuestItemDiv').empty();
+		if (doGetRoomSize() > 0) {
 			let htmlcont = $('#ScreenProfile').html();
-			$('#InviteItemDiv').html(htmlcont);
-			$('.ClientProfile').click(function(e) {
-				let targetScreenNo = e.currentTarget.innerText;
-				let dataStatus = $(e.currentTarget).attr('data-status');
-				doValidInvite(targetScreenNo, dataStatus).then((res) => {
-					if (res.result){
-						doSendInvite(targetScreenNo);
-					} else {
-						if (res.code === 1){
-							alert('คุณไม่สามารถเชิญตัวเองเข้าร่วมสนทนาได้');
-						} else if (res.code === 2){
-							alert(targetScreenNo + ' ได้เข้าร่วมแล้ว');
-						} else if (res.code === 3){
-							alert(targetScreenNo + ' ยังไม่ได้เข้ามาในห้อง');
-						}
-					}
-					$('#InviteItemDiv').toggle();
-				});
+			$('#GuestItemDiv').html(htmlcont);
+		} else {
+			clientConecteds.forEach((item) => {
+				let clientItem = $('<div></div>');
+				$(clientItem).addClass('unlimit-cilent-profile');
+				$(clientItem).addClass('ClientStatusOn');
+				$(clientItem).text(item.clientNo);
+				$(clientItem).attr('data-status', 1);
+				$('#GuestItemDiv').append($(clientItem));
 			});
+		}
+	}
+
+	function doCreateMixResetCmd() {
+		$('#GuestItemDiv').empty();
+		let clientItem = $('<div></div>');
+		$(clientItem).addClass('unlimit-cilent-profile');
+		$(clientItem).addClass('ClientStatusOn');
+		$(clientItem).text('B');
+		$(clientItem).attr('data-status', 'B');
+		$('#GuestItemDiv').append($(clientItem));
+	}
+
+	function handleInviteAction(){
+		$('.ClientProfile, .unlimit-cilent-profile').click(function(e) {
+			let targetScreenNo = e.currentTarget.innerText;
+			let dataStatus = $(e.currentTarget).attr('data-status');
+			doValidInvite(targetScreenNo, dataStatus).then((res) => {
+				if (res.result){
+					doSendInvite(targetScreenNo);
+				} else {
+					if (res.code === 1){
+						alert('คุณไม่สามารถเชิญตัวเองเข้าร่วมสนทนาได้');
+					} else if (res.code === 2){
+						alert(targetScreenNo + ' ได้เข้าร่วมแล้ว');
+					} else if (res.code === 3){
+						alert(targetScreenNo + ' ยังไม่ได้เข้ามาในห้อง');
+					}
+				}
+				$('#GuestItemDiv').toggle();
+			});
+		});
+	}
+
+	function handleMixAction() {
+		const mixStreamHandle = function(ScreenNo) {
+			doGetStreamByScreenNo(ScreenNo).then((thatStream) => {
+				let mixOption = {bgSoundMute: true};
+				if (thatStream){
+					doRenderSingleCanvas(thatStream, ScreenNo).then((obj) => {
+						let thisStream = {stream: obj.stream, screenno: ScreenNo}
+						let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: obj.bgStream, streams: [thisStream], option: mixOption}});
+						document.dispatchEvent(event);
+					});
+				} else {
+					alert('Find Stream not found.');
+				}
+			});
+		}
+		$('.ClientProfile, .unlimit-cilent-profile').click(function(e) {
+			let targetScreenNo = e.currentTarget.innerText;
+			let dataStatus = $(e.currentTarget).attr('data-status');
+			if (dataStatus === 'B'){
+				doRenderAllCanvas().then((bgStream) => {
+					let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
+					document.dispatchEvent(event);
+				});
+			} else {
+				doValidInvite(targetScreenNo, dataStatus).then((res) => {
+					if (res.code === 1) {
+						mixStreamHandle(targetScreenNo);
+					} else if (res.code === 2) {
+						mixStreamHandle(targetScreenNo);
+					}
+				});
+			}
+		});
+	}
+	var mixMode = false;
+	function doOpenGuestItem(mode){
+		if ($('#GuestItemDiv').css('display')==='none')	{
+			$('#GuestItemDiv').slideDown( "slow" );
+			switch (mode) {
+				case "invite": 
+					doCreateGuestItem();
+					handleInviteAction();
+				break;
+				case "mix": 
+					if (mixMode)	{
+						doCreateMixResetCmd();
+						mixMode = false;
+					} else {
+						doCreateGuestItem();
+						mixMode = true;
+					}
+					handleMixAction();
+				break;
+			}
+		} else {
+			$('#GuestItemDiv').toggle();
 		}
 	}
 
@@ -602,7 +598,7 @@
 		});
 	}
 
-	function doUpdateStream(mergedStream){
+	function doUpdateVconfStream(mergedStream){
 		let videoTrack = mergedStream.getVideoTracks()[0];
 		vconPeers.forEach((item) => {
 			var sender = item.peer.getSenders().find(function(s) {
@@ -614,12 +610,17 @@
 	}
 
 	function doCreateMainCanvas(roomName) {
+		let cvWidth = 520;
+		let cvHeight = 310;
+		/*
+		let vconfArea = document.getElementById("Vconf-Area");
+		vconfArea.style.width = cvWidth + 'px';
+		vconfArea.style.height = cvHeight + 'px';
+		*/
 		let canvas = document.createElement('canvas');
 		let ctx = canvas.getContext('2d');
-		let cvWidth = 520;
-		let cvHeight = 360;
 		ctx.canvas.width = cvWidth;
-		ctx.canvas.height = 360;
+		ctx.canvas.height = cvHeight;
 		/*Fill Whole Video Background Color */
 		let r_a = 0.53; 
 		ctx.fillStyle = "rgba(0, 251, 255, " + r_a + ")";
@@ -676,6 +677,17 @@
 		});
 	}
 
+	function doGetStreamByScreenNo(scnno){
+		return new Promise(async function(resolve, reject) {
+			let thisStream = remoteStreams.filter((item)=>{
+				if (item.screenno === scnno){
+					return item;
+				}
+			});
+			resolve(thisStream[0].stream);
+		});
+	}
+
 	function doRemoveStream(scnno){
 		return new Promise(async function(resolve, reject) {
 			let another = null;
@@ -693,8 +705,8 @@
 
 	function doMergeVconfStream(newstream, scnno) {
 		doPushStream(newstream, scnno).then((allStream)=>{
-			doRenderCanvas().then((bgStream) => {
-				let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams}});
+			doRenderAllCanvas().then((bgStream) => {
+				let event = new CustomEvent("MergeVconfStreamCmd", { "detail": {bgStream: bgStream, streams: remoteStreams, option: {bgSoundMute: true}}});
 				document.dispatchEvent(event);
 				//console.log(remoteStreams.length);
 				if (remoteStreams.length === 2)	{
@@ -702,16 +714,24 @@
 				} else {
 					joinCmdButton.disabled = true;
 				}
+				toggleButton.disabled = false;
 			});
 		});
 	}
 
-	function doRenderCanvas() {
-		return new Promise(async function(resolve, reject) {
-			/*
-			let cvWidth = 520;
-			let cvHeight = 360;
-			*/
+	function doRenderAllCanvas() {
+		return new Promise(function(resolve, reject) {
+			//var canvas = document.createElement('canvas');
+			if (mainCanvas)	{
+				doClearCanvas(mainCanvas);
+				mainCanvas = doCreateMainCanvas(roomname);
+			}
+
+			let ctx = mainCanvas.getContext('2d');
+			ctx.font = 'bold 14px THNiramitAS';
+			ctx.fillStyle = 'yellow';
+			ctx.textAlign = 'center';
+
 			const gapX = 5;
 			const gapY = 14;
 
@@ -726,18 +746,6 @@
 				vWidth = 55;
 				vHeight =	35;		
 			}
-
-			let bgStream;
-
-			//var canvas = document.createElement('canvas');
-			if (mainCanvas)	{
-				doClearCanvas(mainCanvas);
-				mainCanvas = doCreateMainCanvas(roomname);
-			}
-			let ctx = mainCanvas.getContext('2d');
-			ctx.font = 'bold 14px THNiramitAS';
-			ctx.fillStyle = 'yellow';
-			ctx.textAlign = 'center';
 
 			let startX = 6;
 			let startY = 50;
@@ -754,11 +762,18 @@
 
 				let x = 0;
 				if (rmSize === 2) {
-					x = i % 2;
+					x = i % 3;
 				} else if (rmSize === 8)	{
-					x = i % 4;
+					x = i % 5;
 				} else if (rmSize === 24){
-					x = i % 8;
+					x = i % 9;
+				} else if (rmSize === 0){ //Unlimited type
+					x = i % 5;
+					/*
+						doGetRoomLength(roomname).then((roomlength) => {
+
+						});
+					*/
 				}
 
 				let proofX = lastX + vWidth + gapX + 2;
@@ -786,30 +801,41 @@
 
 				ctx.fillText(item.screenno, item.tx,  item.ty);
 
-				/*
-				video.addEventListener('play', function() {
-					var $this = this; 
-					(function loop() {
-						if (!$this.paused && !$this.ended) {
-							ctx.drawImage($this, item.vx, item.vy, video.width, video.height);
-							let timer = window.setTimeout(loop, 1000 / 100); 
-							timers.push(timer);
-							console.log(timers.length);
-							//console.log(lineCount);
-							if (timers.length > 200){
-								window.clearTimeout(timers[0]);
-								timers.shift();
-							}
-						}
-					})();
-				}, 0);
-				video.oncanplay = function() {
-					video.play();
-				}
-				*/
 			});
-			bgStream = mainCanvas.captureStream(25);
+			let bgStream = mainCanvas.captureStream(60);
 			resolve(bgStream);
+		});
+	}
+
+	function doRenderSingleCanvas(stream, scno) {
+		return new Promise(function(resolve, reject) {
+
+			if (mainCanvas)	{
+				doClearCanvas(mainCanvas);
+				mainCanvas = doCreateMainCanvas(roomname);
+			}
+			let ctx = mainCanvas.getContext('2d');
+			ctx.font = 'bold 20px THNiramitAS';
+			ctx.fillStyle = 'yellow';
+			ctx.textAlign = 'center';
+
+			let startX = 6;
+			let startY = 50;
+
+			stream.tx = 260;
+			stream.ty = startY + 15;
+
+			stream.vx = startX;
+			stream.vy = startY + 35;
+
+			stream.w = 150;
+			//stream.h = ctx.canvas.height - stream.vy;
+			stream.h = 80;
+
+			ctx.fillText(scno, stream.tx,  stream.ty);
+
+			let bgStream = mainCanvas.captureStream(60);
+			resolve({bgStream, stream});
 		});
 	}
 
@@ -843,7 +869,52 @@
 		console.log(joinStream);
 		let event = new CustomEvent("MergeJoinStreamCmd", { "detail": {joinStream: joinStream}});
 		document.dispatchEvent(event);
-		$("#VchatPopup").dialog('close');
 		$("#CloseRemoteJoinCmd").toggle();
+		setTimeout(() => {
+			doUpdateStream(mixedStream, null);
+			$("#VchatPopup").dialog('close');
+		}, 2500);
 	}
+
+	let usedVconfStream = false;
+	function doToggleStream() {
+		if (usedVconfStream)	{
+			mixedVideo.srcObject = mixedStream;
+			doUpdateStream(mixedStream, null);
+			usedVconfStream = false;
+		} else {
+			mixedVideo.srcObject = vconfStream;
+			doUpdateStream(vconfStream, null);
+			usedVconfStream = true;
+		}
+	}
+
+	function doCloseVconfPopup() {
+		mixedVideo.srcObject = mixedStream;
+		doUpdateStream(mixedStream, null);
+		$('#VchatPopup').dialog('close');
+	}
+	/*
+	merge with canvas ctx
+	video.addEventListener('play', function() {
+		var $this = this; 
+		(function loop() {
+			if (!$this.paused && !$this.ended) {
+				ctx.drawImage($this, item.vx, item.vy, video.width, video.height);
+				let timer = window.setTimeout(loop, 1000 / 100); 
+				timers.push(timer);
+				console.log(timers.length);
+				//console.log(lineCount);
+				if (timers.length > 200){
+					window.clearTimeout(timers[0]);
+					timers.shift();
+				}
+			}
+		})();
+	}, 0);
+	video.oncanplay = function() {
+		video.play();
+	}
+	*/
+
 </script>

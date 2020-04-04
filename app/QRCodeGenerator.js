@@ -18,7 +18,7 @@ const QRCodeGenerator = (entryType, roomId, roomName, screenId, screenNo, hostna
 	//for filling color background
 	ctx.globalAlpha = 0.8;
 	ctx.fillStyle = "yellow";
-    	ctx.fillRect(0,0,400,imageHeigth);
+    ctx.fillRect(0,0,400,imageHeigth);
 	ctx.fill();
 	
 	/*

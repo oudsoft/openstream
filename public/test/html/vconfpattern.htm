@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+		</style>
+	</head>
+	<body>
+		<div style='width: 100%; text-align: center;'>
+			<div style='padding: 10px; border: 1px solid yellow;'>
+				<video id='TestVideo' width='360' height='200' src='../../video/BBH_gravitational_lensing_of_gw150914.webm'/>
+			</div>
+			<div style='padding: 10px; border: 1px solid yellow;'>
+				<canvas id='TestCanvas' width='520' height='310'/>
+			</div>
+			<div style='padding: 10px; margin-top: 10px; border: 1px solid yellow;'><button id="testButton" onclick="doTest()">Test </button></div>
+			<div style='padding: 10px; margin-top: 10px; border: 1px solid yellow;'><button id="testButton" onclick="doTestCanvas()">Test Canvas</button></div>
+		</div>
+	</body>
+</html>
+
+<script>
+	var video = document.getElementById('TestVideo');
+	var canvas = document.getElementById('TestCanvas');
+	var ctx =  canvas.getContext('2d');
+	console.log(ctx.canvas.width, ctx.canvas.height);
+	ctx.fillStyle = 'yellow';
+	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+	ctx.font = 'bold 14px THNiramitAS';
+
+	ctx.textAlign = 'center';
+
+	const gapX = 5;
+	const gapY = 14;
+
+	const sizeW = 110;
+	const sizeH = 75;
+
+	var amount = 6;
+
+	var testObj = {};
+	var testKeys = Object.keys(testObj);
+	console.log(testKeys);
+
+	var contents = [];
+
+	var startX = 10;
+	var startY = 10;
+
+	function doTest(){
+		for (let i=0; i < amount; i++){
+			let box = {};
+			box.text = i;
+			let k = startX + (i * sizeW)  + (i * gapX);
+			if ((k + sizeW) < ctx.canvas.width) {
+				box.tx = k;
+				box.ty = startY;
+			} else {
+				box.tx = startX;
+				startY = startY +sizeH + gapY;
+				box.ty = startY;
+			}
+			box.vx = startX + (i * sizeW)  + (i * gapX);
+			box.vy = startY;
+			box.w = sizeW;
+			box.h = sizeH;
+
+			let boxKeys = Object.keys(box);
+			console.log(boxKeys);
+
+			contents.push(box);
+		}
+		contents.forEach((item, i) => {
+			ctx.fillStyle = 'red';
+			ctx.fillRect(item.tx, item.ty, item.w, item.h);
+		});
+	}
+
+	function doTestCanvas(){
+		video.play();
+		ctx.drawImage(TestVideo,10,10);
+	}
+</script>
