@@ -20,10 +20,16 @@
 		<button id="btn-stop-screen-call" onclick="doDisconnect()">Stop Connect</button>
 		-->
 		<button id="btn-request-fullscreen" onclick="doRequestFullScreen()">Full Screen</button>
-		<button id="btn-request-broadcst-fb" onclick="doRequestBroadcastFB()">Facebook</button>
+		<button id="btn-request-broadcst-fb" onclick="doToggleInputKey()">Facebook</button>
 		<button id="btn-request-broadcst-yt" onclick="doRequestBroadcastYT()">Youtube</button>
 		<button id="btn-request-stop-broadcast" onclick="doStopBroadcast()">Stop Broadcast</button>
 	</div>
+	<div id="InputKeyDiv">
+		<label>Stream Key</label>
+		<input id="StreamKey" type="text" size="60" placeholder="2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"/>
+		<input id="StartStreamCmd" type="button" value=" OK " onclick="doRequestBroadcastFB()" />
+	</div>
+
 	<div>&nbsp;</div>
 	<div id="MainScreen">
 		<div id="ClientScreen">
@@ -128,12 +134,22 @@
 		}
 	}
 
+	function doToggleInputKey() {
+		$('#InputKeyDiv').slideToggle("slow");	
+	}
+
 	function doRequestBroadcastFB() {
 		const fb_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
 		const fb_keyStrem = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
-		const fb_rtmp_url = fb_url + fb_keyStrem;
-		fb_socket = io.connect(fb_socketio_address_url, securePolicy);
-		doBroadcast(fb_socket, fb_rtmp_url);
+		let StreamInputKey = $('#StreamKey').val();
+		if (StreamInputKey){
+			fb_keyStrem = StreamInputKey;
+			const fb_rtmp_url = fb_url + fb_keyStrem;
+			fb_socket = io.connect(fb_socketio_address_url, securePolicy);
+			doBroadcast(fb_socket, fb_rtmp_url);
+		} else {
+			alert('Stream Key ต้องไม่ว่าง');
+		}
 	}
 	function doRequestBroadcastYT() {
 		const yt_url = 'rtmp://a.rtmp.youtube.com/live2/';

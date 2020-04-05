@@ -581,13 +581,23 @@ openstreamApp.get('/client/(:roomname)/(:type)', async function(req, res) {
 	const rootname = req.originalUrl.split('/')[1];
 	let url = '';
 	let theroom = await openstreamObj.getRoomByName(rootname, roomname);
-	if ((theroom.roomname == roomname) && (theroom.status === 'Active')){
-		url = 'https://' + hostname + '/' + rootname + '/client.html?roomname=' + roomname + '&screenno=&t=' + type;
-	} else {
-		url = 'https://' + hostname + '/' + rootname + '/error.html?roomname=' + roomname + '&screenno=&err=405';
+	if (type === 'm'){
+		if ((theroom.roomname == roomname) && (theroom.status === 'Active')){
+			url = 'https://' + hostname + '/' + rootname + '/client.html?roomname=' + roomname + '&screenno=&t=' + type;
+		} else {
+			url = 'https://' + hostname + '/' + rootname + '/error.html?roomname=' + roomname + '&screenno=&err=405';
+		}
+		res.writeHead(301, {Location: url});
+		res.end();
+	} else if (type === 'd') {
+		if (req.session.user && req.cookies.userid) {
+			const url = 'https://' + hostname + '/' + rootname + '/control.html';
+			res.writeHead(301, {Location: url});
+			res.end();
+		} else {	
+			res.redirect('/' + rootname + '/login.html?t=d');
+		}
 	}
-	res.writeHead(301, {Location: url});
-	res.end();
 });
 
 

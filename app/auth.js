@@ -94,7 +94,7 @@ module.exports = function (app) {
 	    resave: false,
 	    saveUninitialized: false,
 	    cookie: {
-		expires: 600000
+			expires: 600000
 	    }
 	}));
 
@@ -134,6 +134,7 @@ module.exports = function (app) {
 		const rootname = req.originalUrl.split('/')[1];		
 	    res.redirect('/' + rootname + '/signup.html');
 	});
+
 	app.post('/signup', (req, res) => {
 		const rootname = req.originalUrl.split('/')[1];
 		User.create({
@@ -166,7 +167,7 @@ module.exports = function (app) {
 		doVerifyUser(username, password).then((user) => {
 			console.log(user);
 			if (user.length === 0) {
-				res.redirect('/' + rootname + '/login.html');
+				res.redirect('/' + rootname + '/login.html?t=' + loginType + '&er=1');
 			} else {
 				if (user[0].userid){
 					doVerifyAgency(user[0].userid).then((agency) => {
@@ -180,12 +181,12 @@ module.exports = function (app) {
 							url = '/' + rootname + '/control.html';
 							res.status(200).send({url: url, status: {code: 200}});
 						} else {
-							url = '/' + rootname + '/login.html';
+							url = '/' + rootname + '/login.html?t=' + loginType + '&er=3';
 							res.status(200).send({url: url, status: {code: 210}});
 						}
 					});
 				} else {
-					url = '/' + rootname + '/login.html';
+					url = '/' + rootname + '/login.html?t=' + loginType + '&er=2';
 					res.status(200).send({url: url, status: {code: 211}});
 				}
 			}

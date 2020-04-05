@@ -292,8 +292,9 @@ input[type="button"], input[type="file"], button { font-size: 24px;}
   }
 }	
 
-
 #ClientScreenLabel { position: relative; width: 100%; /*border: 3px solid red;*/}
 #ClientScreenMark{ position: relative; float: left;  /* border: 3px solid green; */}
 #ClientProfileLogo{ position: relative; float: left; top: 18px; left: 30px; /* border: 3px solid blue*/ }
 .FullWidthCenter { position: relative; width: 100%; text-align: center; }
+
+#InputKeyDiv{position: absolute; padding: 5px; right: 1px; display: none; z-index: 11; background-color: #3cb344; width: 100%;}

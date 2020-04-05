@@ -324,10 +324,13 @@ This will also return the boolean opposite of the return value of the function, 
 -----------------------------------------------------------------------------------------------------------------------------------
 unlimited type
 login
-	logintype[t=a, t=c, t=o] t=o ->> must be specify the ad auth url
+	logintype[t=a, t=d, t=c] t=c ->> must be specify the ad auth url default=local
 auth
-
+	sudo -u postgres psql
+	ALTER TABLE users ADD COLUMN auth_url VARCHAR(100);
+	ALTER TABLE users ALTER COLUMN auth_url SET DEFAULT 'local';
 user register
+
 user create new room
 
 master
