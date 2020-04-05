@@ -156,7 +156,7 @@ function doGetScreenSignal() {
 		//console.log(screen.getTracks());
 		//console.log(screen.getAudioTracks());
 		//console.log(screen.getVideoTracks());		
-		if (localStream)	{
+		if ((localStream) || (localMediaStream) || (mixedStream))	{
 			let conf = confirm('โปรดยืนยันว่า "คุณต้องการเปลี่ยนสัญญาณจอภาพด้วยสัญญาณใหม่ที่เลือก?"\nยืนยันโดย ตกลง หรือ OK');
 				if (conf)	{
 					/*

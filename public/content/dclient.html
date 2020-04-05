@@ -140,16 +140,17 @@
 
 	function doRequestBroadcastFB() {
 		const fb_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
-		const fb_keyStrem = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
+		let fb_keyStrem = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
 		let StreamInputKey = $('#StreamKey').val();
 		if (StreamInputKey){
 			fb_keyStrem = StreamInputKey;
-			const fb_rtmp_url = fb_url + fb_keyStrem;
+			let fb_rtmp_url = fb_url + fb_keyStrem;
 			fb_socket = io.connect(fb_socketio_address_url, securePolicy);
 			doBroadcast(fb_socket, fb_rtmp_url);
 		} else {
 			alert('Stream Key ต้องไม่ว่าง');
 		}
+		doToggleInputKey();
 	}
 	function doRequestBroadcastYT() {
 		const yt_url = 'rtmp://a.rtmp.youtube.com/live2/';
