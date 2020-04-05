@@ -298,3 +298,4 @@ input[type="button"], input[type="file"], button { font-size: 24px;}
 .FullWidthCenter { position: relative; width: 100%; text-align: center; }
 
 #InputKeyDiv{position: absolute; padding: 5px; right: 1px; display: none; z-index: 11; background-color: #3cb344; width: 100%;}
+input[type="text"]{padding: 5px 5px; line-height: 20px; font-size: 24px}
