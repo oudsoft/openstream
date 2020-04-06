@@ -12,7 +12,7 @@ const openstreamApp = express();
 
 let openstreamObj = null;
 let uploader = null;
-let streamerfile =null;
+//let streamerfile =null;
 let dbman = null;
 let billgen = null;
 let proxy = null;

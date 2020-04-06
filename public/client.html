@@ -365,8 +365,11 @@
 			} else  if (type === 'd') {
 				//Desktop
 			}
-			$('#ClientProfilePopup, #VideoCallInteruptPopup, #VchatPopup').dialog({ 
+			$('#ClientProfilePopup, #VideoCallInteruptPopup').dialog({ 
 				modal: true, autoOpen: false, resizable: false, width: 450, title: 'Client Profile', 
+			});
+			$('#VchatPopup').dialog({ 
+				modal: false, autoOpen: false, width: 450, resizable: false, title: 'Video Call'
 			});
 			$(".ui-dialog-titlebar-close").click((e) => { 
 				doCloseClientProfilePopup();
