@@ -455,6 +455,7 @@
 			let htmlcont = $('#ScreenProfile').html();
 			$('#GuestItemDiv').html(htmlcont);
 		} else {
+			console.log(clientConecteds);
 			clientConecteds.forEach((item) => {
 				let clientItem = $('<div></div>');
 				$(clientItem).addClass('unlimit-cilent-profile');
@@ -831,7 +832,7 @@
 			micStream.tx = 260;
 			micStream.ty = startY + 14;
 
-			micStream.vx = startX + 100;
+			micStream.vx = startX + 90;
 			micStream.vy = startY + 20;
 
 			micStream.w = vWidth;
