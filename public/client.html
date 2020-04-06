@@ -12,6 +12,7 @@
 		<script type="text/javascript" src="lib/jquery.ui.chatbox.js"></script>
 		<script type="text/javascript" src="lib/chatboxManager.js"></script>
 		<script type="text/javascript" src="lib/simpleUpload.min.js"></script> 
+		<script src="lib/jquery.dialogextend.min.js"></script>
 		<script src="lib/notify.min.js"></script>
 		<script src="js/utility.js"></script>
 		<script src="js/client.js"></script>
@@ -563,7 +564,12 @@
 
 	function doCallOpenVchat(roomname, screenno, calleeno, calleeId) {
 		doCloseClientProfilePopup();
-		$('#VchatPopup').dialog('option', 'title', 'Video Call');
+		$('#VchatPopup').dialog('option', 'title', 'Video Call').dialogExtend({
+			"maximizable" : true,
+			"minimizable" : true,
+			"dblclick" : "maximize",
+			"icons" : { "maximize" : "ui-icon-arrow-4-diag", "minimize" : "ui-icon-circle-minus", "restore" : "ui-icon-bullet" }
+		});
 		$('#VchatPopup').dialog('option', 'width', '720');
 		$('#VchatPopup').dialog('option', 'height', 'auto');
 		$('#VchatPopup').dialog('open');
