@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>      
+		<script src="../../lib/jquery-ui-1.12.1.custom/external/jquery/jquery.js"></script>
+		<script src="../../lib/jquery-ui-1.12.1.custom/jquery-ui.js"></script>
+		<link href="../../lib/jquery-ui-1.12.1.custom/jquery-ui.css" rel="stylesheet"/>
+		<script data-main="../../js/mod/loadtester.js" src="../../lib/require.js"></script>
+		<style>
+			@font-face { font-family: THNiramitAS; src: url("../../font/THNiramitAS/THNiramitAS.ttf");}
+			#CanvasDiv {/*border: 1px solid red;*/ position: relative; width: 100%; height: auto; text-align: center;}
+			#OutputDiv {position: relative; };
+			.origional {filter:none;}
+			.blur {-webkit-filter: blur(4px);filter: blur(4px);}
+			.brightness {-webkit-filter: brightness(0.30);filter: brightness(0.30);}
+			.contrast {-webkit-filter: contrast(180%);filter: contrast(180%);}
+			.grayscale {-webkit-filter: grayscale(100%);filter: grayscale(100%);}
+		</style>
+	</head>
+	<body>
+		<video id="Monitor" autoplay playsinline></video>
+		<div id="CanvasDiv"><canvas id="AdXCanvas" width="853" height="480" style="font-family: THNiramitAS;"></canvas></div>
+		<button onclick="doStart()">Start</button>
+		<button onclick="doStop()">Stop</button>
+		<div id="OutputDiv">
+			<video id="Output" autoplay playsinline></video>
+		</div>
+		<button onclick="doShowme()">play show me please</button>
+	</body>
+</html>
+
+<script>
+
+	const options = {width: 853, height: 480};
+
+	const init = function() {
+		const AdXCanvas = document.querySelector('#AdXCanvas');
+		//AdXCanvas.style.width = options.width  + 'px';
+		//AdXCanvas.style.height = options.height + 'px';
+		AdXCanvas.style.border = '3px solid gray';
+		AdXCanvas.style.position = 'relative';
+		AdXCanvas.style.display = 'block';
+		AdXCanvas.style.background = 'transparent';
+		AdXCanvas.style.fontFamily = 'THNiramitAS';
+		AdXCanvas.classList.add("contrast");
+		return AdXCanvas;
+	}
+
+	const doRenderLive = function (Canvas) {
+		const ctx = Canvas.getContext('2d');
+		ctx.font = 'bold 30px THNiramitAS';
+		ctx.fillStyle = 'red';
+		ctx.textAlign = 'left';
+		//console.log(w);
+		ctx.fillText('สด', 10, 30);
+	}
+
+	const doRenderLogo = function (Canvas) {
+		var logoPath =  '../../imgs/logo/fullview.png';
+		var logoImage = new Image(); 
+		logoImage.src = logoPath;
+		const ctx = Canvas.getContext('2d');
+		logoImage.addEventListener('load', e => {
+			ctx.drawImage(logoImage, 10, 440, 40, 40);
+		});
+	}
+
+	const doRenderBrand = function (Canvas) {
+		const ctx = Canvas.getContext('2d');
+		ctx.font = 'bold 30px THNiramitAS';
+		ctx.fillStyle = 'lightgreen';
+		ctx.textAlign = 'left';
+		//console.log(w);
+		ctx.fillText('Open Stream', 60, 470);
+	}
+
+	doStart();
+	function doStart() {
+		let CanvasDiv = document.querySelector("#CanvasDiv");
+		CanvasDiv.style.width = options.width + 'px';
+		CanvasDiv.style.height = options.height + 'px';;
+		let Canvas = init();
+		doRenderLive(Canvas);
+		doRenderLogo(Canvas);
+		CanvasDiv.appendChild(Canvas);
+		doRenderBrand(Canvas);
+		CanvasDiv.style.testAlign = 'center';
+		doPaly();
+	}
+
+	function doPaly(){
+		let output = document.querySelector("#Output");
+		output.oncanplay = function() {
+			output.play();
+		}
+
+		let webmstream = null;	
+		media = document.createElement("video");
+		media.oncanplay = function() {
+			webmstream = media.captureStream();
+			console.log(webmstream);
+			output.srcObject = webmstream;
+		}
+		let Canvas = document.querySelector('#AdXCanvas');
+		let stream = Canvas.captureStream(25);
+		customRecordStream(stream);
+	}
+
+	function customRecordStream(stream) {
+		const INT_REC = 1000;
+		const options = { mimeType: 'video/webm;codecs=vp9' };
+		mediaRecorder = new MediaRecorder(stream, options);
+		mediaRecorder.ondataavailable = handleWriteFile; 
+		mediaRecorder.start(INT_REC)
+	};
+
+	function handleWriteFile(event){
+		if (event.data && event.data.size > 0) {
+			console.log(event.data);
+		}
+	}
+</script>

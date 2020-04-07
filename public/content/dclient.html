@@ -20,13 +20,13 @@
 		<button id="btn-stop-screen-call" onclick="doDisconnect()">Stop Connect</button>
 		-->
 		<button id="btn-request-fullscreen" onclick="doRequestFullScreen()">Full Screen</button>
-		<button id="btn-request-broadcst-fb" onclick="doToggleInputKey()">Facebook</button>
-		<button id="btn-request-broadcst-yt" onclick="doRequestBroadcastYT()">Youtube</button>
+		<button id="btn-request-broadcst-fb" onclick="doToggleInputKey('fb')">Facebook</button>
+		<button id="btn-request-broadcst-yt" onclick="doToggleInputKey('yt')">Youtube</button>
 		<button id="btn-request-stop-broadcast" onclick="doStopBroadcast()">Stop Broadcast</button>
 	</div>
 	<div id="InputKeyDiv">
 		<label>Stream Key</label>
-		<input id="StreamKey" type="text" size="60" placeholder="2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"/>
+		<input id="StreamKey" type="text" size="60" value="2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw"/>
 		<input id="StartStreamCmd" type="button" value=" OK " onclick="doRequestBroadcastFB()" />
 	</div>
 
@@ -74,6 +74,12 @@
 
 	const fb_socketio_address_url = 'https://202.28.68.28:443';
 	const yt_socketio_address_url = 'https://202.28.68.28:8443';
+
+	const fb_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
+	const yt_url = 'rtmp://a.rtmp.youtube.com/live2/';
+
+	const oudsoft_fb_Streamkey = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
+	const oudsoft_yt_Streamkey = '8et8-2cej-yjzq-e26a';
 
 	const securePolicy = {secure: true};
 
@@ -134,13 +140,16 @@
 		}
 	}
 
-	function doToggleInputKey() {
+	function doToggleInputKey(target) {
+		if (target === 'fb'){
+			$('#StreamKey').val(oudsoft_fb_Streamkey);
+		} esle if (target === 'yt'){
+			$('#StreamKey').val(oudsoft_yt_Streamkey);
+		}
 		$('#InputKeyDiv').slideToggle("slow");	
 	}
 
 	function doRequestBroadcastFB() {
-		const fb_url = 'rtmps://live-api-s.facebook.com:443/rtmp/';
-		let fb_keyStrem = '2761746463874032?s_bl=1&s_ps=1&s_sw=0&s_vt=api-s&a=AbzRWHRQi37Cp4Jw';
 		let StreamInputKey = $('#StreamKey').val();
 		if (StreamInputKey){
 			fb_keyStrem = StreamInputKey;
@@ -153,11 +162,15 @@
 		doToggleInputKey();
 	}
 	function doRequestBroadcastYT() {
-		const yt_url = 'rtmp://a.rtmp.youtube.com/live2/';
-		const yt_keyStrem = '8et8-2cej-yjzq-e26a';
-		const yt_rtmp_url = yt_url + yt_keyStrem;
-		yt_socket = io.connect(yt_socketio_address_url, securePolicy);
-		doBroadcast(yt_socket, yt_rtmp_url);
+		let StreamInputKey = $('#StreamKey').val();
+		if (StreamInputKey){
+			const yt_rtmp_url = yt_url + yt_keyStrem;
+			yt_socket = io.connect(yt_socketio_address_url, securePolicy);
+			doBroadcast(yt_socket, yt_rtmp_url);
+		} else {
+			alert('Stream Key ต้องไม่ว่าง');
+		}
+		doToggleInputKey();
 	}
 	function doBroadcast(socket, rtmp_url) {
 		

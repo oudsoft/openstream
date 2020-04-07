@@ -329,19 +329,13 @@ auth
 	sudo -u postgres psql
 	ALTER TABLE users ADD COLUMN auth_url VARCHAR(100);
 	ALTER TABLE users ALTER COLUMN auth_url SET DEFAULT 'local';
+	<== user_role <a/g/u>
 user register
 
 user create new room
 
-master
-	- remerge mixedStream
-		เมื่อ สั่งเล่น youtube ให้เอาสัญญาณจาก local multimedia มาใส่ให้ localStream
-		เมื่อใช้ vchat ให้เอาสัญญาณ vconMixed มาใส่ให้ mixedStream
-			- ควบคุมเสียง/ภาพ ที่มาจาก client แต่ล่ะคนได้
-			- มีรูปแบบการ merge ที่หลากหลาย
-	- ซ่อน
-dclient
-	- broadcast to youtube/facebook
+vconf
+	เมื่อสัญญาณ conf อยู่ในโหมด toggle (เข้าไปในสัญญาณหลักของห้องแทนที่ mixedStream เมื่อมีการ Mix (เปลี่ยน remoteStream) ควร toggle ให้ไปที่สัญยาณหลักด้วย
 -------------------------------------
 วิธีใช้งาน ffmpeg
 http://dsdi.msu.ac.th/?article=ffmpeg

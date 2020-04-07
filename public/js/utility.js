@@ -463,7 +463,9 @@ function handleClientDisConnect(AClientNo){
 	}
 	if (myname === 'master'){
 		let otherClients = clientConecteds.filter((item) => {
-			if (item.clientNo === AClientNo) return item;
+			if (item.clientNo !== '00') {
+				if (item.clientNo !== AClientNo) return item;
+			}
 		});
 		clientConecteds = otherClients;
 	}
